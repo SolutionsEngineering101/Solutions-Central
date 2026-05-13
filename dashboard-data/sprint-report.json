@@ -1,0 +1,19 @@
+{
+  "last_updated": "",
+  "current_sprint": {
+    "number": null,
+    "start_date": "",
+    "end_date": "",
+    "goals": [],
+    "status": "not started"
+  },
+  "team_activity": {
+    "hemanga-bharadwaj": { "last_log": "", "today_summary": "" },
+    "pankaj-chakrabarty": { "last_log": "", "today_summary": "" },
+    "bhargav-nath": { "last_log": "", "today_summary": "" },
+    "nilimpa-nizara-bora": { "last_log": "", "today_summary": "" },
+    "garima-kayal": { "last_log": "", "today_summary": "" },
+    "kongkana-bayan": { "last_log": "", "today_summary": "" }
+  },
+  "sprint_summary": ""
+}
