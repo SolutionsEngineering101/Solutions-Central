@@ -16,9 +16,9 @@
 
 ### Bhargav Nath
 - **Folder:** `team/bhargav-nath/`
-- **Role:** 
-- **Focus Areas:** 
-- **Contact:** 
+- **Role:** Associate Project Coordinator / APM
+- **Focus Areas:** Product management, API integrations (Switchfly, SaaS platforms), data analysis, automation
+- **Contact:** bhargav.nath@vantagecircle.com
 
 ### Nilimpa Nizara Bora
 - **Folder:** `team/nilimpa-nizara-bora/`
