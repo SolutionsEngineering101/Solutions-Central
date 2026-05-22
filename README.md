@@ -30,8 +30,7 @@ claude "create new project [project name] for [your name]"
 ```
 solutions-engineering/
 ├── intake/                      # All incoming data lands here
-│   ├── solutions-forms/         # MS Forms responses (via Power Automate)
-│   └── confluence-sync/         # Confluence pages (daily sync)
+│   └── solutions-forms/         # MS Forms responses (auto-pulled via Graph API)
 ├── documents/                   # Central document library
 ├── product-information/         # Product specs, screenshots, release notes
 ├── playbook/                    # Recorded best practices and learnings

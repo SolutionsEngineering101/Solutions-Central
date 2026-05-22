@@ -144,17 +144,6 @@ Always refer to files by their relative path. Always commit and push after writi
 
 ---
 
-## WORKFLOW 6: Sync Confluence (manual trigger)
-
-**Trigger:** `"sync confluence"`
-
-**Steps:**
-1. Run `scripts/sync-confluence.sh` (requires CONFLUENCE_TOKEN env var)
-2. New/updated pages land in `intake/confluence-sync/`
-3. Commit: `sync: confluence [date]`
-
----
-
 ## GLOBAL RULES
 
 - **Never overwrite** existing playbook or blueprint entries — always create new dated files
