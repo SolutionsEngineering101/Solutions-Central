@@ -44,7 +44,7 @@ The repo serves as: intake hub, documentation library, team workspace, playbook,
 ## To Do (in order)
 
 - [x] **3. Clean up Confluence references** — Deleted `intake/confluence-sync/`, `scripts/sync-confluence.sh`. Removed Workflow 6 from CLAUDE.md. Updated README.md.
-- [ ] **4. Scaffold `skills/` folder** — Currently empty. Needs a structure and README.
+- [x] **4. Scaffold `skills/` folder** — Created `skills/README.md`, `skills/matrix.md` (blank skills matrix for all 6 members), and 7 domain files in `skills/domains/`.
 - [ ] **5. Fill in team roles** — `intake/team-and-roles.md` has all members listed but Role, Focus Areas, and Contact are blank for everyone.
 - [ ] **6. Build dashboard website** — Dynamic site hosted on Vercel or Netlify. Reads from `dashboard-data/` JSON files in the repo (via GitHub API). Stack not yet decided.
 
