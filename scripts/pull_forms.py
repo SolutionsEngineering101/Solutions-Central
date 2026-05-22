@@ -30,8 +30,9 @@ CLIENT_ID     = os.environ["AZURE_CLIENT_ID"]
 TENANT_ID     = os.environ["AZURE_TENANT_ID"]
 CLIENT_SECRET = os.environ["AZURE_CLIENT_SECRET"]
 
-GROUP_NAME = os.getenv("MS_GROUP_NAME", "Solutions")
-EXCEL_NAME = os.getenv("MS_EXCEL_NAME", "Solution Request Form")
+SHAREPOINT_HOST = os.getenv("MS_SHAREPOINT_HOST", "vantagecircle.sharepoint.com")
+SHAREPOINT_SITE = os.getenv("MS_SHAREPOINT_SITE", "Solutions")
+EXCEL_NAME      = os.getenv("MS_EXCEL_NAME", "Solution Request Form")
 
 AUTHORITY  = f"https://login.microsoftonline.com/{TENANT_ID}"
 SCOPES     = ["https://graph.microsoft.com/.default"]
@@ -80,7 +81,7 @@ def get_token() -> str:
     )
     result = app.acquire_token_for_client(scopes=SCOPES)
     if "access_token" not in result:
-        raise RuntimeError(f"Auth failed: {result.get(chr(39)+'error_description'+chr(39), result)}")
+        raise RuntimeError(f"Auth failed: {result.get('error_description', result)}")
     return result["access_token"]
 
 
@@ -95,27 +96,27 @@ def graph_get(token: str, path: str, params: dict = None) -> dict:
     return resp.json()
 
 
-def find_group(token: str, name: str) -> dict:
-    data = graph_get(token, "/groups", {"$filter": f"displayName eq '{name}'", "$select": "id,displayName"})
-    groups = data.get("value", [])
-    if not groups:
-        raise RuntimeError(f"Group not found: {name}")
-    return groups[0]
+def find_site(token: str, host: str, site_name: str) -> str:
+    data = graph_get(token, f"/sites/{host}:/sites/{site_name}")
+    site_id = data.get("id")
+    if not site_id:
+        raise RuntimeError(f"SharePoint site not found: {host}/sites/{site_name}")
+    return site_id
 
 
-def find_excel(token: str, group_id: str, name_fragment: str) -> dict:
-    data = graph_get(token, f"/groups/{group_id}/drive/root/children", {"$select": "id,name,file"})
+def find_excel(token: str, site_id: str, name_fragment: str) -> dict:
+    data = graph_get(token, f"/sites/{site_id}/drive/root/children", {"$select": "id,name,file"})
     hits = [f for f in data.get("value", []) if name_fragment.lower() in f.get("name","").lower() and "file" in f]
     if not hits:
-        data = graph_get(token, f"/groups/{group_id}/drive/root/search(q='{name_fragment}')", {"$select": "id,name,file"})
+        data = graph_get(token, f"/sites/{site_id}/drive/root/search(q='{name_fragment}')", {"$select": "id,name,file"})
         hits = [f for f in data.get("value", []) if "file" in f]
     if not hits:
-        raise RuntimeError(f"Excel file not found: {name_fragment}")
+        raise RuntimeError(f"Excel file not found matching '{name_fragment}'")
     return hits[0]
 
 
-def read_sheet(token: str, group_id: str, file_id: str):
-    data = graph_get(token, f"/groups/{group_id}/drive/items/{file_id}/workbook/worksheets/Sheet1/usedRange")
+def read_sheet(token: str, site_id: str, file_id: str):
+    data = graph_get(token, f"/sites/{site_id}/drive/items/{file_id}/workbook/worksheets/Sheet1/usedRange")
     values = data.get("values", [])
     if not values:
         return [], []
@@ -181,13 +182,12 @@ def to_markdown(row: dict) -> str:
 def pull():
     token = get_token()
     print("Authenticated")
-    group   = find_group(token, GROUP_NAME)
-    gid     = group["id"]
-    print(f"Group : {group[chr(39)+'displayName'+chr(39)]} ({gid})")
-    excel   = find_excel(token, gid, EXCEL_NAME)
+    site_id = find_site(token, SHAREPOINT_HOST, SHAREPOINT_SITE)
+    print(f"Site  : {SHAREPOINT_HOST}/sites/{SHAREPOINT_SITE}")
+    excel   = find_excel(token, site_id, EXCEL_NAME)
     fid     = excel["id"]
-    print(f"File  : {excel[chr(39)+'name'+chr(39)]}")
-    headers, rows = read_sheet(token, gid, fid)
+    print(f"File  : {excel['name']}")
+    headers, rows = read_sheet(token, site_id, fid)
     col = {h: i for i, h in enumerate(headers)}
     print(f"Rows  : {len(rows)}")
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -204,19 +204,19 @@ def pull():
         f = OUTPUT_DIR / f"SF-{date}-{num:03d}.md"
         if f.exists(): continue
         f.write_text(to_markdown(row), encoding="utf-8")
-        print(f"  #{num:>3} | {date} | {clean(row[chr(39)+'client'+chr(39)])[:45]}")
+        client_name = clean(row['client'])
+        print(f"  #{num:>3} | {date} | {client_name[:45]}")
         new_n += 1
     print(f"Done - {new_n} new file(s)." if new_n else "No new responses.")
 
 
 def list_debug():
     token = get_token()
-    data = graph_get(token, "/groups", {"$filter": f"displayName eq '{GROUP_NAME}'", "$select": "id,displayName"})
-    for g in data.get("value", []):
-        print(f"Group: {g[chr(39)+'displayName'+chr(39)]}  id={g[chr(39)+'id'+chr(39)]}")
-        fs = graph_get(token, f"/groups/{g[chr(39)+'id'+chr(39)]}/drive/root/children", {"$select": "id,name"})
-        for f in fs.get("value", []):
-            print(f"  {f[chr(39)+'name'+chr(39)]}  id={f[chr(39)+'id'+chr(39)]}")
+    site_id = find_site(token, SHAREPOINT_HOST, SHAREPOINT_SITE)
+    print(f"Site: {SHAREPOINT_HOST}/sites/{SHAREPOINT_SITE}  id={site_id}")
+    data = graph_get(token, f"/sites/{site_id}/drive/root/children", {"$select": "id,name"})
+    for f in data.get("value", []):
+        print(f"  {f['name']}  id={f['id']}")
 
 
 if __name__ == "__main__":
