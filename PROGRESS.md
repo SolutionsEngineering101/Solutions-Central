@@ -38,19 +38,31 @@ The repo serves as: intake hub, documentation library, team workspace, playbook,
   - `.github/workflows/pull-forms.yml` — daily 8am UTC GitHub Actions schedule + manual trigger
   - `.gitignore` — covers Python, Node, macOS, secrets, `.refresh_token`
   - Auth strategy: device code flow for first-time setup → refresh token stored as GitHub secret
+- [x] **3. Clean up Confluence references** — Deleted `sync-confluence.sh`, updated `intake/confluence-sync/README.md` to generic knowledge-import drop zone, repurposed Workflow 6 in CLAUDE.md.
+- [x] **4. Scaffold `skills/` folder** — `skills/member/` (6 profiles + `_template.md`) and `skills/guides/`. Bhargav's profile pre-filled.
+- [x] **6. Build dashboard website** — `dashboard/` subfolder. Next.js 14 App Router + Tailwind + NextAuth (GitHub OAuth) + Octokit. Builds clean. **Needs `.env.local` before local run and Vercel deploy.**
 
 ---
 
 ## To Do (in order)
 
-- [x] **3. Clean up Confluence references** — Deleted `intake/confluence-sync/`, `scripts/sync-confluence.sh`. Removed Workflow 6 from CLAUDE.md. Updated README.md.
-- [x] **4. Scaffold `skills/` folder** — Created `skills/README.md`, `skills/matrix.md` (blank skills matrix for all 6 members), and 7 domain files in `skills/domains/`.
-- [ ] **5. Fill in team roles** — `intake/team-and-roles.md` — Bhargav's details filled in. Other 5 members need Role, Focus Areas, and Contact added manually.
-- [ ] **6. Build dashboard website** — Dynamic site hosted on Vercel or Netlify. Reads from `dashboard-data/` JSON files in the repo (via GitHub API). Stack not yet decided.
+- [ ] **5. Fill in team roles** — `intake/team-and-roles.md` has all members listed but Role, Focus Areas, and Contact are blank for everyone.
 
 ---
 
+## Dashboard — Next Steps to Go Live
+
+1. **Create `.env.local`** in `dashboard/` (copy from `.env.local.example`)
+   - `GITHUB_CLIENT_ID` + `GITHUB_CLIENT_SECRET` — from GitHub OAuth App
+   - `GITHUB_PAT` — Personal Access Token with `repo` scope
+   - `NEXTAUTH_SECRET` — run `openssl rand -base64 32`
+   - `NEXTAUTH_URL=http://localhost:3000`
+   - `GITHUB_REPO_OWNER=SolutionsEngineering101`
+   - `GITHUB_REPO_NAME=Solutions-Central`
+2. **Run locally**: `cd dashboard && npm run dev`
+3. **Deploy to Vercel**: connect repo, set Root Directory = `dashboard`, add env vars
+4. **Update OAuth callback URL** in GitHub OAuth App to Vercel URL after deploy
+
 ## Open Questions (still need answers)
-- Dashboard: React or another framework? Should it be in this repo or a separate one?
 - SCD — what does it stand for in your context?
 - Complexity mapping in `documents/complexity-mapping/` — same as the SIP SOP (Low/Medium/High = 3/5/15 days) or a separate doc?
