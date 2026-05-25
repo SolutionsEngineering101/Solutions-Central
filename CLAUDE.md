@@ -144,6 +144,17 @@ Always refer to files by their relative path. Always commit and push after writi
 
 ---
 
+## WORKFLOW 6: Import External Knowledge (manual trigger)
+
+**Trigger:** `"import knowledge"` or `"add external doc"`
+
+**Steps:**
+1. Ask: "What is the source and what should this file be called?"
+2. Save the content as `intake/confluence-sync/[source]-[slug]-[YYYY-MM-DD].md`
+3. Commit: `sync: import [source] [date]`
+
+---
+
 ## GLOBAL RULES
 
 - **Never overwrite** existing playbook or blueprint entries — always create new dated files
