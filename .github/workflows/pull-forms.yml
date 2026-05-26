@@ -40,6 +40,7 @@ jobs:
           else
             COUNT=$(git diff --cached --name-only | wc -l | tr -d ' ')
             git commit -m "intake: $COUNT new form response(s) $(date +%Y-%m-%d)"
+            git pull --rebase origin main
             git push
             echo "✅ Pushed $COUNT new file(s)"
           fi
