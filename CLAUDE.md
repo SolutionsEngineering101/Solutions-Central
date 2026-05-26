@@ -276,9 +276,7 @@ sprint: null
 [Brief description]
 
 ## Linked Documents
-- [ ] BRD: 
-- [ ] PRD:
-- [ ] SCD:
+- [ ] [Document name and type] — [path or link]
 
 ## Milestones
 - [ ] [Milestone 1]
