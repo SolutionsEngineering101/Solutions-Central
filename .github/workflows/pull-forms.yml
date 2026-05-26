@@ -27,8 +27,7 @@ jobs:
         env:
           AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
           AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-          MS_FORM_ID: ${{ secrets.MS_FORM_ID }}
-          MS_REFRESH_TOKEN: ${{ secrets.MS_REFRESH_TOKEN }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
         run: python scripts/pull_forms.py
 
       - name: Commit and push new responses
