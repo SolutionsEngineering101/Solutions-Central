@@ -11,14 +11,14 @@ import {
   Layers,
   Users,
   ClipboardList,
-  Kanban,
+  BarChart2,
   LogOut,
 } from "lucide-react";
 
 const nav = [
   { href: "/", label: "Overview", icon: LayoutDashboard },
   { href: "/solution-requests", label: "Solution Requests", icon: FileText },
-  { href: "/sprint", label: "Sprint", icon: Kanban },
+  { href: "/sprint", label: "Portfolio Tracker", icon: BarChart2 },
   { href: "/playbook", label: "Playbook", icon: BookOpen },
   { href: "/blueprints", label: "Blueprints", icon: Layers },
   { href: "/team", label: "Team & Skills", icon: Users },

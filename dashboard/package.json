@@ -28,6 +28,7 @@
     "octokit": "^5.0.5",
     "react": "19.2.4",
     "react-dom": "19.2.4",
+    "recharts": "^3.8.1",
     "remark": "^15.0.1",
     "remark-html": "^16.0.1",
     "swr": "^2.4.1",
