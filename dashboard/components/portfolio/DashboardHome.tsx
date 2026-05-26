@@ -92,7 +92,7 @@ export function DashboardHome({ projects, onProjectClick, onViewAllProjects, onA
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-white text-2xl font-semibold">Solutions Tech Tracker</h1>
+        <h1 className="text-white text-2xl font-semibold">Project Tracker</h1>
         <p className="text-gray-500 text-sm mt-1">Backend · Frontend · QA status across all projects</p>
       </div>
 
