@@ -6,7 +6,7 @@ import { signOut, useSession } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
-  GitPullRequestArrow,
+  FileText,
   BookOpen,
   Layers,
   Users,
@@ -17,7 +17,7 @@ import {
 
 const nav = [
   { href: "/", label: "Overview", icon: LayoutDashboard },
-  { href: "/pipeline", label: "Pipeline", icon: GitPullRequestArrow },
+  { href: "/solution-requests", label: "Solution Requests", icon: FileText },
   { href: "/sprint", label: "Sprint", icon: Kanban },
   { href: "/playbook", label: "Playbook", icon: BookOpen },
   { href: "/blueprints", label: "Blueprints", icon: Layers },
