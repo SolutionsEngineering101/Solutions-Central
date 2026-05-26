@@ -2,17 +2,23 @@ import { AppShell } from "@/components/layout/AppShell";
 import { PipelineBoard } from "@/components/pipeline/PipelineBoard";
 import { getMarkdownFiles, getJSON } from "@/lib/github";
 
+interface SolutionsFile {
+  solutions?: Record<string, unknown>[];
+}
+
 export default async function PipelinePage() {
-  const [forms, solutions] = await Promise.all([
+  const [forms, solutionsFile] = await Promise.all([
     getMarkdownFiles("intake/solutions-forms"),
-    getJSON<Record<string, unknown>[]>("dashboard-data/solutions-provided.json"),
+    getJSON<SolutionsFile>("dashboard-data/solutions-provided.json"),
   ]);
+
+  const solutions = solutionsFile?.solutions ?? [];
 
   const rawForms = forms.filter((f) => !f.path.includes("skeleton-"));
   const skeletons = forms.filter((f) => f.path.includes("skeleton-"));
 
   const deliveredClients = new Set(
-    (solutions ?? []).map((s) => s.client as string).filter(Boolean)
+    solutions.map((s) => s.client as string).filter(Boolean)
   );
 
   return (
@@ -25,7 +31,7 @@ export default async function PipelinePage() {
         <PipelineBoard
           forms={rawForms}
           skeletons={skeletons}
-          delivered={solutions ?? []}
+          delivered={solutions}
           deliveredClients={deliveredClients}
         />
       </div>

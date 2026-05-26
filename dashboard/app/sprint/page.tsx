@@ -12,11 +12,12 @@ interface BacklogItem {
 }
 
 interface SprintData {
-  active_sprint?: {
-    number: number;
-    goal: string;
+  current_sprint?: {
+    number: number | null;
+    goals: string[];
     start_date: string;
     end_date: string;
+    status: string;
   };
   completed_sprints?: { number: number; summary: string }[];
 }
@@ -50,16 +51,26 @@ export default async function SprintPage() {
           <p className="text-gray-400 text-sm mt-1">Current sprint and backlog</p>
         </div>
 
-        {sprint?.active_sprint ? (
+        {sprint?.current_sprint?.number ? (
           <div className="bg-gray-900 border border-indigo-800 rounded-xl p-6">
             <div className="flex items-center gap-2 mb-2">
               <Kanban size={16} className="text-indigo-400" />
-              <span className="text-indigo-400 text-sm font-medium">Sprint {sprint.active_sprint.number}</span>
-              <span className="ml-auto text-gray-500 text-xs">
-                {formatDate(sprint.active_sprint.start_date)} → {formatDate(sprint.active_sprint.end_date)}
-              </span>
+              <span className="text-indigo-400 text-sm font-medium">Sprint {sprint.current_sprint.number}</span>
+              {sprint.current_sprint.start_date && sprint.current_sprint.end_date && (
+                <span className="ml-auto text-gray-500 text-xs">
+                  {formatDate(sprint.current_sprint.start_date)} → {formatDate(sprint.current_sprint.end_date)}
+                </span>
+              )}
             </div>
-            <p className="text-white text-base">{sprint.active_sprint.goal}</p>
+            {sprint.current_sprint.goals.length > 0 ? (
+              <ul className="space-y-1 mt-2">
+                {sprint.current_sprint.goals.map((g, i) => (
+                  <li key={i} className="text-gray-300 text-sm flex gap-2"><span className="text-indigo-500">·</span>{g}</li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-gray-400 text-sm">No goals set.</p>
+            )}
           </div>
         ) : (
           <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 text-center">

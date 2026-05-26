@@ -57,7 +57,7 @@ export function PipelineBoard({ forms, skeletons, delivered, deliveredClients }:
       color: "border-gray-700",
       label: "text-gray-400",
       items: forms.filter((f) => {
-        const client = (f.frontmatter.client as string) ?? f.path.split("/").pop() ?? "";
+        const client = (f.frontmatter.client as string) ?? (f.frontmatter.client_name as string) ?? f.path.split("/").pop() ?? "";
         return !deliveredClients.has(client);
       }),
     },
@@ -97,6 +97,7 @@ export function PipelineBoard({ forms, skeletons, delivered, deliveredClients }:
               {items.map((item, i) => {
                 const title =
                   (item.frontmatter.client as string) ??
+                  (item.frontmatter.client_name as string) ??
                   (item.frontmatter.title as string) ??
                   item.path.split("/").pop()?.replace(".md", "") ??
                   "Untitled";
@@ -147,7 +148,7 @@ export function PipelineBoard({ forms, skeletons, delivered, deliveredClients }:
           >
             <button onClick={() => setSelected(null)} className="text-gray-500 hover:text-white text-sm mb-6">← Close</button>
             <h2 className="text-white text-lg font-semibold mb-1">
-              {(selected.frontmatter.client as string) ?? (selected.frontmatter.title as string) ?? "Detail"}
+              {(selected.frontmatter.client as string) ?? (selected.frontmatter.client_name as string) ?? (selected.frontmatter.title as string) ?? "Detail"}
             </h2>
             <p className="text-gray-500 text-xs mb-4">{selected.path}</p>
             <pre className="text-gray-300 text-xs whitespace-pre-wrap font-mono bg-gray-950 rounded-lg p-4">

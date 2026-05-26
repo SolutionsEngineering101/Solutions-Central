@@ -68,8 +68,13 @@ export async function getMarkdownFiles(dir: string) {
     mdPaths.map(async (p) => {
       const raw = await getFile(p);
       if (!raw) return null;
-      const { data: frontmatter, content } = matter(raw);
-      return { path: p, frontmatter, content };
+      try {
+        const { data: frontmatter, content } = matter(raw);
+        return { path: p, frontmatter, content };
+      } catch {
+        // Malformed YAML frontmatter — return file with empty frontmatter so the page still loads
+        return { path: p, frontmatter: {} as Record<string, unknown>, content: raw };
+      }
     })
   );
   return files.filter(Boolean) as { path: string; frontmatter: Record<string, unknown>; content: string }[];
