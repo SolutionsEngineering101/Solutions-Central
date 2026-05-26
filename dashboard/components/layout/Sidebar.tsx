@@ -12,6 +12,7 @@ import {
   Users,
   ClipboardList,
   BarChart2,
+  Cloud,
   LogOut,
 } from "lucide-react";
 
@@ -19,6 +20,7 @@ const nav = [
   { href: "/", label: "Overview", icon: LayoutDashboard },
   { href: "/solution-requests", label: "Solution Requests", icon: FileText },
   { href: "/sprint", label: "Project Tracker", icon: BarChart2 },
+  { href: "/confluence", label: "Confluence", icon: Cloud },
   { href: "/playbook", label: "Playbook", icon: BookOpen },
   { href: "/blueprints", label: "Blueprints", icon: Layers },
   { href: "/team", label: "Team & Skills", icon: Users },
