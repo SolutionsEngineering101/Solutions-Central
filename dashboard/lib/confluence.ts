@@ -147,3 +147,15 @@ export function updateTableRow(
 
   return storageXml.replace(targetTr[0], newRow);
 }
+
+export function deleteTableRow(storageXml: string, rowIndex: number): string {
+  const tableMatch = storageXml.match(/<table[\s\S]*?<\/table>/);
+  if (!tableMatch) return storageXml;
+
+  const trBlocks = [...tableMatch[0].matchAll(/<tr[^>]*>[\s\S]*?<\/tr>/g)];
+  // rowIndex 0 = first data row (skip header row at index 0)
+  const targetTr = trBlocks[rowIndex + 1];
+  if (!targetTr) return storageXml;
+
+  return storageXml.replace(targetTr[0], "");
+}

@@ -48,6 +48,16 @@ The repo serves as: intake hub, documentation library, team workspace, playbook,
   - Primary merge key: `slNo`. Upsert by slNo across projects on CSV upload.
   - recharts installed for completion trend chart.
 - [x] **11. Confluence integration** — `/confluence` route + nav item ("Confluence", Cloud icon). Reads and writes to Confluence page 567050244 (`Solutions Dev Project Tracker`) via REST API v2. Features: dark-themed table display, status auto-badges, Add Row form, inline row editing. API proxy at `/api/confluence` (GET + PUT) keeps credentials server-side.
+- [x] **12. Project Tracker redesign (Confluence-native)** — Replaced CSV/localStorage-based PortfolioTracker with two-route system:
+  - `/sprint` → `SprintDashboard`: KPI strip (Total/In Progress/Done/Overdue), Portfolio Health circle, Status Breakdown bar chart, Confluence preview card (mini KPIs + recent tickets + status pills), Recently Completed (sorted by Actual Release Date), Currently In Progress. All metrics from live Confluence data.
+  - `/sprint/tracker` → `ProjectTracker`: full table with search, filter by status, column sort, density toggle, inline edit, delete row (with confirm), add row. All writes back to Confluence.
+  - Clicking the Confluence card navigates from dashboard → full table.
+  - `lib/confluence.ts` extended with `deleteTableRow`.
+  - API route handles `delete_row` action.
+  - Status column detection prioritises "Overall Status" over Backend/Frontend/QA status columns.
+  - Total count excludes rows where only SL No is filled.
+  - Recently Completed uses Actual Release Date column to sort.
+- [x] **13. Confluence page fixes** — Sticky frozen header, blank columns hidden (only cols with ≥1 non-empty value shown), empty rows hidden from display. Hooks moved before early returns to fix Rules-of-Hooks crash.
 
 ---
 
@@ -56,6 +66,7 @@ The repo serves as: intake hub, documentation library, team workspace, playbook,
 - [ ] **5. Fill in team roles** — `intake/team-and-roles.md` has all members listed but Role, Focus Areas, and Contact are blank for everyone.
 - [ ] **Deploy to Vercel** — see steps below.
 - [ ] **Confluence activation** — user has API token, needs to add to `.env.local` and restart dev server.
+- [ ] **Project Tracker polish** — verify health score formula feels right once Actual Release Date data is populated in Confluence. Consider timeline/assignee view as a future addition.
 
 ---
 
@@ -65,8 +76,9 @@ The repo serves as: intake hub, documentation library, team workspace, playbook,
 |---|---|---|
 | `/` | Overview | Live — live status counts from intake forms |
 | `/solution-requests` | Solution Requests | Live — searchable grid + side panel |
-| `/sprint` | Project Tracker | Live — full portfolio tracker (localStorage) |
-| `/confluence` | Confluence | Built — needs `.env.local` vars to activate |
+| `/sprint` | Project Tracker | Live — dashboard (KPIs, health, chart, Confluence card) from live Confluence data |
+| `/sprint/tracker` | Full Tracker Table | Live — search, filter, sort, inline edit, delete, add row |
+| `/confluence` | Confluence | Live — sticky header, blank cols/rows hidden |
 | `/playbook` | Playbook | Live |
 | `/blueprints` | Blueprints | Live |
 | `/team` | Team & Skills | Live — member profiles mostly blank |

@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { RefreshCw, ExternalLink, Plus, Pencil, X, Check, AlertCircle, Loader2 } from "lucide-react";
 
 interface TableData {
@@ -100,6 +100,21 @@ export function ConfluenceViewer() {
     setShowAddForm(false);
   };
 
+  // Hooks must be before all early returns
+  const visibleColIndices = useMemo(() => {
+    if (!data) return [];
+    return data.table.headers.map((_, ci) => ci).filter(ci =>
+      data.table.rows.some(row => (row[ci] ?? "").trim() !== "")
+    );
+  }, [data]);
+
+  const visibleRows = useMemo(() => {
+    if (!data) return [];
+    return data.table.rows
+      .map((row, ri) => ({ row, ri }))
+      .filter(({ row }) => row.some(cell => (cell ?? "").trim() !== ""));
+  }, [data]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64 gap-3 text-gray-500">
@@ -149,7 +164,7 @@ CONFLUENCE_PAGE_ID=567050244`}</pre>
         <div>
           <h1 className="text-white text-2xl font-semibold">{title}</h1>
           <p className="text-gray-500 text-sm mt-1">
-            {table.rows.length} rows · v{version} · Synced from Confluence
+            {visibleRows.length} rows · v{version} · Synced from Confluence
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -191,13 +206,13 @@ CONFLUENCE_PAGE_ID=567050244`}</pre>
             </button>
           </div>
           <div className="grid grid-cols-2 gap-3 mb-4">
-            {table.headers.map((h, i) => (
+            {visibleColIndices.map(i => (
               <div key={i}>
-                <label className="block text-xs text-gray-500 mb-1">{h}</label>
+                <label className="block text-xs text-gray-500 mb-1">{table.headers[i]}</label>
                 <input
                   value={newCells[i] ?? ""}
                   onChange={e => setNewCells(prev => { const n = [...prev]; n[i] = e.target.value; return n; })}
-                  placeholder={h}
+                  placeholder={table.headers[i]}
                   className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
@@ -226,28 +241,28 @@ CONFLUENCE_PAGE_ID=567050244`}</pre>
         </div>
       ) : (
         <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto overflow-y-auto max-h-[calc(100vh-260px)]">
             <table className="w-full text-sm">
-              <thead>
+              <thead className="sticky top-0 z-10 bg-gray-900">
                 <tr className="border-b border-gray-800">
-                  {table.headers.map((h, i) => (
-                    <th key={i} className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                      {h}
+                  {visibleColIndices.map(i => (
+                    <th key={i} className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500 whitespace-nowrap">
+                      {table.headers[i]}
                     </th>
                   ))}
                   <th className="px-4 py-3 w-16" />
                 </tr>
               </thead>
               <tbody>
-                {table.rows.map((row, ri) => (
+                {visibleRows.map(({ row, ri }) => (
                   editRowIdx === ri ? (
                     <tr key={ri} className="border-b border-gray-800 bg-indigo-950/30">
-                      {editCells.map((cell, ci) => (
+                      {visibleColIndices.map(ci => (
                         <td key={ci} className="px-3 py-2">
                           <input
-                            value={cell}
+                            value={editCells[ci] ?? ""}
                             onChange={e => setEditCells(prev => { const n = [...prev]; n[ci] = e.target.value; return n; })}
-                            className="w-full px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm text-gray-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                            className="w-full min-w-[72px] px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm text-gray-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                           />
                         </td>
                       ))}
@@ -269,11 +284,11 @@ CONFLUENCE_PAGE_ID=567050244`}</pre>
                     </tr>
                   ) : (
                     <tr key={ri} className="border-b border-gray-800 last:border-0 hover:bg-gray-800/40 transition-colors group">
-                      {row.map((cell, ci) => (
+                      {visibleColIndices.map(ci => (
                         <td key={ci} className="px-4 py-3 text-gray-300 max-w-[240px] truncate">
-                          {isStatusCol(table.headers[ci] ?? "") && cell
-                            ? <StatusBadge text={cell} />
-                            : cell || <span className="text-gray-700">—</span>}
+                          {isStatusCol(table.headers[ci] ?? "") && row[ci]
+                            ? <StatusBadge text={row[ci]!} />
+                            : row[ci] || <span className="text-gray-700">—</span>}
                         </td>
                       ))}
                       <td className="px-4 py-3">

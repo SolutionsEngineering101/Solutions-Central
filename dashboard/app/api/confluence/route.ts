@@ -6,6 +6,7 @@ import {
   parseFirstTable,
   appendTableRow,
   updateTableRow,
+  deleteTableRow,
 } from "@/lib/confluence";
 
 const PAGE_ID = process.env.CONFLUENCE_PAGE_ID ?? "";
@@ -46,7 +47,7 @@ export async function PUT(req: Request) {
   }
 
   const body = (await req.json()) as {
-    action: "append_row" | "edit_row";
+    action: "append_row" | "edit_row" | "delete_row";
     cells: string[];
     rowIndex?: number;
   };
@@ -59,6 +60,8 @@ export async function PUT(req: Request) {
       updatedXml = appendTableRow(updatedXml, body.cells);
     } else if (body.action === "edit_row" && body.rowIndex !== undefined) {
       updatedXml = updateTableRow(updatedXml, body.rowIndex, body.cells);
+    } else if (body.action === "delete_row" && body.rowIndex !== undefined) {
+      updatedXml = deleteTableRow(updatedXml, body.rowIndex);
     } else {
       return Response.json({ error: "Invalid action" }, { status: 400 });
     }

@@ -1,10 +1,10 @@
 import { AppShell } from "@/components/layout/AppShell";
-import { PortfolioTracker } from "@/components/portfolio/PortfolioTracker";
+import { SprintDashboard } from "@/components/sprint/SprintDashboard";
 
 export default function SprintPage() {
   return (
     <AppShell>
-      <PortfolioTracker />
+      <SprintDashboard />
     </AppShell>
   );
 }
