@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { X, Search, ArrowDownWideNarrow, ArrowUpNarrowWide } from "lucide-react";
+import { X, Search, ArrowDownWideNarrow, ArrowUpNarrowWide, Sparkles } from "lucide-react";
 import { formatDate } from "@/lib/utils";
+import { useAssistant, type AssistantRequest } from "@/components/ai/AssistantProvider";
 
 interface Request {
   path: string;
@@ -54,6 +55,19 @@ export function RequestsTable({ requests }: { requests: Request[] }) {
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [sort, setSort] = useState<"none" | "desc" | "asc">("none");
   const [selected, setSelected] = useState<Request | null>(null);
+  const { open: openAssistant } = useAssistant();
+
+  // Build the assistant's request context from a row's frontmatter.
+  const toAssistant = (r: Request): AssistantRequest => ({
+    id: get(r.frontmatter, "form_id"),
+    client: get(r.frontmatter, "client", "client_name"),
+    department: get(r.frontmatter, "department"),
+    feature: get(r.frontmatter, "feature_name"),
+    status: get(r.frontmatter, "status"),
+    complexity: get(r.frontmatter, "complexity"),
+    description: get(r.frontmatter, "description", "brief"),
+    content: r.content,
+  });
 
   // Per-status counts across all requests (the status bar analytics — stable, not affected by search).
   const counts = useMemo(() => {
@@ -174,12 +188,13 @@ export function RequestsTable({ requests }: { requests: Request[] }) {
         {/* Table */}
         <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
           {/* Header */}
-          <div className="grid grid-cols-[180px_1fr_160px_1fr_120px] gap-0 border-b border-gray-800 px-5 py-3">
+          <div className="grid grid-cols-[180px_1fr_160px_1fr_120px_44px] gap-0 border-b border-gray-800 px-5 py-3">
             <span className="text-gray-500 text-xs font-semibold uppercase tracking-wider">Solution ID</span>
             <span className="text-gray-500 text-xs font-semibold uppercase tracking-wider">Client</span>
             <span className="text-gray-500 text-xs font-semibold uppercase tracking-wider">Department</span>
             <span className="text-gray-500 text-xs font-semibold uppercase tracking-wider">Feature</span>
             <span className="text-gray-500 text-xs font-semibold uppercase tracking-wider">Status</span>
+            <span className="sr-only">AI</span>
           </div>
 
           {/* Rows */}
@@ -195,10 +210,13 @@ export function RequestsTable({ requests }: { requests: Request[] }) {
               const isActive = selected?.path === req.path;
 
               return (
-                <button
+                <div
                   key={req.path + i}
+                  role="button"
+                  tabIndex={0}
                   onClick={() => setSelected(isActive ? null : req)}
-                  className={`w-full grid grid-cols-[180px_1fr_160px_1fr_120px] gap-0 px-5 py-3.5 text-left transition-colors
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSelected(isActive ? null : req); } }}
+                  className={`group w-full grid grid-cols-[180px_1fr_160px_1fr_120px_44px] gap-0 px-5 py-3.5 text-left transition-colors cursor-pointer items-center
                     ${isActive ? "bg-indigo-950/40 border-l-2 border-l-indigo-500" : "hover:bg-gray-800/50 border-l-2 border-l-transparent"}`}
                 >
                   <span className="text-indigo-400 text-sm font-mono font-medium truncate pr-4">{id}</span>
@@ -210,7 +228,16 @@ export function RequestsTable({ requests }: { requests: Request[] }) {
                       {status}
                     </span>
                   </span>
-                </button>
+                  {/* Solve with AI */}
+                  <button
+                    type="button"
+                    title="Draft a solution with AI"
+                    onClick={(e) => { e.stopPropagation(); openAssistant(toAssistant(req)); }}
+                    className="justify-self-end p-1.5 rounded-lg text-gray-600 opacity-60 group-hover:opacity-100 hover:text-indigo-300 hover:bg-indigo-950/60 transition-all"
+                  >
+                    <Sparkles size={16} />
+                  </button>
+                </div>
               );
             })}
             {sorted.length === 0 && (
@@ -241,6 +268,16 @@ export function RequestsTable({ requests }: { requests: Request[] }) {
                 className="text-gray-600 hover:text-white transition-colors mt-0.5"
               >
                 <X size={16} />
+              </button>
+            </div>
+
+            {/* Draft with AI */}
+            <div className="px-6 py-3 border-b border-gray-800">
+              <button
+                onClick={() => openAssistant(toAssistant(selected))}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-sm font-semibold transition-colors"
+              >
+                <Sparkles size={15} /> Draft a solution with AI
               </button>
             </div>
 

@@ -4,6 +4,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { Sidebar } from "./Sidebar";
+import { AssistantProvider } from "@/components/ai/AssistantProvider";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession();
@@ -24,9 +25,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   if (!session) return null;
 
   return (
-    <div className="flex h-screen bg-gray-950">
-      <Sidebar />
-      <main className="ml-56 flex-1 h-screen overflow-y-auto p-5">{children}</main>
-    </div>
+    <AssistantProvider>
+      <div className="flex h-screen bg-gray-950">
+        <Sidebar />
+        <main className="ml-56 flex-1 h-screen overflow-y-auto p-5">{children}</main>
+      </div>
+    </AssistantProvider>
   );
 }

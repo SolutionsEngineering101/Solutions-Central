@@ -1,0 +1,59 @@
+// Minimal Google Gemini (Generative Language API) client over REST — no SDK dependency.
+// Model is overridable via GEMINI_MODEL; defaults to the fast Flash tier.
+
+const API = "https://generativelanguage.googleapis.com/v1beta/models";
+const MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+
+export function geminiConfigured(): boolean {
+  return !!process.env.GEMINI_API_KEY;
+}
+
+export type GeminiPart = { text: string };
+export type GeminiContent = { role: "user" | "model"; parts: GeminiPart[] };
+
+export async function callGemini(opts: {
+  system: string;
+  contents: GeminiContent[];
+  schema?: unknown;       // JSON schema → forces structured JSON output
+  temperature?: number;
+}): Promise<string> {
+  const key = process.env.GEMINI_API_KEY;
+  if (!key) throw new Error("GEMINI_API_KEY not set");
+
+  const body: Record<string, unknown> = {
+    system_instruction: { parts: [{ text: opts.system }] },
+    contents: opts.contents,
+    generationConfig: {
+      temperature: opts.temperature ?? 0.4,
+      ...(opts.schema ? { responseMimeType: "application/json", responseSchema: opts.schema } : {}),
+    },
+  };
+
+  const res = await fetch(`${API}/${encodeURIComponent(MODEL)}:generateContent?key=${key}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+    cache: "no-store",
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Gemini ${res.status}: ${text.slice(0, 300)}`);
+  }
+
+  const data = await res.json();
+  const parts = data?.candidates?.[0]?.content?.parts as GeminiPart[] | undefined;
+  const out = parts?.map((p) => p.text ?? "").join("") ?? "";
+  if (!out) {
+    const reason =
+      data?.candidates?.[0]?.finishReason ?? data?.promptFeedback?.blockReason ?? "no content returned";
+    throw new Error(`Gemini returned no text (${reason})`);
+  }
+  return out;
+}
+
+// Parse JSON from a model response, tolerating ```json fences if any slip through.
+export function parseJsonLoose<T>(raw: string): T {
+  const cleaned = raw.trim().replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
+  return JSON.parse(cleaned) as T;
+}
