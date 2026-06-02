@@ -83,22 +83,24 @@ export function ComplexityDonut({ low, medium, high }: Props) {
   return (
     <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 flex flex-col">
 
-      {/* Header: title left · legend right */}
-      <div className="flex items-center justify-between mb-3 shrink-0">
-        <h2 className="text-white font-semibold text-sm">By Complexity</h2>
-        <div className="flex items-center gap-3">
-          {SLICES.map(({ key, color }) => {
-            const count = key === "Low" ? low : key === "Medium" ? medium : high;
-            const pct   = total > 0 ? Math.round((count / total) * 100) : 0;
-            return (
-              <div key={key} className="flex items-center gap-1.5">
-                <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
-                <span className="text-[11px] text-gray-400">{key}</span>
-                <span className="text-[11px] font-bold" style={{ color }}>{pct}%</span>
-              </div>
-            );
-          })}
-        </div>
+      {/* Title — on its own line, separated from the legend */}
+      <h2 className="text-white font-semibold text-sm pb-2.5 mb-3 border-b border-gray-800 shrink-0">
+        By Complexity
+      </h2>
+
+      {/* Legend — vertical stack */}
+      <div className="flex flex-col gap-2 mb-3 shrink-0">
+        {SLICES.map(({ key, color }) => {
+          const count = key === "Low" ? low : key === "Medium" ? medium : high;
+          const pct   = total > 0 ? Math.round((count / total) * 100) : 0;
+          return (
+            <div key={key} className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
+              <span className="text-xs text-gray-400">{key}</span>
+              <span className="text-xs font-bold ml-auto tabular-nums" style={{ color }}>{pct}%</span>
+            </div>
+          );
+        })}
       </div>
 
       {/* Donut — fills remaining card height */}
