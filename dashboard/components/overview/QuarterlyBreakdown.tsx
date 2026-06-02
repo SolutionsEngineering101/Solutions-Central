@@ -54,10 +54,10 @@ export function QuarterlyBreakdown({ requests }: { requests: RequestRow[] }) {
   const open      = counts["Open"] ?? 0;
   const winRate   = total > 0 ? Math.round((delivered / total) * 100) : 0;
 
+  // Always show every status in a fixed order so the card structure stays rigid
+  // across quarter changes — only the counts/bars update.
   const breakdown = Object.entries(STATUS_META)
-    .map(([key, meta]) => ({ ...meta, count: counts[key] ?? 0 }))
-    .filter(e => e.count > 0)
-    .sort((a, b) => b.count - a.count);
+    .map(([key, meta]) => ({ ...meta, count: counts[key] ?? 0 }));
 
   return (
     <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
@@ -89,10 +89,7 @@ export function QuarterlyBreakdown({ requests }: { requests: RequestRow[] }) {
         </div>
       </div>
 
-      {total === 0 ? (
-        <p className="text-gray-600 text-sm text-center py-6">No requests found</p>
-      ) : (
-        <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-4 gap-4">
 
           {/* Mini KPIs */}
           <div className="col-span-1 grid grid-cols-2 gap-2">
@@ -112,7 +109,7 @@ export function QuarterlyBreakdown({ requests }: { requests: RequestRow[] }) {
           {/* Status bars */}
           <div className="col-span-3 flex flex-col justify-center gap-2.5">
             {breakdown.map(({ label, color, bg, count }) => {
-              const pct = Math.round((count / total) * 100);
+              const pct = total > 0 ? Math.round((count / total) * 100) : 0;
               return (
                 <div key={label} className="flex items-center gap-3">
                   <span
@@ -135,7 +132,6 @@ export function QuarterlyBreakdown({ requests }: { requests: RequestRow[] }) {
           </div>
 
         </div>
-      )}
     </div>
   );
 }
