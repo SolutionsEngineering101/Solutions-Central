@@ -223,7 +223,8 @@ export async function POST(req: Request) {
     ].filter(Boolean).join(" ")));
     const cands = await gather(query);
 
-    const user = `INCOMING REQUEST:\n${reqBlock(request)}\n\nCANDIDATE SOURCES (cite these by ref):\n${sourcesBlock(cands)}`;
+    const focus = (body.instruction ?? "").trim();
+    const user = `INCOMING REQUEST:\n${reqBlock(request)}\n\n${focus ? `CONSULTANT'S FOCUS: ${focus}\n\n` : ""}CANDIDATE SOURCES (cite these by ref):\n${sourcesBlock(cands)}`;
     const raw = await callGemini({
       system: SYSTEM,
       contents: [{ role: "user", parts: [{ text: user }] }],
