@@ -23,6 +23,24 @@ function statusStyle(status: string) {
   return STATUS_STYLES[status.toLowerCase()] ?? "bg-gray-800 text-gray-400 border-gray-700";
 }
 
+// Canonical statuses for the summary bar — fixed order, matches the Overview page.
+const STATUS_BAR: { key: string; label: string; color: string; bg: string }[] = [
+  { key: "Solution Given Closed", label: "Delivered",   color: "#34d399", bg: "rgba(52,211,153,0.14)"  },
+  { key: "To Product Closed",     label: "To Product",  color: "#818cf8", bg: "rgba(129,140,248,0.14)" },
+  { key: "Open",                  label: "Open",        color: "#fbbf24", bg: "rgba(251,191,36,0.14)"  },
+  { key: "Rejected",              label: "Rejected",    color: "#f87171", bg: "rgba(248,113,113,0.14)" },
+  { key: "No Response Closed",    label: "No Response", color: "#9ca3af", bg: "rgba(156,163,175,0.14)" },
+  { key: "Unknown",               label: "Unknown",     color: "#6b7280", bg: "rgba(107,114,128,0.14)" },
+];
+const CANON = new Set(STATUS_BAR.map((s) => s.key));
+
+function normalizeStatus(raw: string): string {
+  const s = (raw ?? "").trim();
+  if (!s || s === "—") return "Unknown";
+  if (s.toLowerCase() === "new") return "Open";
+  return CANON.has(s) ? s : "Unknown";
+}
+
 function get(fm: Record<string, unknown>, ...keys: string[]): string {
   for (const k of keys) {
     const v = fm[k];
@@ -33,13 +51,25 @@ function get(fm: Record<string, unknown>, ...keys: string[]): string {
 
 export function RequestsTable({ requests }: { requests: Request[] }) {
   const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [selected, setSelected] = useState<Request | null>(null);
+
+  // Per-status counts across all requests (the status bar analytics — stable, not affected by search).
+  const counts = useMemo(() => {
+    const c: Record<string, number> = {};
+    for (const r of requests) {
+      const k = normalizeStatus(get(r.frontmatter, "status"));
+      c[k] = (c[k] ?? 0) + 1;
+    }
+    return c;
+  }, [requests]);
 
   const filtered = useMemo(() => {
     const q = query.toLowerCase();
-    if (!q) return requests;
     return requests.filter((r) => {
       const fm = r.frontmatter;
+      if (statusFilter && normalizeStatus(get(fm, "status")) !== statusFilter) return false;
+      if (!q) return true;
       const searchable = [
         get(fm, "form_id"),
         get(fm, "client", "client_name"),
@@ -49,12 +79,43 @@ export function RequestsTable({ requests }: { requests: Request[] }) {
       ].join(" ").toLowerCase();
       return searchable.includes(q);
     });
-  }, [requests, query]);
+  }, [requests, query, statusFilter]);
 
   return (
     <div className="flex gap-0 relative">
       {/* Main table */}
       <div className={`flex-1 min-w-0 transition-all duration-200 ${selected ? "pr-0" : ""}`}>
+        {/* Status bar — counts per status, click to filter */}
+        <div className="flex items-center gap-2 flex-wrap mb-3">
+          <button
+            onClick={() => setStatusFilter(null)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+              statusFilter === null
+                ? "bg-indigo-600 border-indigo-500 text-white"
+                : "bg-gray-900 border-gray-800 text-gray-400 hover:text-white hover:border-gray-700"
+            }`}
+          >
+            All <span className="tabular-nums opacity-80">{requests.length}</span>
+          </button>
+          {STATUS_BAR.map((s) => {
+            const active = statusFilter === s.key;
+            return (
+              <button
+                key={s.key}
+                onClick={() => setStatusFilter(active ? null : s.key)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                  active ? "" : "bg-gray-900 border-gray-800 text-gray-400 hover:text-white hover:border-gray-700"
+                }`}
+                style={active ? { backgroundColor: s.bg, borderColor: s.color, color: s.color } : undefined}
+              >
+                <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: s.color }} />
+                {s.label}
+                <span className="tabular-nums opacity-80">{counts[s.key] ?? 0}</span>
+              </button>
+            );
+          })}
+        </div>
+
         {/* Search */}
         <div className="relative mb-4">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
