@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { X, Search } from "lucide-react";
+import { X, Search, ArrowDownWideNarrow, ArrowUpNarrowWide } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 
 interface Request {
@@ -52,6 +52,7 @@ function get(fm: Record<string, unknown>, ...keys: string[]): string {
 export function RequestsTable({ requests }: { requests: Request[] }) {
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
+  const [sort, setSort] = useState<"none" | "desc" | "asc">("none");
   const [selected, setSelected] = useState<Request | null>(null);
 
   // Per-status counts across all requests (the status bar analytics — stable, not affected by search).
@@ -80,6 +81,22 @@ export function RequestsTable({ requests }: { requests: Request[] }) {
       return searchable.includes(q);
     });
   }, [requests, query, statusFilter]);
+
+  const sorted = useMemo(() => {
+    if (sort === "none") return filtered;
+    const ts = (r: Request): number | null => {
+      const t = new Date(get(r.frontmatter, "submitted_at", "date")).getTime();
+      return isNaN(t) ? null : t;
+    };
+    return [...filtered].sort((a, b) => {
+      const ta = ts(a), tb = ts(b);
+      // Rows without a valid date always sink to the bottom, in either direction.
+      if (ta === null && tb === null) return 0;
+      if (ta === null) return 1;
+      if (tb === null) return -1;
+      return sort === "desc" ? tb - ta : ta - tb;
+    });
+  }, [filtered, sort]);
 
   return (
     <div className="flex gap-0 relative">
@@ -116,16 +133,42 @@ export function RequestsTable({ requests }: { requests: Request[] }) {
           })}
         </div>
 
-        {/* Search */}
-        <div className="relative mb-4">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-          <input
-            type="text"
-            placeholder="Search by client, ID, status, feature…"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            className="w-full bg-gray-900 border border-gray-800 rounded-lg pl-9 pr-4 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-indigo-600 transition-colors"
-          />
+        {/* Search + date sort */}
+        <div className="flex items-center gap-2 mb-4">
+          <div className="relative flex-1 min-w-0">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+            <input
+              type="text"
+              placeholder="Search by client, ID, status, feature…"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              className="w-full bg-gray-900 border border-gray-800 rounded-lg pl-9 pr-4 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-indigo-600 transition-colors"
+            />
+          </div>
+          <div className="flex items-center gap-1 shrink-0">
+            <button
+              onClick={() => setSort(sort === "desc" ? "none" : "desc")}
+              title="Sort by date — newest first"
+              className={`flex items-center gap-1.5 px-3 py-2.5 rounded-lg text-xs font-medium border transition-colors ${
+                sort === "desc"
+                  ? "bg-indigo-600 border-indigo-500 text-white"
+                  : "bg-gray-900 border-gray-800 text-gray-400 hover:text-white hover:border-gray-700"
+              }`}
+            >
+              <ArrowDownWideNarrow size={14} /> Newest
+            </button>
+            <button
+              onClick={() => setSort(sort === "asc" ? "none" : "asc")}
+              title="Sort by date — oldest first"
+              className={`flex items-center gap-1.5 px-3 py-2.5 rounded-lg text-xs font-medium border transition-colors ${
+                sort === "asc"
+                  ? "bg-indigo-600 border-indigo-500 text-white"
+                  : "bg-gray-900 border-gray-800 text-gray-400 hover:text-white hover:border-gray-700"
+              }`}
+            >
+              <ArrowUpNarrowWide size={14} /> Oldest
+            </button>
+          </div>
         </div>
 
         {/* Table */}
@@ -141,7 +184,7 @@ export function RequestsTable({ requests }: { requests: Request[] }) {
 
           {/* Rows */}
           <div className="divide-y divide-gray-800/60">
-            {filtered.map((req, i) => {
+            {sorted.map((req, i) => {
               const fm = req.frontmatter;
               const id = get(fm, "form_id");
               const client = get(fm, "client", "client_name");
@@ -170,7 +213,7 @@ export function RequestsTable({ requests }: { requests: Request[] }) {
                 </button>
               );
             })}
-            {filtered.length === 0 && (
+            {sorted.length === 0 && (
               <div className="py-16 text-center text-gray-600 text-sm">No requests match your search.</div>
             )}
           </div>
