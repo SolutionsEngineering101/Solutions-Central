@@ -36,6 +36,20 @@ function formatWhen(when: string): string {
   return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
 }
 
+const MONTHS = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
+
+// Buckets a page by the month/year of its last-updated date. Undated pages sort last.
+function monthBucket(when?: string): { key: string; label: string; sort: number } {
+  const d = when ? new Date(when) : null;
+  if (!d || isNaN(d.getTime())) return { key: "undated", label: "Undated", sort: -Infinity };
+  const y = d.getFullYear();
+  const m = d.getMonth();
+  return { key: `${y}-${m}`, label: `${MONTHS[m]} ${y}`, sort: y * 12 + m };
+}
+
 function SkeletonCard() {
   return (
     <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 animate-pulse">
@@ -229,6 +243,70 @@ export function TechDocs() {
     p.title.toLowerCase().includes(search.toLowerCase())
   );
 
+  // Group the visible pages into month/year buckets, newest month first,
+  // and newest page first within each bucket.
+  const groups = (() => {
+    const map = new Map<string, { label: string; sort: number; pages: SpacePage[] }>();
+    for (const p of filteredPages) {
+      const { key, label, sort } = monthBucket(p.version?.when);
+      if (!map.has(key)) map.set(key, { label, sort, pages: [] });
+      map.get(key)!.pages.push(p);
+    }
+    const arr = [...map.values()];
+    for (const g of arr) {
+      g.pages.sort((a, b) =>
+        new Date(b.version?.when ?? 0).getTime() - new Date(a.version?.when ?? 0).getTime()
+      );
+    }
+    arr.sort((a, b) => b.sort - a.sort);
+    return arr;
+  })();
+
+  const renderCard = (page: SpacePage) => {
+    const active = page.id === selectedId;
+    const menuOpen = openMenuId === page.id;
+    return (
+      <div
+        key={page.id}
+        className={`rounded-xl flex flex-col transition-all p-5 ${
+          active
+            ? "bg-indigo-950/40 border-2 border-indigo-600"
+            : "bg-gray-900 border border-gray-800 hover:border-indigo-700/60 hover:bg-gray-800/50"
+        }`}
+      >
+        {/* Title row: clickable title + three-dot button side by side */}
+        <div className="flex items-start gap-2 mb-2">
+          <p
+            onClick={() => openDoc(page.id)}
+            className={`font-semibold text-sm leading-snug line-clamp-2 flex-1 cursor-pointer transition-colors ${active ? "text-indigo-300" : "text-white hover:text-indigo-300"}`}
+          >
+            {page.title}
+          </p>
+
+          {/* Three-dot */}
+          <button
+            type="button"
+            onClick={e => { e.stopPropagation(); toggleMenu(page.id, e.currentTarget); }}
+            className={`p-1 rounded-md transition-colors shrink-0 ${menuOpen ? "bg-gray-700 text-white" : "text-gray-500 hover:text-white hover:bg-gray-700"}`}
+          >
+            <MoreVertical size={15} />
+          </button>
+        </div>
+
+        {/* Excerpt + date — clickable */}
+        <div onClick={() => openDoc(page.id)} className="cursor-pointer">
+          {page.excerpt && (
+            <p className="text-gray-500 text-xs line-clamp-2 mb-3">{page.excerpt}</p>
+          )}
+          <p className="text-gray-600 text-xs">
+            {page.version.when ? formatWhen(page.version.when) : ""}
+            {page.version.by?.displayName ? ` · ${page.version.by.displayName}` : ""}
+          </p>
+        </div>
+      </div>
+    );
+  };
+
   if (notConfigured) {
     return (
       <div className="bg-gray-900 border border-gray-800 rounded-xl p-8 max-w-xl">
@@ -341,53 +419,25 @@ export function TechDocs() {
           </div>
         )}
 
-        {/* Cards grid */}
+        {/* Cards — grouped into month/year buckets */}
         {!listLoading && filteredPages.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredPages.map(page => {
-              const active = page.id === selectedId;
-              const menuOpen = openMenuId === page.id;
-              return (
-                <div
-                  key={page.id}
-                  className={`rounded-xl flex flex-col transition-all p-5 ${
-                    active
-                      ? "bg-indigo-950/40 border-2 border-indigo-600"
-                      : "bg-gray-900 border border-gray-800 hover:border-indigo-700/60 hover:bg-gray-800/50"
-                  }`}
-                >
-                  {/* Title row: clickable title + three-dot button side by side */}
-                  <div className="flex items-start gap-2 mb-2">
-                    <p
-                      onClick={() => openDoc(page.id)}
-                      className={`font-semibold text-sm leading-snug line-clamp-2 flex-1 cursor-pointer transition-colors ${active ? "text-indigo-300" : "text-white hover:text-indigo-300"}`}
-                    >
-                      {page.title}
-                    </p>
-
-                    {/* Three-dot */}
-                    <button
-                      type="button"
-                      onClick={e => { e.stopPropagation(); toggleMenu(page.id, e.currentTarget); }}
-                      className={`p-1 rounded-md transition-colors shrink-0 ${menuOpen ? "bg-gray-700 text-white" : "text-gray-500 hover:text-white hover:bg-gray-700"}`}
-                    >
-                      <MoreVertical size={15} />
-                    </button>
-                  </div>
-
-                  {/* Excerpt + date — clickable */}
-                  <div onClick={() => openDoc(page.id)} className="cursor-pointer">
-                    {page.excerpt && (
-                      <p className="text-gray-500 text-xs line-clamp-2 mb-3">{page.excerpt}</p>
-                    )}
-                    <p className="text-gray-600 text-xs">
-                      {page.version.when ? formatWhen(page.version.when) : ""}
-                      {page.version.by?.displayName ? ` · ${page.version.by.displayName}` : ""}
-                    </p>
-                  </div>
+          <div className="space-y-8">
+            {groups.map(group => (
+              <section key={group.label}>
+                {/* Bucket header */}
+                <div className="flex items-center gap-3 mb-4">
+                  <h2 className="text-sm font-semibold text-gray-300 whitespace-nowrap">{group.label}</h2>
+                  <span className="text-[11px] text-gray-500 bg-gray-800/60 px-2 py-0.5 rounded-full tabular-nums">
+                    {group.pages.length}
+                  </span>
+                  <div className="flex-1 h-px bg-gradient-to-r from-gray-800 to-transparent" />
                 </div>
-              );
-            })}
+                {/* Cards in this bucket */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {group.pages.map(renderCard)}
+                </div>
+              </section>
+            ))}
           </div>
         )}
       </div>
