@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   RefreshCw, ExternalLink, ArrowRight, Loader2, AlertCircle,
-  CheckCircle2, Clock, TrendingUp, Database,
+  CheckCircle2, Clock, TrendingUp, Database, AlertTriangle,
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -31,6 +31,9 @@ function isStatusBlocked(v: string) { return /block|hold|risk|stall/i.test(v); }
 
 function parseDate(v: string): Date | null {
   if (!v) return null;
+  // Handle dd/mm/yyyy (primary storage format)
+  const dmy = v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (dmy) return new Date(Number(dmy[3]), Number(dmy[2]) - 1, Number(dmy[1]));
   const d = new Date(v);
   return isNaN(d.getTime()) ? null : d;
 }
@@ -188,6 +191,7 @@ export function SprintDashboard() {
     const epicColIdx = headers.findIndex(h => /epic|feature|name|title|requirement/i.test(h));
     const slNoColIdx = headers.findIndex(h => /^sl\.?\s*no/i.test(h));
     const actualReleaseDateColIdx = headers.findIndex(h => /actual.?release|release.?date/i.test(h));
+    const dateColIdx = headers.findIndex(h => colType(h) === "date");
 
     // A row is valid if at least one column OTHER than SL No is non-empty
     const validRows = rows.filter(r =>
@@ -230,16 +234,20 @@ export function SprintDashboard() {
       const da = parseDate(a[actualReleaseDateColIdx] ?? "");
       const db = parseDate(b[actualReleaseDateColIdx] ?? "");
       if (!da && !db) return 0;
-      if (!da) return 1;  // no date → pushed to end
+      if (!da) return 1;
       if (!db) return -1;
-      return db.getTime() - da.getTime(); // most recent first
+      return db.getTime() - da.getTime();
     });
+
+    // Overdue rows — not done and past their due date
+    const overdueRows = validRows.filter(r => isOverdue(r, headers));
 
     return {
       total, done, inProgress, blocked, overdue,
       health: Math.max(0, Math.min(100, health)),
       chartData, statusCounts, statusColIdx, epicColIdx,
-      recentRows, recentCompleted, headers, actualReleaseDateColIdx,
+      recentRows, recentCompleted, overdueRows, headers,
+      actualReleaseDateColIdx, dateColIdx,
     };
   }, [data]);
 
@@ -445,8 +453,8 @@ export function SprintDashboard() {
 
       </div>
 
-      {/* Recent activity: completed + in-progress breakdown */}
-      <div className="grid grid-cols-2 gap-4">
+      {/* Recent activity: completed · in-progress · overdue */}
+      <div className="grid grid-cols-3 gap-4">
 
         {/* Recently completed */}
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
@@ -471,9 +479,7 @@ export function SprintDashboard() {
                   <div key={i} className="flex items-center gap-3 py-2.5 border-b border-gray-800 last:border-0">
                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
                     <span className="text-sm text-gray-300 truncate flex-1">{name}</span>
-                    <span className="text-xs text-gray-600 shrink-0">
-                      {releaseDate || "—"}
-                    </span>
+                    <span className="text-xs text-gray-600 shrink-0">{releaseDate || "—"}</span>
                   </div>
                 );
               })}
@@ -485,7 +491,7 @@ export function SprintDashboard() {
           )}
         </div>
 
-        {/* In progress */}
+        {/* Currently in progress */}
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
           <div className="flex items-center gap-2 mb-4">
             <Clock size={15} className="text-indigo-400" />
@@ -510,8 +516,8 @@ export function SprintDashboard() {
                     return (
                       <div key={i} className="flex items-center gap-3 py-2.5 border-b border-gray-800 last:border-0">
                         <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 shrink-0" />
-                        <span className="text-sm text-gray-300 truncate">{name}</span>
-                        <span className="ml-auto text-xs text-indigo-400 font-medium shrink-0">Active</span>
+                        <span className="text-sm text-gray-300 truncate flex-1">{name}</span>
+                        <span className="text-xs text-indigo-400 font-medium shrink-0">Active</span>
                       </div>
                     );
                   })}
@@ -523,6 +529,56 @@ export function SprintDashboard() {
               );
             })()
           ) : null}
+        </div>
+
+        {/* Overdue */}
+        <div className="bg-gray-900 border border-red-900/40 rounded-xl p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <AlertTriangle size={15} className="text-red-400" />
+              <h2 className="text-white font-medium text-sm">Overdue</h2>
+            </div>
+            {metrics && metrics.overdueRows.length > 0 && (
+              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-red-950 text-red-400 border border-red-900">
+                {metrics.overdueRows.length}
+              </span>
+            )}
+          </div>
+          {loading ? (
+            <div className="space-y-3">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="h-8 bg-gray-800 rounded animate-pulse" />
+              ))}
+            </div>
+          ) : metrics && metrics.overdueRows.length > 0 ? (
+            <div className="space-y-0">
+              {metrics.overdueRows.slice(0, 5).map((row, i) => {
+                const epicVal = metrics.epicColIdx >= 0 ? (row[metrics.epicColIdx] ?? "") : "";
+                const name = epicVal || row.find(c => c.trim() !== "") || "—";
+                const dueDate = metrics.dateColIdx >= 0 ? (row[metrics.dateColIdx] ?? "") : "";
+                const statusVal = metrics.statusColIdx >= 0 ? (row[metrics.statusColIdx] ?? "") : "";
+                return (
+                  <div key={i} className="flex items-start gap-3 py-2.5 border-b border-gray-800/60 last:border-0">
+                    <div className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0 mt-1.5" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-gray-300 truncate">{name}</p>
+                      {statusVal && (
+                        <p className="text-[11px] text-gray-600 mt-0.5">{statusVal}</p>
+                      )}
+                    </div>
+                    {dueDate && (
+                      <span className="text-xs text-red-400 font-medium shrink-0">{dueDate}</span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-8 text-center gap-1">
+              <CheckCircle2 size={20} className="text-emerald-600 mb-1" />
+              <p className="text-sm text-gray-600">All on track</p>
+            </div>
+          )}
         </div>
 
       </div>

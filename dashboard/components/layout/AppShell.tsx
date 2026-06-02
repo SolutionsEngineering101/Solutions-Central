@@ -24,9 +24,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   if (!session) return null;
 
   return (
-    <div className="flex min-h-screen bg-gray-900">
+    <div className="flex h-screen bg-gray-950">
       <Sidebar />
-      <main className="ml-56 flex-1 p-8 overflow-y-auto">{children}</main>
+      <main className="ml-56 flex-1 h-screen overflow-y-auto p-5">{children}</main>
     </div>
   );
 }

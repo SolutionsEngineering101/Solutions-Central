@@ -9,9 +9,11 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async signIn({ profile }) {
-      // Only allow logins from the org — update if you want email-based allow list
-      return !!profile;
+    async signIn() {
+      // Allow any GitHub account that completes OAuth. Access is controlled at the
+      // GitHub OAuth App level (org/third-party approval), not here. To restrict to
+      // specific people later, check `profile.login` against an allow-list and return false.
+      return true;
     },
     async session({ session, token }) {
       if (session.user && token.sub) {

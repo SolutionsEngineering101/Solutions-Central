@@ -2,6 +2,8 @@ import { AppShell } from "@/components/layout/AppShell";
 import { RequestsTable } from "@/components/requests/RequestsTable";
 import { getMarkdownFiles } from "@/lib/github";
 
+export const dynamic = "force-dynamic";
+
 export default async function SolutionRequestsPage() {
   const forms = await getMarkdownFiles("intake/solutions-forms");
   const requests = forms

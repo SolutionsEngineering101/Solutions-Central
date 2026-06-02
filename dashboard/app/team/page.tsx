@@ -2,6 +2,8 @@ import { AppShell } from "@/components/layout/AppShell";
 import { getMarkdownFiles } from "@/lib/github";
 import { Users } from "lucide-react";
 
+export const dynamic = "force-dynamic";
+
 export default async function TeamPage() {
   const profiles = await getMarkdownFiles("skills/member");
   const members = profiles.filter((p) => !p.path.includes("_template"));

@@ -58,6 +58,9 @@ The repo serves as: intake hub, documentation library, team workspace, playbook,
   - Total count excludes rows where only SL No is filled.
   - Recently Completed uses Actual Release Date column to sort.
 - [x] **13. Confluence page fixes** — Sticky frozen header, blank columns hidden (only cols with ≥1 non-empty value shown), empty rows hidden from display. Hooks moved before early returns to fix Rules-of-Hooks crash.
+- [x] **14. Project Tracker improvements** — KPI counts now filter empty/SL-No-only rows (matches dashboard card). Date columns normalised to dd/mm/yyyy at parse time in `lib/confluence.ts` via `normalizeDateStr` (handles ISO, slash, dash, dot, and natural-language formats). Actual Release Date now extracted from Confluence `<time datetime>` elements. Date inputs use `type="date"` with dd/mm↔ISO conversion helpers. Overdue card added to SprintDashboard bottom row. Worklogs page 404 noise fixed (Octokit logger suppressed, `listFiles` rethrows non-404 errors).
+- [x] **15. Tech Docs page** — `/confluence` nav renamed to "Tech Docs". New `TechDocs` component replaces old `ConfluenceViewer`. Fetches all pages from Confluence space `PMT` (env var `CONFLUENCE_SPACE_KEY=PMT`), excludes tracker page. Features: searchable card grid, slide-in side panel (read + edit + new page), three-dot menu per card (Edit / Open in Confluence / Remove from view). Remove from view is local-only — persisted in `localStorage` under `techdocs_hidden_ids`, Confluence untouched. Three-dot menu uses fixed-position dropdown + transparent backdrop to avoid React 18 event / `overflow-y-auto` clipping bugs. New API routes: `GET/POST/PUT /api/confluence/docs`.
+- [x] **16. Overview page full redesign** — Removed Active Sprint. New layout: 3 KPI cards (Delivered, Win Rate, Open Now) + Quarterly Breakdown (interactive quarter tabs + All, status bars + mini KPIs) + bottom row (Team Leaderboard by SPOC / Complexity Donut / Recent Requests). Donut uses Recharts PieChart with custom `ActiveShape` (+5px controlled expansion, no center-label overlap), tooltip shows count + %, legend in card header top-right. Full-canvas layout: AppShell changed to `h-screen p-5`, overview uses `flex flex-col h-full` with bottom row `flex-1 min-h-0`. New files: `components/overview/QuarterlyBreakdown.tsx`, `components/overview/ComplexityDonut.tsx`.
 
 ---
 
@@ -65,8 +68,7 @@ The repo serves as: intake hub, documentation library, team workspace, playbook,
 
 - [ ] **5. Fill in team roles** — `intake/team-and-roles.md` has all members listed but Role, Focus Areas, and Contact are blank for everyone.
 - [ ] **Deploy to Vercel** — see steps below.
-- [ ] **Confluence activation** — user has API token, needs to add to `.env.local` and restart dev server.
-- [ ] **Project Tracker polish** — verify health score formula feels right once Actual Release Date data is populated in Confluence. Consider timeline/assignee view as a future addition.
+- [ ] **⚠️ REMINDER — Portfolio Health formula review** — Current formula in `SprintDashboard.tsx` is a simplified weighted-count approach that can go negative. Agreed to improve it with: (1) clamp output to 0–100, (2) add timeline pressure using Actual Release Date for In Progress / To Do items past their release date. Pankaj's full 3-factor formula (status × 0.4 + timeline × 0.35 + blockers × 0.25) is NOT suitable for the Confluence tracker because it only has a single Overall Status column and no blocker relationships. Fix is small — ask Bhargav to revisit this when ready.
 
 ---
 
@@ -74,15 +76,15 @@ The repo serves as: intake hub, documentation library, team workspace, playbook,
 
 | Route | Label | Status |
 |---|---|---|
-| `/` | Overview | Live — live status counts from intake forms |
+| `/` | Overview | Live — KPIs, quarterly breakdown, leaderboard, complexity donut, recent requests |
 | `/solution-requests` | Solution Requests | Live — searchable grid + side panel |
-| `/sprint` | Project Tracker | Live — dashboard (KPIs, health, chart, Confluence card) from live Confluence data |
-| `/sprint/tracker` | Full Tracker Table | Live — search, filter, sort, inline edit, delete, add row |
-| `/confluence` | Confluence | Live — sticky header, blank cols/rows hidden |
+| `/sprint` | Project Tracker | Live — KPIs, health, status chart, Confluence card, completed/in-progress/overdue rows |
+| `/sprint/tracker` | Full Tracker Table | Live — search, filter, sort, inline edit, add row |
+| `/confluence` | Tech Docs | Live — PMT space pages, slide-in panel, edit/create, local hide via localStorage |
 | `/playbook` | Playbook | Live |
 | `/blueprints` | Blueprints | Live |
 | `/team` | Team & Skills | Live — member profiles mostly blank |
-| `/worklogs` | Worklogs | Live |
+| `/worklogs` | Worklogs | Live — 404 noise fixed |
 
 ---
 
@@ -107,6 +109,7 @@ CONFLUENCE_EMAIL=bhargav.nath@vantagecircle.com
 CONFLUENCE_API_TOKEN=   # from id.atlassian.com or Jira profile → Account Settings → Security
 CONFLUENCE_DOMAIN=vantagecirclejira.atlassian.net
 CONFLUENCE_PAGE_ID=567050244
+CONFLUENCE_SPACE_KEY=PMT
 ```
 
 ## Dashboard — Go Live Steps

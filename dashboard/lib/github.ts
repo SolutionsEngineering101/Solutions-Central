@@ -1,7 +1,12 @@
 import { Octokit } from "@octokit/rest";
 import matter from "gray-matter";
 
-const octokit = new Octokit({ auth: process.env.GITHUB_PAT });
+const octokit = new Octokit({
+  auth: process.env.GITHUB_PAT,
+  // Suppress Octokit's internal logger — Next.js dev overlay captures console.error
+  // during SSR and surfaces them as issues. 404s for missing directories are expected.
+  log: { debug: () => {}, info: () => {}, warn: () => {}, error: () => {} },
+});
 
 const OWNER = process.env.GITHUB_REPO_OWNER!;
 const REPO = process.env.GITHUB_REPO_NAME!;
@@ -13,8 +18,9 @@ export async function getFile(path: string): Promise<string | null> {
     const { data } = await octokit.repos.getContent({ owner: OWNER, repo: REPO, path });
     if ("content" in data) return Buffer.from(data.content, "base64").toString("utf-8");
     return null;
-  } catch {
-    return null;
+  } catch (err: unknown) {
+    if (err && typeof err === "object" && "status" in err && err.status === 404) return null;
+    throw err;
   }
 }
 
@@ -23,8 +29,10 @@ export async function listFiles(path: string): Promise<string[]> {
     const { data } = await octokit.repos.getContent({ owner: OWNER, repo: REPO, path });
     if (Array.isArray(data)) return data.filter((f) => f.type === "file").map((f) => f.path);
     return [];
-  } catch {
-    return [];
+  } catch (err: unknown) {
+    // 404 = directory doesn't exist yet, treat as empty
+    if (err && typeof err === "object" && "status" in err && err.status === 404) return [];
+    throw err;
   }
 }
 

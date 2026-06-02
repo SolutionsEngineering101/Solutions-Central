@@ -59,7 +59,12 @@ export async function updatePage(
 }
 
 function stripTags(html: string): string {
-  return html
+  // Confluence date picker stores dates as <time datetime="YYYY-MM-DD" /> — extract the ISO value
+  const withDates = html.replace(
+    /<time[^>]+datetime="([^"]+)"[^>]*\/?>/gi,
+    (_, dt) => dt
+  );
+  return withDates
     .replace(/<[^>]+>/g, " ")
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
@@ -67,6 +72,42 @@ function stripTags(html: string): string {
     .replace(/&nbsp;/g, " ")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+// Normalises any recognisable date string to dd/mm/yyyy.
+// Treats all numeric d/m or d-m patterns as day-first (India locale).
+function normalizeDateStr(val: string): string {
+  const v = val.trim();
+  if (!v) return v;
+
+  // yyyy-mm-dd  (ISO — from <time> element or plain text)
+  const iso = v.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (iso) return `${iso[3]}/${iso[2]}/${iso[1]}`;
+
+  // d/m/yyyy or dd/mm/yyyy — pad and return
+  const slash = v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (slash) return `${slash[1].padStart(2, "0")}/${slash[2].padStart(2, "0")}/${slash[3]}`;
+
+  // d-m-yyyy or dd-mm-yyyy (treat as day-month-year)
+  const dash = v.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
+  if (dash) return `${dash[1].padStart(2, "0")}/${dash[2].padStart(2, "0")}/${dash[3]}`;
+
+  // d.m.yyyy or dd.mm.yyyy
+  const dot = v.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+  if (dot) return `${dot[1].padStart(2, "0")}/${dot[2].padStart(2, "0")}/${dot[3]}`;
+
+  // Natural-language dates ("7 May 2026", "May 7, 2026") — safe to use Date() here
+  // because these formats are unambiguous
+  if (/[a-zA-Z]/.test(v)) {
+    const d = new Date(v);
+    if (!isNaN(d.getTime())) {
+      const dd = String(d.getDate()).padStart(2, "0");
+      const mm = String(d.getMonth() + 1).padStart(2, "0");
+      return `${dd}/${mm}/${d.getFullYear()}`;
+    }
+  }
+
+  return v; // unrecognised — return as-is
 }
 
 export interface ParsedTable {
@@ -97,6 +138,19 @@ export function parseFirstTable(storageXml: string): ParsedTable {
       rows.push(tdMatches.map((m) => stripTags(m[1])));
     }
   });
+
+  // Normalise all date-column cells to dd/mm/yyyy
+  const dateColIdxs = headers
+    .map((h, i) => (/date|deadline|due|target|scheduled|release/i.test(h) ? i : -1))
+    .filter(i => i >= 0);
+
+  for (const row of rows) {
+    for (const ci of dateColIdxs) {
+      if (ci < row.length && row[ci]) {
+        row[ci] = normalizeDateStr(row[ci]);
+      }
+    }
+  }
 
   return { headers, rows };
 }
@@ -158,4 +212,113 @@ export function deleteTableRow(storageXml: string, rowIndex: number): string {
   if (!targetTr) return storageXml;
 
   return storageXml.replace(targetTr[0], "");
+}
+
+export interface SpacePage {
+  id: string;
+  title: string;
+  version: { number: number; when: string; by?: { displayName: string } };
+  excerpt?: string;
+  url?: string;
+  _links: { webui: string };
+}
+
+export async function listSpacePages(spaceKey: string, excludeIds: string[] = []): Promise<SpacePage[]> {
+  const all: SpacePage[] = [];
+  let start = 0;
+  const limit = 100;
+  while (true) {
+    const res = await fetch(
+      `https://${process.env.CONFLUENCE_DOMAIN}/wiki/rest/api/content?spaceKey=${encodeURIComponent(spaceKey)}&type=page&status=current&limit=${limit}&start=${start}&expand=version,excerpt`,
+      { headers: { Authorization: authHeader(), Accept: "application/json" }, cache: "no-store" }
+    );
+    if (!res.ok) {
+      const t = await res.text();
+      throw new Error(`Confluence ${res.status}: ${t.slice(0, 200)}`);
+    }
+    const data = await res.json() as { results: SpacePage[]; size: number };
+    const filtered = data.results.filter(p => !excludeIds.includes(p.id));
+    all.push(...filtered);
+    if (data.results.length < limit) break;
+    start += limit;
+  }
+  return all.sort((a, b) => a.title.localeCompare(b.title));
+}
+
+export async function getPageView(pageId: string): Promise<{ id: string; title: string; version: number; body: string; url: string }> {
+  const res = await fetch(
+    `https://${process.env.CONFLUENCE_DOMAIN}/wiki/rest/api/content/${pageId}?expand=body.view,version`,
+    { headers: { Authorization: authHeader(), Accept: "application/json" }, cache: "no-store" }
+  );
+  if (!res.ok) {
+    const t = await res.text();
+    throw new Error(`Confluence ${res.status}: ${t.slice(0, 200)}`);
+  }
+  const d = await res.json() as {
+    id: string; title: string;
+    version: { number: number };
+    body: { view: { value: string } };
+    _links: { webui: string };
+  };
+  return {
+    id: d.id,
+    title: d.title,
+    version: d.version.number,
+    body: d.body.view.value,
+    url: `https://${process.env.CONFLUENCE_DOMAIN}/wiki${d._links.webui}`,
+  };
+}
+
+export async function createSpacePage(spaceKey: string, title: string, bodyText: string): Promise<string> {
+  const storageBody = bodyText
+    .split(/\n\n+/)
+    .filter(p => p.trim())
+    .map(p => `<p>${escapeXml(p.trim().replace(/\n/g, " "))}</p>`)
+    .join("");
+  const res = await fetch(
+    `https://${process.env.CONFLUENCE_DOMAIN}/wiki/rest/api/content`,
+    {
+      method: "POST",
+      headers: { Authorization: authHeader(), "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({
+        type: "page",
+        title,
+        space: { key: spaceKey },
+        body: { storage: { value: storageBody || "<p></p>", representation: "storage" } },
+      }),
+    }
+  );
+  if (!res.ok) {
+    const t = await res.text();
+    throw new Error(`Confluence create ${res.status}: ${t.slice(0, 200)}`);
+  }
+  const d = await res.json() as { id: string };
+  return d.id;
+}
+
+
+export async function updateSpacePage(pageId: string, version: number, title: string, bodyText: string): Promise<void> {
+  const storageBody = bodyText
+    .split(/\n\n+/)
+    .filter(p => p.trim())
+    .map(p => `<p>${escapeXml(p.trim().replace(/\n/g, " "))}</p>`)
+    .join("");
+  const res = await fetch(
+    `https://${process.env.CONFLUENCE_DOMAIN}/wiki/rest/api/content/${pageId}`,
+    {
+      method: "PUT",
+      headers: { Authorization: authHeader(), "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({
+        id: pageId,
+        type: "page",
+        title,
+        version: { number: version },
+        body: { storage: { value: storageBody || "<p></p>", representation: "storage" } },
+      }),
+    }
+  );
+  if (!res.ok) {
+    const t = await res.text();
+    throw new Error(`Confluence update ${res.status}: ${t.slice(0, 200)}`);
+  }
 }

@@ -28,8 +28,25 @@ function isStatusDone(val: string) {
 
 function parseDate(val: string): Date | null {
   if (!val) return null;
+  // Handle dd/mm/yyyy (primary storage format)
+  const dmy = val.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (dmy) return new Date(Number(dmy[3]), Number(dmy[2]) - 1, Number(dmy[1]));
   const d = new Date(val);
   return isNaN(d.getTime()) ? null : d;
+}
+
+// Converts dd/mm/yyyy → yyyy-mm-dd for <input type="date"> value attribute
+function dmyToIso(dmy: string): string {
+  const p = dmy.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (!p) return dmy;
+  return `${p[3]}-${p[2].padStart(2, "0")}-${p[1].padStart(2, "0")}`;
+}
+
+// Converts yyyy-mm-dd from <input type="date"> back to dd/mm/yyyy for storage
+function isoToDmy(iso: string): string {
+  const p = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!p) return iso;
+  return `${p[3]}/${p[2]}/${p[1]}`;
 }
 
 function isOverdue(dateVal: string, row: string[], headers: string[]): boolean {
@@ -221,20 +238,24 @@ export function ProjectTracker() {
     ).sort();
   }, [data, statusColIdx]);
 
-  // KPI counts
+  // KPI counts — mirror the validRows filter used in SprintDashboard so totals match
   const kpis = useMemo(() => {
     if (!data) return null;
-    const rows = data.table.rows;
-    const total = rows.length;
-    const done = rows.filter(r =>
+    const { headers, rows } = data.table;
+    const slNoColIdx = headers.findIndex(h => /^sl\.?\s*no/i.test(h));
+    const validRows = rows.filter(r =>
+      r.some((c, i) => i !== slNoColIdx && (c ?? "").trim() !== "")
+    );
+    const total = validRows.length;
+    const done = validRows.filter(r =>
       statusColIdx >= 0 && isStatusDone(r[statusColIdx] ?? "")
     ).length;
-    const inProgress = rows.filter(r =>
+    const inProgress = validRows.filter(r =>
       statusColIdx >= 0 && /in.?progress|active|ongoing|wip/i.test(r[statusColIdx] ?? "")
     ).length;
-    const overdue = rows.filter(r =>
-      data.table.headers.some((h, i) =>
-        colType(h) === "date" && isOverdue(r[i] ?? "", r, data.table.headers)
+    const overdue = validRows.filter(r =>
+      headers.some((h, i) =>
+        colType(h) === "date" && isOverdue(r[i] ?? "", r, headers)
       )
     ).length;
     return { total, done, inProgress, overdue };
@@ -243,7 +264,10 @@ export function ProjectTracker() {
   // Filtered + sorted rows, keeping original indices for write-back
   const displayRows = useMemo(() => {
     if (!data) return [];
-    let rows = data.table.rows.map((row, origIdx) => ({ row, origIdx }));
+    const slNoColIdx = data.table.headers.findIndex(h => /^sl\.?\s*no/i.test(h));
+    let rows = data.table.rows
+      .map((row, origIdx) => ({ row, origIdx }))
+      .filter(({ row }) => row.some((c, i) => i !== slNoColIdx && (c ?? "").trim() !== ""));
 
     if (search.trim()) {
       const q = search.toLowerCase();
@@ -384,7 +408,7 @@ CONFLUENCE_PAGE_ID=567050244`}</pre>
           <p className="text-gray-500 text-sm mt-1">
             {loading
               ? "Loading from Confluence…"
-              : `${data?.table.rows.length ?? 0} items · ${syncLabel}`}
+              : `${kpis?.total ?? 0} items · ${syncLabel}`}
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
@@ -486,7 +510,7 @@ CONFLUENCE_PAGE_ID=567050244`}</pre>
 
         {(search || statusFilter !== "all") && (
           <span className="text-xs text-gray-500">
-            {displayRows.length} of {data?.table.rows.length ?? 0} shown
+            {displayRows.length} of {kpis?.total ?? 0} shown
           </span>
         )}
       </div>
@@ -501,17 +525,25 @@ CONFLUENCE_PAGE_ID=567050244`}</pre>
             </button>
           </div>
           <div className="grid grid-cols-2 gap-3 mb-4">
-            {headers.map((h, i) => (
-              <div key={i}>
-                <label className="block text-xs text-gray-500 mb-1">{h}</label>
-                <input
-                  value={newCells[i] ?? ""}
-                  onChange={e => setNewCells(prev => { const n = [...prev]; n[i] = e.target.value; return n; })}
-                  placeholder={h}
-                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                />
-              </div>
-            ))}
+            {headers.map((h, i) => {
+              const isDate = colType(h) === "date";
+              return (
+                <div key={i}>
+                  <label className="block text-xs text-gray-500 mb-1">{h}</label>
+                  <input
+                    type={isDate ? "date" : "text"}
+                    value={isDate ? dmyToIso(newCells[i] ?? "") : (newCells[i] ?? "")}
+                    onChange={e => setNewCells(prev => {
+                      const n = [...prev];
+                      n[i] = isDate ? isoToDmy(e.target.value) : e.target.value;
+                      return n;
+                    })}
+                    placeholder={isDate ? "" : h}
+                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+              );
+            })}
           </div>
           <div className="flex justify-end gap-2">
             <button
@@ -604,17 +636,23 @@ CONFLUENCE_PAGE_ID=567050244`}</pre>
                   if (isEditing) {
                     return (
                       <tr key={origIdx} className="border-b border-gray-800 bg-indigo-950/20">
-                        {editCells.map((cell, ci) => (
-                          <td key={ci} className={`px-3 ${density === "compact" ? "py-2" : "py-2.5"}`}>
-                            <input
-                              value={cell}
-                              onChange={e => setEditCells(prev => {
-                                const n = [...prev]; n[ci] = e.target.value; return n;
-                              })}
-                              className="w-full min-w-[72px] px-2 py-1.5 bg-gray-800 border border-gray-700 rounded-md text-sm text-gray-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                            />
-                          </td>
-                        ))}
+                        {editCells.map((cell, ci) => {
+                          const isDate = colType(data?.table.headers[ci] ?? "") === "date";
+                          return (
+                            <td key={ci} className={`px-3 ${density === "compact" ? "py-2" : "py-2.5"}`}>
+                              <input
+                                type={isDate ? "date" : "text"}
+                                value={isDate ? dmyToIso(cell) : cell}
+                                onChange={e => setEditCells(prev => {
+                                  const n = [...prev];
+                                  n[ci] = isDate ? isoToDmy(e.target.value) : e.target.value;
+                                  return n;
+                                })}
+                                className="w-full min-w-[72px] px-2 py-1.5 bg-gray-800 border border-gray-700 rounded-md text-sm text-gray-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                              />
+                            </td>
+                          );
+                        })}
                         <td className={`px-3 ${density === "compact" ? "py-2" : "py-2.5"}`}>
                           <div className="flex items-center gap-1">
                             <button

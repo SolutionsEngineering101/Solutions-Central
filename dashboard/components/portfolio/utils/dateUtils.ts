@@ -10,15 +10,13 @@ export function getTimeAgo(date: Date): string {
   if (days === 1) return 'Yesterday';
   if (days < 7) return `${days} days ago`;
 
-  return date.toLocaleDateString();
+  return formatDate(date);
 }
 
 export function formatDate(date: Date): string {
-  return date.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: date.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined,
-  });
+  const dd = String(date.getDate()).padStart(2, "0");
+  const mm = String(date.getMonth() + 1).padStart(2, "0");
+  return `${dd}/${mm}/${date.getFullYear()}`;
 }
 
 export function getDaysUntil(date: Date): number {

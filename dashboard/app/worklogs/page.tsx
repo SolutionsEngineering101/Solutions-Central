@@ -8,6 +8,8 @@ const MEMBERS = [
   "nilimpa-nizara-bora", "garima-kayal", "kongkana-bayan",
 ];
 
+export const dynamic = "force-dynamic";
+
 export default async function WorklogsPage() {
   const allLogs = await Promise.all(
     MEMBERS.map(async (member) => {

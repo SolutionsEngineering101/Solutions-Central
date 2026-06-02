@@ -1,10 +1,10 @@
 import { AppShell } from "@/components/layout/AppShell";
-import { ConfluenceViewer } from "@/components/confluence/ConfluenceViewer";
+import { TechDocs } from "@/components/confluence/TechDocs";
 
 export default function ConfluencePage() {
   return (
     <AppShell>
-      <ConfluenceViewer />
+      <TechDocs />
     </AppShell>
   );
 }
