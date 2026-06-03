@@ -233,7 +233,7 @@ export function RequestsTable({ requests }: { requests: Request[] }) {
                     type="button"
                     title="Draft a solution with AI"
                     onClick={(e) => { e.stopPropagation(); openAssistant(toAssistant(req)); }}
-                    className="justify-self-end p-1.5 rounded-lg text-gray-600 opacity-60 group-hover:opacity-100 hover:text-indigo-300 hover:bg-indigo-950/60 transition-all"
+                    className="justify-self-end p-1.5 rounded-lg text-amber-400 hover:text-amber-300 hover:bg-amber-400/10 transition-all"
                   >
                     <Sparkles size={16} />
                   </button>
