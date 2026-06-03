@@ -252,9 +252,9 @@ export function RequestsTable({ requests }: { requests: Request[] }) {
       {/* Side panel */}
       {selected && (
         <div className="w-[420px] shrink-0 ml-5 sticky top-0 self-start">
-          <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+          <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden flex flex-col max-h-[calc(100vh-2.5rem)]">
             {/* Panel header */}
-            <div className="flex items-start justify-between gap-3 px-6 py-5 border-b border-gray-800">
+            <div className="flex items-start justify-between gap-3 px-6 py-5 border-b border-gray-800 shrink-0">
               <div>
                 <p className="text-indigo-400 text-xs font-mono mb-1">
                   {get(selected.frontmatter, "form_id")}
@@ -272,7 +272,7 @@ export function RequestsTable({ requests }: { requests: Request[] }) {
             </div>
 
             {/* Draft with AI */}
-            <div className="px-6 py-3 border-b border-gray-800">
+            <div className="px-6 py-3 border-b border-gray-800 shrink-0">
               <button
                 onClick={() => openAssistant(toAssistant(selected))}
                 className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-sm font-semibold transition-colors"
@@ -282,7 +282,7 @@ export function RequestsTable({ requests }: { requests: Request[] }) {
             </div>
 
             {/* Status badge */}
-            <div className="px-6 py-3 border-b border-gray-800 flex items-center gap-3">
+            <div className="px-6 py-3 border-b border-gray-800 flex items-center gap-3 shrink-0">
               <span className={`inline-block px-2.5 py-1 rounded-full text-xs border ${statusStyle(get(selected.frontmatter, "status"))}`}>
                 {get(selected.frontmatter, "status")}
               </span>
@@ -297,14 +297,16 @@ export function RequestsTable({ requests }: { requests: Request[] }) {
             </div>
 
             {/* Detail rows */}
-            <div className="px-6 py-4 space-y-4 max-h-[calc(100vh-280px)] overflow-y-auto">
+            <div className="px-6 py-4 space-y-4 flex-1 min-h-0 overflow-y-auto">
               {[
                 { label: "Submitted by", keys: ["submitted_by"] },
+                { label: "Email", keys: ["email"] },
                 { label: "Department", keys: ["department"] },
                 { label: "Feature", keys: ["feature_name"] },
                 { label: "SPOC", keys: ["solution_spoc", "vc_spoc"] },
                 { label: "Go-live requirement", keys: ["go_live_requirement"] },
                 { label: "Go-live date", keys: ["go_live_date"] },
+                { label: "Closed on", keys: ["closed_on"] },
                 { label: "Priority", keys: ["priority", "priority_justification"] },
                 { label: "Dev sprint", keys: ["dev_sprint"] },
                 { label: "Ticket", keys: ["ticket"] },
@@ -336,9 +338,8 @@ export function RequestsTable({ requests }: { requests: Request[] }) {
                 <div>
                   <p className="text-gray-600 text-xs mb-2">Notes</p>
                   <div className="bg-gray-950 rounded-lg p-3">
-                    <pre className="text-gray-400 text-xs whitespace-pre-wrap font-mono leading-relaxed">
-                      {selected.content.trim().slice(0, 800)}
-                      {selected.content.trim().length > 800 ? "\n…" : ""}
+                    <pre className="text-gray-300 text-xs whitespace-pre-wrap break-words font-mono leading-relaxed">
+                      {selected.content.trim()}
                     </pre>
                   </div>
                 </div>
