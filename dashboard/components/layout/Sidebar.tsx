@@ -12,6 +12,7 @@ import {
   Users,
   ClipboardList,
   BarChart2,
+  UserCog,
   LogOut,
 } from "lucide-react";
 
@@ -24,6 +25,7 @@ const nav = [
   { href: "/blueprints", label: "Blueprints", icon: Layers },
   { href: "/team", label: "Team & Skills", icon: Users },
   { href: "/worklogs", label: "Worklogs", icon: ClipboardList },
+  { href: "/profile", label: "My Profile", icon: UserCog },
 ];
 
 export function Sidebar() {
