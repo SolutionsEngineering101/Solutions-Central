@@ -1,8 +1,8 @@
 ---
 name: "Bhargav Nath"
-role: "Associate Project Coordinator / APM"
+role: "Solutions Engineer - 1"
 email: "bhargav.nath@vantagecircle.com"
-updated: 2026-05-25
+updated: 2026-06-03
 ---
 
 # Bhargav Nath — Capability Profile
@@ -12,10 +12,14 @@ updated: 2026-05-25
 - API integrations (REST, Switchfly, SaaS platforms)
 - Data analysis and reporting
 - Employee recognition program design
+- AI Integration
+- API Integration
 
 ## Product Knowledge
 - Vantage Circle platform
-- Switchfly API
+- Switchfly 
+- Snappy 
+- Rewards & Redemption
 
 ## Technical Capabilities
 - Tools: Power BI, n8n, Zapier, GitHub
@@ -26,7 +30,10 @@ updated: 2026-05-25
 - HR Tech / SaaS
 - Employee rewards and recognition
 
+## Focus / Working On
+
+
 ## Past Solutions Led
-- 
+-
 
 ## Notes
