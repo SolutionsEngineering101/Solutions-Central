@@ -1,7 +1,74 @@
-# CLAUDE.md — Solutions Engineering Workflow Instructions
+# CLAUDE.md
 
-> This file is read by Claude Code automatically. It defines all team workflows.
-> Every teammate runs these via: `claude "[workflow name]"`
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+> Every teammate runs workflows from the terminal via: `claude "[workflow name]"`
+
+---
+
+## ARCHITECTURE
+
+This repo has two moving parts that interact through the GitHub API:
+
+**Claude Code (this repo) — write path**
+Workflows write markdown/JSON files, commit, and push. The dashboard reads them from GitHub at runtime — not from the local filesystem. Changes must be pushed to be visible in the dashboard.
+
+**Dashboard (`dashboard/`) — read path**
+Next.js 16 app (React 19, TypeScript, Tailwind v4). All data is fetched via `lib/github.ts` using Octokit + a `GITHUB_PAT`. Pages are server components that call `getMarkdownFiles()` / `getJSON()` at request time, so no build step is needed to reflect new content.
+
+**Forms ingestion (`scripts/pull_forms.py`)**
+Pulls MS Forms responses from SharePoint via Microsoft Graph API (client credentials, no user login) and writes each response as a dated markdown file to `intake/solutions-forms/`. Safe to re-run — existing files are skipped.
+
+**Data flow:**
+```
+MS Forms (SharePoint Excel) → pull_forms.py → intake/solutions-forms/*.md
+                                                        ↓ git commit/push
+Claude Code workflows → playbook/, blueprints/, etc.    → GitHub repo
+                                                        ↓ Octokit API
+                                                   Next.js Dashboard
+```
+
+**Confluence integration** (`dashboard/lib/confluence.ts`): reads and writes Confluence pages using the REST API v2 (storage format XML). The `/confluence` dashboard page maps a Confluence page to the Project Tracker table.
+
+---
+
+## DASHBOARD COMMANDS
+
+```bash
+cd dashboard
+npm install          # first time
+npm run dev          # dev server at localhost:3000
+npm run build        # production build
+npm run lint         # ESLint
+```
+
+**Required env vars** (create `dashboard/.env.local`):
+```
+GITHUB_PAT=                  # repo read/write access
+GITHUB_REPO_OWNER=           # e.g. hbharadwaj06
+GITHUB_REPO_NAME=            # e.g. Solutions-Central
+GITHUB_CLIENT_ID=            # NextAuth GitHub OAuth app
+GITHUB_CLIENT_SECRET=
+NEXTAUTH_SECRET=             # random string
+NEXTAUTH_URL=http://localhost:3000
+CONFLUENCE_DOMAIN=           # e.g. vantagecircle.atlassian.net
+CONFLUENCE_EMAIL=
+CONFLUENCE_API_TOKEN=
+```
+
+---
+
+## FORMS SCRIPT COMMANDS
+
+```bash
+pip install -r scripts/requirements.txt    # first time
+cp scripts/.env.example scripts/.env       # fill in Azure credentials
+
+python scripts/pull_forms.py               # pull new form responses
+python scripts/pull_forms.py --list        # debug: list SharePoint files
+```
+
+**Azure credentials** (in `scripts/.env`): `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_CLIENT_SECRET`
 
 ---
 
@@ -9,6 +76,16 @@
 
 You are the Solutions Engineering team assistant. You have access to this entire repository.
 Always refer to files by their relative path. Always commit and push after writing files unless told otherwise.
+
+**Team members and folder mapping:**
+| Name | Folder |
+|---|---|
+| Hemanga Bharadwaj | `team/hemanga-bharadwaj/` |
+| Pankaj Chakrabarty | `team/pankaj-chakrabarty/` |
+| Bhargav Nath | `team/bhargav-nath/` |
+| Nilimpa Nizara Bora | `team/nilimpa-nizara-bora/` |
+| Garima Kayal | `team/garima-kayal/` |
+| Kongkana Bayan | `team/kongkana-bayan/` |
 
 ---
 
