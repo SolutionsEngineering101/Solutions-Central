@@ -4,7 +4,7 @@ import { createContext, useContext, useState, useCallback, useRef, useEffect, Re
 import { useSession } from "next-auth/react";
 import {
   Sparkles, X, Loader2, Send, FileText, BookOpen, Layers,
-  ExternalLink, Download, Check, Wand2,
+  ExternalLink, Download, Check, Wand2, Search,
 } from "lucide-react";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -53,6 +53,29 @@ const REF_META = {
   blueprint: { Icon: Layers,   label: "Blueprint", color: "#34d399" },
 } as const;
 
+// A pickable request, shown in the panel's empty-state picker.
+interface FormItem {
+  id: string; client: string; submittedBy: string; email: string;
+  brief: string; department: string; status: string; complexity: string;
+  content: string; submittedAt: string;
+}
+
+// Pull a one-line summary for the picker: frontmatter description/brief, else from the body.
+function extractBrief(fm: Record<string, unknown>, content: string): string {
+  const direct = fm.description ?? fm.brief;
+  if (typeof direct === "string" && direct.trim()) return direct.trim();
+  const m =
+    content.match(/##\s*Brief\s*\n+([^\n]+)/i) ||
+    content.match(/##\s*Problem[^\n]*\n+([^\n]+)/i) ||
+    content.match(/##\s*Subject\s*\n+([^\n]+)/i);
+  if (m) return m[1].replace(/\*\*/g, "").trim();
+  const line = content
+    .split("\n")
+    .map((l) => l.replace(/^#+\s*/, "").replace(/\*\*/g, "").trim())
+    .find((l) => l && !/^date:/i.test(l) && !l.startsWith("|"));
+  return line ?? "";
+}
+
 // ── Provider ──────────────────────────────────────────────────────────────────
 
 export function AssistantProvider({ children }: { children: ReactNode }) {
@@ -73,9 +96,62 @@ export function AssistantProvider({ children }: { children: ReactNode }) {
     { id: "", choosing: false, exporting: false, done: null, error: null }
   );
 
+  // request picker (empty state, when opened from the orb with no request)
+  const [forms, setForms] = useState<FormItem[] | null>(null);
+  const [formsLoading, setFormsLoading] = useState(false);
+  const [formsError, setFormsError] = useState<string | null>(null);
+  const [pickerSearch, setPickerSearch] = useState("");
+
   const idRef = useRef(0);
   const nextId = () => String(++idRef.current);
   const threadRef = useRef<HTMLDivElement>(null);
+
+  const fetchForms = useCallback(async () => {
+    setFormsLoading(true); setFormsError(null);
+    try {
+      const res = await fetch("/api/github/solutions");
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Failed to load requests");
+      const items: FormItem[] = (json.forms ?? [])
+        .filter((f: { path: string }) => !f.path.endsWith("README.md"))
+        .map((f: { path: string; frontmatter: Record<string, unknown>; content: string }) => {
+          const fm = f.frontmatter ?? {};
+          const s = (k: string) => (typeof fm[k] === "string" ? (fm[k] as string) : "");
+          return {
+            id: s("form_id") || f.path.split("/").pop()?.replace(/\.md$/, "") || "",
+            client: s("client") || s("client_name") || "—",
+            submittedBy: s("submitted_by"),
+            email: s("email"),
+            brief: extractBrief(fm, f.content ?? ""),
+            department: s("department"),
+            status: s("status"),
+            complexity: s("complexity"),
+            content: f.content ?? "",
+            submittedAt: s("submitted_at") || s("date"),
+          };
+        })
+        .sort((a: FormItem, b: FormItem) => (b.submittedAt > a.submittedAt ? 1 : -1));
+      setForms(items);
+    } catch (e) {
+      setFormsError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setFormsLoading(false);
+    }
+  }, []);
+
+  // Lazy-load the request list the first time the panel opens without a request.
+  useEffect(() => {
+    if (isOpen && !request && forms === null && !formsLoading) fetchForms();
+  }, [isOpen, request, forms, formsLoading, fetchForms]);
+
+  const pickRequest = (f: FormItem) => {
+    setRequest({
+      id: f.id, client: f.client, department: f.department,
+      status: f.status, complexity: f.complexity, description: f.brief, content: f.content,
+    });
+    setMessages([]); setError(null); setInput("");
+    setExp({ id: "", choosing: false, exporting: false, done: null, error: null });
+  };
 
   useEffect(() => {
     threadRef.current?.scrollTo({ top: threadRef.current.scrollHeight, behavior: "smooth" });
@@ -171,6 +247,10 @@ export function AssistantProvider({ children }: { children: ReactNode }) {
 
   const chips = ["Draft a solution from our past work", "What info should I confirm with the client?"];
   const hasMessages = messages.length > 0;
+  const pq = pickerSearch.toLowerCase();
+  const pickerFiltered = (forms ?? []).filter(
+    (f) => !pq || [f.id, f.client, f.submittedBy, f.email, f.brief].join(" ").toLowerCase().includes(pq)
+  );
 
   return (
     <Ctx.Provider value={{ open, close }}>
@@ -211,13 +291,21 @@ export function AssistantProvider({ children }: { children: ReactNode }) {
 
         {/* Context chip */}
         {request && (
-          <div className="px-5 py-2.5 border-b border-gray-800 shrink-0 bg-gray-900/50">
-            <p className="text-[11px] text-gray-500">Working on</p>
-            <p className="text-xs text-gray-300 truncate">
-              <span className="text-indigo-400 font-mono">{request.id || "—"}</span>
-              {request.client ? ` · ${request.client}` : ""}
-              {request.feature ? ` · ${request.feature}` : ""}
-            </p>
+          <div className="px-5 py-2.5 border-b border-gray-800 shrink-0 bg-gray-900/50 flex items-center gap-3">
+            <div className="min-w-0 flex-1">
+              <p className="text-[11px] text-gray-500">Working on</p>
+              <p className="text-xs text-gray-300 truncate">
+                <span className="text-indigo-400 font-mono">{request.id || "—"}</span>
+                {request.client ? ` · ${request.client}` : ""}
+                {request.feature ? ` · ${request.feature}` : ""}
+              </p>
+            </div>
+            <button
+              onClick={() => { setRequest(null); setMessages([]); setError(null); setInput(""); }}
+              className="text-[11px] text-gray-500 hover:text-indigo-300 transition-colors shrink-0"
+            >
+              Change
+            </button>
           </div>
         )}
 
@@ -239,7 +327,55 @@ export function AssistantProvider({ children }: { children: ReactNode }) {
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-gray-500">Open a Solution Request and click the ✨ icon to draft a solution.</p>
+                <div>
+                  <p className="text-sm text-gray-400 mb-3">Pick the request you want to work on:</p>
+                  <div className="relative mb-3">
+                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+                    <input
+                      value={pickerSearch}
+                      onChange={(e) => setPickerSearch(e.target.value)}
+                      placeholder="Search by client, ID, person, email…"
+                      className="w-full pl-9 pr-3 py-2.5 bg-gray-900 border border-gray-800 rounded-lg text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                  </div>
+
+                  {formsLoading && (
+                    <div className="flex items-center gap-2 text-gray-500 text-sm py-6 justify-center">
+                      <Loader2 size={16} className="animate-spin" /> Loading requests…
+                    </div>
+                  )}
+                  {formsError && <p className="text-red-400 text-xs">{formsError}</p>}
+
+                  {forms && !formsLoading && (
+                    <div className="flex flex-col gap-2">
+                      {pickerFiltered.slice(0, 60).map((f) => (
+                        <button
+                          key={f.id + f.client}
+                          onClick={() => pickRequest(f)}
+                          className="text-left px-3 py-2.5 rounded-xl bg-gray-900 border border-gray-800 hover:border-indigo-600 transition-colors"
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className="text-indigo-400 font-mono text-xs shrink-0">{f.id}</span>
+                            <span className="text-white text-sm font-medium truncate">{f.client}</span>
+                            {f.status && <span className="ml-auto text-[10px] text-gray-500 shrink-0">{f.status}</span>}
+                          </div>
+                          {(f.submittedBy || f.email) && (
+                            <p className="text-[11px] text-gray-500 mt-0.5 truncate">
+                              {[f.submittedBy, f.email].filter(Boolean).join(" · ")}
+                            </p>
+                          )}
+                          {f.brief && <p className="text-xs text-gray-400 mt-1 line-clamp-2">{f.brief}</p>}
+                        </button>
+                      ))}
+                      {pickerFiltered.length === 0 && (
+                        <p className="text-gray-600 text-xs text-center py-4">No matching requests.</p>
+                      )}
+                      {pickerFiltered.length > 60 && (
+                        <p className="text-gray-600 text-[11px] text-center pt-1">Showing first 60 — refine your search.</p>
+                      )}
+                    </div>
+                  )}
+                </div>
               )}
             </div>
           )}
@@ -351,7 +487,7 @@ export function AssistantProvider({ children }: { children: ReactNode }) {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter" && !loading) send(input); }}
               disabled={!request || loading}
-              placeholder={!request ? "Open a request to start…" : hasMessages ? "Ask AI to refine… (e.g. add a rollout plan)" : "Describe what you need, or pick a suggestion above…"}
+              placeholder={!request ? "Pick a request above to start…" : hasMessages ? "Ask AI to refine… (e.g. add a rollout plan)" : "Describe what you need, or pick a suggestion above…"}
               className="flex-1 px-3 py-2.5 bg-gray-900 border border-gray-800 rounded-lg text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
             />
             <button
