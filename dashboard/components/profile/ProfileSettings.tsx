@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useCallback, ReactNode } from "react";
 import {
-  Loader2, Save, Check, AlertCircle, UserCog, ChevronDown, Pencil, X,
-  FileText, Sparkles, Plus, Ticket, ExternalLink, FolderOpen,
+  Loader2, Save, Check, AlertCircle, UserCog, Pencil, X,
+  FileText, Sparkles, Plus, Ticket, FolderOpen,
 } from "lucide-react";
 
 interface Member { slug: string; name: string; role: string; email: string; updated: string; content: string }
@@ -73,6 +73,7 @@ function MarkdownView({ md }: { md: string }) {
 export function ProfileSettings() {
   const [members, setMembers] = useState<Member[] | null>(null);
   const [slug, setSlug] = useState("");
+  const [chosen, setChosen] = useState(false); // has the user identified themselves yet
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -131,8 +132,8 @@ export function ProfileSettings() {
         setMembers(list);
         if (sRes.ok) { const sJson = await sRes.json(); setAllForms((sJson.forms ?? []).filter((f: { path: string }) => !f.path.includes("skeleton-"))); }
         const remembered = typeof window !== "undefined" ? localStorage.getItem(LS_KEY) : null;
-        const pick = list.find((m) => m.slug === remembered) ?? list[0];
-        if (pick) { setSlug(pick.slug); loadMember(pick); loadFiles(pick.slug); }
+        const pick = list.find((m) => m.slug === remembered); // only auto-load a remembered identity
+        if (pick) { setSlug(pick.slug); loadMember(pick); loadFiles(pick.slug); setChosen(true); }
       } catch (e) {
         setLoadError(e instanceof Error ? e.message : String(e));
       } finally { setLoading(false); }
@@ -144,7 +145,7 @@ export function ProfileSettings() {
     if (!m) return;
     setSlug(s); localStorage.setItem(LS_KEY, s);
     loadMember(m); loadFiles(s);
-    setViewing(null); setEditor(null);
+    setViewing(null); setEditor(null); setChosen(true);
   };
 
   // Tickets this member worked on (SPOC by first name, or submitted_by full name).
@@ -221,23 +222,45 @@ export function ProfileSettings() {
   if (loading) return <div className="flex items-center justify-center h-64 gap-2 text-gray-500"><Loader2 size={18} className="animate-spin" /> Loading your profile…</div>;
   if (loadError) return <div className="flex items-start gap-2 bg-red-950/60 border border-red-900 rounded-lg p-4 max-w-xl"><AlertCircle size={15} className="text-red-400 shrink-0 mt-0.5" /><p className="text-red-300 text-sm">{loadError}</p></div>;
 
-  const initials = (name || "?").split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+  const ini = (n: string) => (n || "?").split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+
+  // One-time identity selection (the GitHub login is a shared org account).
+  if (!chosen) {
+    return (
+      <div className="max-w-md mx-auto mt-16 text-center">
+        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center mx-auto mb-4">
+          <UserCog size={24} className="text-white" />
+        </div>
+        <h1 className="text-white text-xl font-semibold mb-1">Who are you?</h1>
+        <p className="text-gray-500 text-sm mb-6">Select your profile once — we&apos;ll remember it on this device and show only your details.</p>
+        <div className="space-y-2 text-left">
+          {members?.map((m) => (
+            <button key={m.slug} onClick={() => switchMember(m.slug)}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-gray-900 border border-gray-800 hover:border-indigo-600 transition-colors">
+              <div className="w-9 h-9 rounded-full bg-indigo-600 flex items-center justify-center shrink-0">
+                <span className="text-white text-xs font-semibold">{ini(m.name)}</span>
+              </div>
+              <div className="min-w-0">
+                <p className="text-white text-sm font-medium truncate">{m.name || m.slug}</p>
+                <p className="text-gray-500 text-xs truncate">{m.role || "—"}</p>
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  const initials = ini(name);
 
   return (
     <div className="max-w-5xl space-y-5 pb-10">
       {/* Header */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-2"><UserCog size={20} className="text-indigo-400" /><h1 className="text-white text-2xl font-semibold">My Profile</h1></div>
-        <label className="flex items-center gap-2 text-xs text-gray-500">
-          You are
-          <div className="relative">
-            <select value={slug} onChange={(e) => switchMember(e.target.value)}
-              className="appearance-none bg-gray-900 border border-gray-800 rounded-lg pl-3 pr-8 py-1.5 text-sm text-gray-200 focus:outline-none focus:border-indigo-600">
-              {members?.map((m) => <option key={m.slug} value={m.slug}>{m.name || m.slug}</option>)}
-            </select>
-            <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
-          </div>
-        </label>
+        <button onClick={() => setChosen(false)} className="text-xs text-gray-500 hover:text-indigo-300 transition-colors">
+          Not you? Switch profile
+        </button>
       </div>
 
       {/* Identity banner */}
