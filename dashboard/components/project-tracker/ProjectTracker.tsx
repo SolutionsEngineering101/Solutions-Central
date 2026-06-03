@@ -369,6 +369,14 @@ export function ProjectTracker() {
     ...Array(Math.max(0, headers.length - r.length)).fill(""),
   ];
 
+  // Only show columns that have at least one non-empty value — hides the empty
+  // Confluence columns. Edits still send the full row, so hidden cells are preserved.
+  const visibleIdx = useMemo(() => {
+    const h = data?.table.headers ?? [];
+    const rows = data?.table.rows ?? [];
+    return h.map((_, i) => i).filter((i) => rows.some((r) => (r[i] ?? "").trim() !== ""));
+  }, [data]);
+
   // ─── Error state ───────────────────────────────────────────────────────────
   if (error) {
     const isConfig = error.includes("not configured");
@@ -566,29 +574,29 @@ CONFLUENCE_PAGE_ID=567050244`}</pre>
 
       {/* Table */}
       <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
-        <div className="overflow-x-auto">
+        <div className="overflow-auto max-h-[72vh]">
           <table className="w-full text-sm">
 
-            {/* Header */}
-            <thead>
+            {/* Header — sticky on vertical scroll */}
+            <thead className="sticky top-0 z-20">
               <tr className="border-b border-gray-800">
                 {loading ? (
                   Array.from({ length: 6 }).map((_, i) => (
-                    <th key={i} className="px-4 py-3">
+                    <th key={i} className="px-4 py-3 bg-gray-900">
                       <div className="h-3 rounded bg-gray-800 animate-pulse w-16" />
                     </th>
                   ))
                 ) : (
                   <>
-                    {headers.map((h, i) => (
+                    {visibleIdx.map((ci) => (
                       <th
-                        key={i}
-                        onClick={() => cycleSort(i)}
-                        className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-gray-500 cursor-pointer hover:text-gray-300 select-none whitespace-nowrap transition-colors"
+                        key={ci}
+                        onClick={() => cycleSort(ci)}
+                        className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-gray-500 cursor-pointer hover:text-gray-300 select-none whitespace-nowrap transition-colors bg-gray-900"
                       >
                         <span className="inline-flex items-center gap-1">
-                          {h}
-                          {sort.col === i ? (
+                          {headers[ci]}
+                          {sort.col === ci ? (
                             sort.dir === "asc"
                               ? <ChevronUp size={11} className="text-indigo-400" />
                               : <ChevronDown size={11} className="text-indigo-400" />
@@ -598,7 +606,10 @@ CONFLUENCE_PAGE_ID=567050244`}</pre>
                         </span>
                       </th>
                     ))}
-                    <th className="px-4 py-3 w-16" />
+                    {/* Actions — pinned to the right + top corner */}
+                    <th className="px-4 py-3 w-24 text-right text-[11px] font-semibold uppercase tracking-wide text-gray-500 sticky right-0 z-30 bg-gray-900">
+                      Actions
+                    </th>
                   </>
                 )}
               </tr>
@@ -612,7 +623,7 @@ CONFLUENCE_PAGE_ID=567050244`}</pre>
                 ))
               ) : displayRows.length === 0 ? (
                 <tr>
-                  <td colSpan={headers.length + 1} className="px-4 py-16 text-center">
+                  <td colSpan={visibleIdx.length + 1} className="px-4 py-16 text-center">
                     <div className="text-4xl mb-3">🗂️</div>
                     <p className="text-gray-400 font-medium text-sm">
                       {search || statusFilter !== "all"
@@ -636,7 +647,8 @@ CONFLUENCE_PAGE_ID=567050244`}</pre>
                   if (isEditing) {
                     return (
                       <tr key={origIdx} className="border-b border-gray-800 bg-indigo-950/20">
-                        {editCells.map((cell, ci) => {
+                        {visibleIdx.map((ci) => {
+                          const cell = editCells[ci] ?? "";
                           const isDate = colType(data?.table.headers[ci] ?? "") === "date";
                           return (
                             <td key={ci} className={`px-3 ${density === "compact" ? "py-2" : "py-2.5"}`}>
@@ -653,7 +665,7 @@ CONFLUENCE_PAGE_ID=567050244`}</pre>
                             </td>
                           );
                         })}
-                        <td className={`px-3 ${density === "compact" ? "py-2" : "py-2.5"}`}>
+                        <td className={`px-3 ${density === "compact" ? "py-2" : "py-2.5"} sticky right-0 z-10 bg-indigo-950/60`}>
                           <div className="flex items-center gap-1">
                             <button
                               onClick={() => handleSave("edit_row", editCells, origIdx)}
@@ -680,7 +692,7 @@ CONFLUENCE_PAGE_ID=567050244`}</pre>
                   if (isDeleting) {
                     return (
                       <tr key={origIdx} className="border-b border-gray-800 bg-red-950/20">
-                        <td colSpan={headers.length + 1} className={`px-4 ${density === "compact" ? "py-2.5" : "py-3.5"}`}>
+                        <td colSpan={visibleIdx.length + 1} className={`px-4 ${density === "compact" ? "py-2.5" : "py-3.5"}`}>
                           <div className="flex items-center gap-3">
                             <AlertCircle size={14} className="text-red-400 shrink-0" />
                             <span className="text-sm text-red-300">Delete this row from Confluence? This cannot be undone.</span>
@@ -712,25 +724,25 @@ CONFLUENCE_PAGE_ID=567050244`}</pre>
                       key={origIdx}
                       className={`border-b border-gray-800 last:border-0 hover:bg-gray-800/40 transition-colors group ${density === "compact" ? "h-10" : "h-14"}`}
                     >
-                      {paddedRow.map((cell, ci) => (
+                      {visibleIdx.map((ci) => (
                         <td key={ci} className={`px-4 ${density === "compact" ? "py-2" : "py-3.5"} max-w-[260px]`}>
                           <div className="truncate">
-                            {renderCell(cell, ci, paddedRow)}
+                            {renderCell(paddedRow[ci], ci, paddedRow)}
                           </div>
                         </td>
                       ))}
-                      <td className={`px-3 ${density === "compact" ? "py-2" : "py-3.5"}`}>
-                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <td className={`px-3 ${density === "compact" ? "py-2" : "py-3.5"} sticky right-0 z-10 bg-gray-900 group-hover:bg-[#171c26]`}>
+                        <div className="flex items-center justify-end gap-1">
                           <button
                             onClick={() => startEdit(origIdx)}
-                            className="p-1.5 rounded-md text-gray-600 hover:text-indigo-400 hover:bg-gray-800 transition-colors"
+                            className="p-1.5 rounded-md text-gray-400 hover:text-indigo-400 hover:bg-gray-800 transition-colors"
                             title="Edit row"
                           >
                             <Pencil size={13} />
                           </button>
                           <button
                             onClick={() => { setDeleteConfirm(origIdx); setEditRowIdx(null); }}
-                            className="p-1.5 rounded-md text-gray-600 hover:text-red-400 hover:bg-gray-800 transition-colors"
+                            className="p-1.5 rounded-md text-gray-400 hover:text-red-400 hover:bg-gray-800 transition-colors"
                             title="Delete row"
                           >
                             <Trash2 size={13} />
