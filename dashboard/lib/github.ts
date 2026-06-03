@@ -69,21 +69,44 @@ export async function writeJSON(path: string, data: unknown, message: string): P
 
 // ─── Markdown helpers ─────────────────────────────────────────────────────────
 
-export async function getMarkdownFiles(dir: string) {
-  const paths = await listFiles(dir);
-  const mdPaths = paths.filter((p) => p.endsWith(".md"));
-  const files = await Promise.all(
-    mdPaths.map(async (p) => {
-      const raw = await getFile(p);
-      if (!raw) return null;
-      try {
-        const { data: frontmatter, content } = matter(raw);
-        return { path: p, frontmatter, content };
-      } catch {
-        // Malformed YAML frontmatter — return file with empty frontmatter so the page still loads
-        return { path: p, frontmatter: {} as Record<string, unknown>, content: raw };
+// One GraphQL call fetches the whole directory tree AND every file's text, instead
+// of ~1 REST call per file (which exhausted the 5000/hr core rate limit). GraphQL
+// uses a separate rate-limit bucket and keeps the data fresh on every render.
+const DIR_QUERY = `
+query($owner:String!,$repo:String!,$expr:String!){
+  repository(owner:$owner,name:$repo){
+    object(expression:$expr){
+      ... on Tree {
+        entries { name type object { ... on Blob { text } } }
       }
-    })
-  );
-  return files.filter(Boolean) as { path: string; frontmatter: Record<string, unknown>; content: string }[];
+    }
+  }
+}`;
+
+interface TreeEntry { name: string; type: string; object?: { text?: string | null } | null }
+interface DirResult { repository?: { object?: { entries?: TreeEntry[] } | null } | null }
+
+export async function getMarkdownFiles(dir: string) {
+  const res = await octokit.graphql<DirResult>(DIR_QUERY, {
+    owner: OWNER,
+    repo: REPO,
+    expr: `HEAD:${dir}`,
+  });
+
+  const entries = res?.repository?.object?.entries ?? []; // null Tree → dir missing → []
+  const files: { path: string; frontmatter: Record<string, unknown>; content: string }[] = [];
+
+  for (const e of entries) {
+    if (e.type !== "blob" || !e.name.endsWith(".md")) continue;
+    const raw = e.object?.text;
+    if (typeof raw !== "string") continue; // binary/oversized → text is null
+    try {
+      const { data: frontmatter, content } = matter(raw);
+      files.push({ path: `${dir}/${e.name}`, frontmatter, content });
+    } catch {
+      // Malformed YAML frontmatter — keep the file so the page still loads
+      files.push({ path: `${dir}/${e.name}`, frontmatter: {}, content: raw });
+    }
+  }
+  return files;
 }
