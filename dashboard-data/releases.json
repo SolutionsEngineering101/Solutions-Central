@@ -12,7 +12,7 @@
     "pmOwner": "pankaj-chakrabarty",
     "status": "in-progress",
     "createdAt": "2026-06-04T11:57:30.033Z",
-    "updatedAt": "2026-06-04T12:30:02.040Z",
+    "updatedAt": "2026-06-04T12:30:04.389Z",
     "sections": {
       "solutions": {
         "status": "complete",
@@ -69,7 +69,8 @@
           "positive-flow",
           "negative-testing",
           "edge-cases-tested",
-          "role-based"
+          "role-based",
+          "regression-full"
         ]
       },
       "devops": {
