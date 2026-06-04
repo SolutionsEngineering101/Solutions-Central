@@ -12,7 +12,7 @@
     "pmOwner": "pankaj-chakrabarty",
     "status": "in-progress",
     "createdAt": "2026-06-04T11:57:30.033Z",
-    "updatedAt": "2026-06-04T12:37:28.368Z",
+    "updatedAt": "2026-06-04T12:37:30.171Z",
     "sections": {
       "solutions": {
         "status": "complete",
@@ -143,7 +143,8 @@
           "role-access",
           "feature-visibility",
           "e2e-transaction",
-          "approval-workflow-works"
+          "approval-workflow-works",
+          "notifications-triggered"
         ]
       }
     }
