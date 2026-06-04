@@ -170,7 +170,7 @@
     "pmOwner": "pankaj-chakrabarty",
     "status": "in-progress",
     "createdAt": "2026-06-04T11:58:37.969Z",
-    "updatedAt": "2026-06-04T12:48:58.648Z",
+    "updatedAt": "2026-06-04T12:49:00.301Z",
     "sections": {
       "solutions": {
         "status": "in-progress",
@@ -182,7 +182,8 @@
           "edge-cases",
           "dependencies",
           "impacted-modules",
-          "risk-assessment"
+          "risk-assessment",
+          "rollback-plan"
         ]
       },
       "engineering": {
