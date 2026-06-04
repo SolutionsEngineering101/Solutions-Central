@@ -12,7 +12,7 @@
     "pmOwner": "pankaj-chakrabarty",
     "status": "in-progress",
     "createdAt": "2026-06-04T11:57:30.033Z",
-    "updatedAt": "2026-06-04T12:36:17.420Z",
+    "updatedAt": "2026-06-04T12:37:20.852Z",
     "sections": {
       "solutions": {
         "status": "complete",
@@ -137,8 +137,10 @@
         "notes": "dfgh"
       },
       "clientValidation": {
-        "status": "pending",
-        "completedChecks": []
+        "status": "in-progress",
+        "completedChecks": [
+          "sso-login"
+        ]
       }
     }
   },
