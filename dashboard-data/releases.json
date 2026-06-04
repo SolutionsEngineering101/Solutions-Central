@@ -170,7 +170,7 @@
     "pmOwner": "pankaj-chakrabarty",
     "status": "in-progress",
     "createdAt": "2026-06-04T11:58:37.969Z",
-    "updatedAt": "2026-06-04T12:53:47.097Z",
+    "updatedAt": "2026-06-04T12:53:48.844Z",
     "sections": {
       "solutions": {
         "status": "in-progress",
@@ -208,7 +208,8 @@
       "deployment": {
         "status": "in-progress",
         "completedChecks": [
-          "deploy-window"
+          "deploy-window",
+          "eng-standby"
         ]
       },
       "clientValidation": {
