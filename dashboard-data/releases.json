@@ -12,7 +12,7 @@
     "pmOwner": "pankaj-chakrabarty",
     "status": "in-progress",
     "createdAt": "2026-06-04T11:57:30.033Z",
-    "updatedAt": "2026-06-04T12:37:35.326Z",
+    "updatedAt": "2026-06-04T12:37:37.072Z",
     "sections": {
       "solutions": {
         "status": "complete",
@@ -147,7 +147,8 @@
           "notifications-triggered",
           "reports-correct",
           "no-duplicate-accounts",
-          "no-incorrect-balances"
+          "no-incorrect-balances",
+          "historical-intact"
         ]
       }
     }
