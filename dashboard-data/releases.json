@@ -12,7 +12,7 @@
     "pmOwner": "pankaj-chakrabarty",
     "status": "in-progress",
     "createdAt": "2026-06-04T11:57:30.033Z",
-    "updatedAt": "2026-06-04T12:33:19.656Z",
+    "updatedAt": "2026-06-04T12:33:50.614Z",
     "sections": {
       "solutions": {
         "status": "complete",
@@ -86,8 +86,10 @@
         "signedOffAt": "2026-06-04T12:33:19.061Z"
       },
       "devops": {
-        "status": "pending",
-        "completedChecks": []
+        "status": "in-progress",
+        "completedChecks": [
+          "correct-branch"
+        ]
       },
       "clientConfig": {
         "status": "pending",
