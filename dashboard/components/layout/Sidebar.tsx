@@ -14,12 +14,14 @@ import {
   BarChart2,
   UserCog,
   LogOut,
+  Rocket,
 } from "lucide-react";
 
 const nav = [
   { href: "/", label: "Overview", icon: LayoutDashboard },
   { href: "/solution-requests", label: "Solution Requests", icon: FileText },
   { href: "/sprint", label: "Project Tracker", icon: BarChart2 },
+  { href: "/releases", label: "Releases", icon: Rocket },
   { href: "/confluence", label: "Tech Docs", icon: BookOpen },
   { href: "/playbook", label: "Playbook", icon: BookOpen },
   { href: "/blueprints", label: "Blueprints", icon: Layers },
