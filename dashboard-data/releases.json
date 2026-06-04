@@ -43,5 +43,50 @@
         "completedChecks": []
       }
     }
+  },
+  {
+    "id": "REL-2026-002",
+    "name": "AI Announcement",
+    "releaseType": "new-feature",
+    "clients": [
+      "All clients"
+    ],
+    "product": "R&R",
+    "jiraTickets": [],
+    "deploymentDate": "2026-06-16",
+    "pmOwner": "pankaj-chakrabarty",
+    "status": "in-progress",
+    "createdAt": "2026-06-04T11:58:37.969Z",
+    "updatedAt": "2026-06-04T11:58:37.969Z",
+    "sections": {
+      "solutions": {
+        "status": "pending",
+        "completedChecks": []
+      },
+      "engineering": {
+        "status": "pending",
+        "completedChecks": []
+      },
+      "qa": {
+        "status": "pending",
+        "completedChecks": []
+      },
+      "devops": {
+        "status": "pending",
+        "completedChecks": []
+      },
+      "clientConfig": {
+        "status": "pending",
+        "completedChecks": []
+      },
+      "deployment": {
+        "status": "pending",
+        "completedChecks": []
+      },
+      "clientValidation": {
+        "status": "pending",
+        "completedChecks": []
+      }
+    }
   }
 ]
