@@ -12,7 +12,7 @@
     "pmOwner": "pankaj-chakrabarty",
     "status": "in-progress",
     "createdAt": "2026-06-04T11:57:30.033Z",
-    "updatedAt": "2026-06-04T12:34:07.302Z",
+    "updatedAt": "2026-06-04T12:34:10.546Z",
     "sections": {
       "solutions": {
         "status": "complete",
@@ -96,7 +96,8 @@
           "prod-backup",
           "env-vars",
           "cron-jobs",
-          "monitoring-enabled"
+          "monitoring-enabled",
+          "alerts-configured"
         ]
       },
       "clientConfig": {
