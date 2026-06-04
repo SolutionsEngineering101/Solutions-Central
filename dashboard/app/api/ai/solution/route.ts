@@ -193,7 +193,7 @@ function sourcesBlock(cands: Candidate[]): string {
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session && process.env.NEXT_PUBLIC_DEV_NO_AUTH !== "1") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (!geminiConfigured())
     return NextResponse.json({ error: "AI not configured — add GEMINI_API_KEY" }, { status: 503 });
 

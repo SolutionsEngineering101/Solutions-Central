@@ -5,7 +5,7 @@ import { getJSON, writeJSON, getMarkdownFiles } from "@/lib/github";
 
 export async function GET() {
   const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session && process.env.NEXT_PUBLIC_DEV_NO_AUTH !== "1") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const [provided, forms, skeletons] = await Promise.all([
     getJSON<Record<string, unknown>[]>("dashboard-data/solutions-provided.json"),
@@ -21,7 +21,7 @@ export async function GET() {
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session && process.env.NEXT_PUBLIC_DEV_NO_AUTH !== "1") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json();
   const existing = (await getJSON<Record<string, unknown>[]>("dashboard-data/solutions-provided.json")) || [];

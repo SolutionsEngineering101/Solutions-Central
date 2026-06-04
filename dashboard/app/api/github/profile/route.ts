@@ -10,7 +10,7 @@ const DIR = "skills/member";
 //        with ?member=<slug>: list that member's personal MD files (skills/member/<slug>/).
 export async function GET(req: Request) {
   const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session && process.env.NEXT_PUBLIC_DEV_NO_AUTH !== "1") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const member = new URL(req.url).searchParams.get("member");
 
@@ -48,7 +48,7 @@ export async function GET(req: Request) {
 // PUT — save the member's capability profile (skills/member/<slug>.md).
 export async function PUT(req: Request) {
   const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session && process.env.NEXT_PUBLIC_DEV_NO_AUTH !== "1") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   let body: { slug?: string; name?: string; role?: string; email?: string; body?: string };
   try { body = await req.json(); }
@@ -91,7 +91,7 @@ ${sectionBody}
 // POST — save a personal MD file to the member's folder (skills/member/<slug>/<file>.md).
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session && process.env.NEXT_PUBLIC_DEV_NO_AUTH !== "1") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   let body: { slug?: string; filename?: string; content?: string };
   try { body = await req.json(); }
