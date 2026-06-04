@@ -12,7 +12,7 @@
     "pmOwner": "pankaj-chakrabarty",
     "status": "in-progress",
     "createdAt": "2026-06-04T11:57:30.033Z",
-    "updatedAt": "2026-06-04T12:29:35.547Z",
+    "updatedAt": "2026-06-04T12:29:40.331Z",
     "sections": {
       "solutions": {
         "status": "complete",
@@ -35,7 +35,7 @@
         "notes": "neatly done"
       },
       "engineering": {
-        "status": "in-progress",
+        "status": "complete",
         "completedChecks": [
           "backward-compat",
           "migration-scripts",
@@ -58,7 +58,9 @@
           "fe-error-logging",
           "fe-api-optimized",
           "fe-validation"
-        ]
+        ],
+        "signedOffBy": "hb",
+        "signedOffAt": "2026-06-04T12:29:40.034Z"
       },
       "qa": {
         "status": "pending",
