@@ -1,8 +1,9 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
-// Proxies Confluence images: fetches them server-side with the Confluence
-// credentials and streams the bytes back, so the browser can display them.
+// Proxies a Confluence image: looks up the attachment by page + filename, then
+// downloads it via the REST attachment-download endpoint (which accepts API-token
+// basic auth, unlike the raw /wiki/download/ URL) and streams the bytes back.
 export async function GET(req: Request) {
   const session = await getServerSession(authOptions);
   if (!session) return new Response("Unauthorized", { status: 401 });
@@ -12,27 +13,38 @@ export async function GET(req: Request) {
   const token = process.env.CONFLUENCE_API_TOKEN ?? "";
   if (!domain || !token) return new Response("Not configured", { status: 503 });
 
-  const url = new URL(req.url).searchParams.get("url");
-  if (!url) return new Response("Missing url", { status: 400 });
+  const sp = new URL(req.url).searchParams;
+  const page = sp.get("page") ?? "";
+  const file = sp.get("file") ?? "";
+  if (!/^\d+$/.test(page) || !file) return new Response("Bad request", { status: 400 });
 
-  let target: URL;
-  try { target = new URL(url); } catch { return new Response("Bad url", { status: 400 }); }
-  // SSRF guard — only proxy images on the configured Confluence host.
-  if (target.protocol !== "https:" || target.hostname !== domain)
-    return new Response("Forbidden", { status: 403 });
+  const auth = `Basic ${Buffer.from(`${email}:${token}`).toString("base64")}`;
 
-  const auth = Buffer.from(`${email}:${token}`).toString("base64");
-  const res = await fetch(target.toString(), {
-    headers: { Authorization: `Basic ${auth}` },
-    cache: "no-store",
-  });
-  if (!res.ok) return new Response("Image not found", { status: res.status });
+  try {
+    // Find the attachment id for this filename on the page.
+    const listRes = await fetch(
+      `https://${domain}/wiki/rest/api/content/${page}/child/attachment?filename=${encodeURIComponent(file)}&limit=50`,
+      { headers: { Authorization: auth, Accept: "application/json" }, cache: "no-store" },
+    );
+    if (!listRes.ok) return new Response("Lookup failed", { status: listRes.status });
+    const results = (await listRes.json()).results as { id: string; title: string }[];
+    const att = results.find((a) => a.title === file) ?? results[0];
+    if (!att) return new Response("Attachment not found", { status: 404 });
 
-  const buf = await res.arrayBuffer();
-  return new Response(buf, {
-    headers: {
-      "Content-Type": res.headers.get("content-type") ?? "application/octet-stream",
-      "Cache-Control": "private, max-age=3600",
-    },
-  });
+    const dl = await fetch(
+      `https://${domain}/wiki/rest/api/content/${page}/child/attachment/${att.id}/download`,
+      { headers: { Authorization: auth }, cache: "no-store" },
+    );
+    if (!dl.ok) return new Response("Download failed", { status: dl.status });
+
+    const buf = await dl.arrayBuffer();
+    return new Response(buf, {
+      headers: {
+        "Content-Type": dl.headers.get("content-type") ?? "application/octet-stream",
+        "Cache-Control": "private, max-age=3600",
+      },
+    });
+  } catch (err) {
+    return new Response(err instanceof Error ? err.message : "Proxy error", { status: 500 });
+  }
 }

@@ -248,18 +248,20 @@ export async function listSpacePages(spaceKey: string, excludeIds: string[] = []
 // Confluence image URLs are relative and/or need auth, so the browser can't load
 // them directly. Rewrite <img> src to go through our authenticated image proxy.
 function rewriteImages(html: string): string {
-  const domain = process.env.CONFLUENCE_DOMAIN ?? "";
   const noSrcset = html.replace(/\s(?:data-)?srcset="[^"]*"/gi, "");
   return noSrcset.replace(/(<img\b[^>]*?\bsrc=")([^"]+)(")/gi, (m, pre, src, post) => {
     if (/^data:/i.test(src)) return m;
-    let abs = src;
-    if (src.startsWith("//")) abs = "https:" + src;
-    else if (src.startsWith("/")) abs = `https://${domain}${src}`;
-    else if (!/^https?:/i.test(src)) abs = `https://${domain}/wiki/${src.replace(/^wiki\//, "")}`;
-    try {
-      if (new URL(abs).hostname !== domain) return pre + abs + post; // external image — leave as-is
-    } catch { return m; }
-    return `${pre}/api/confluence/image?url=${encodeURIComponent(abs)}${post}`;
+    const decoded = src.replace(/&amp;/g, "&");
+    // Confluence attachment/thumbnail URLs carry the page id + filename. The raw
+    // /wiki/download/ URL rejects API-token auth, so route via our proxy which
+    // re-fetches through the REST attachment-download endpoint (which accepts it).
+    const mm = decoded.match(/\/wiki\/download\/(?:attachments|thumbnails)\/(\d+)\/([^?#]+)/);
+    if (mm) {
+      const page = mm[1];
+      const file = decodeURIComponent(mm[2]);
+      return `${pre}/api/confluence/image?page=${page}&file=${encodeURIComponent(file)}${post}`;
+    }
+    return m; // external / unknown image — leave as-is
   });
 }
 
