@@ -170,7 +170,7 @@
     "pmOwner": "pankaj-chakrabarty",
     "status": "in-progress",
     "createdAt": "2026-06-04T11:58:37.969Z",
-    "updatedAt": "2026-06-04T12:49:06.378Z",
+    "updatedAt": "2026-06-04T12:49:07.967Z",
     "sections": {
       "solutions": {
         "status": "in-progress",
@@ -185,7 +185,8 @@
           "risk-assessment",
           "rollback-plan",
           "comm-plan",
-          "support-informed"
+          "support-informed",
+          "cx-pace-informed"
         ]
       },
       "engineering": {
