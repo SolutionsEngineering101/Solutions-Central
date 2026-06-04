@@ -12,7 +12,7 @@
     "pmOwner": "pankaj-chakrabarty",
     "status": "in-progress",
     "createdAt": "2026-06-04T11:57:30.033Z",
-    "updatedAt": "2026-06-04T12:35:49.724Z",
+    "updatedAt": "2026-06-04T12:35:53.406Z",
     "sections": {
       "solutions": {
         "status": "complete",
@@ -108,7 +108,7 @@
         "signedOffAt": "2026-06-04T12:35:25.378Z"
       },
       "clientConfig": {
-        "status": "in-progress",
+        "status": "complete",
         "completedChecks": [
           "tenant-verified",
           "feature-flags-client",
@@ -120,7 +120,9 @@
           "notification-templates",
           "sow-verified",
           "role-hierarchy"
-        ]
+        ],
+        "signedOffBy": "lkjhg",
+        "signedOffAt": "2026-06-04T12:35:53.120Z"
       },
       "deployment": {
         "status": "pending",
