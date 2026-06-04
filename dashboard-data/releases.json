@@ -12,7 +12,7 @@
     "pmOwner": "pankaj-chakrabarty",
     "status": "in-progress",
     "createdAt": "2026-06-04T11:57:30.033Z",
-    "updatedAt": "2026-06-04T12:29:20.696Z",
+    "updatedAt": "2026-06-04T12:29:22.405Z",
     "sections": {
       "solutions": {
         "status": "complete",
@@ -49,7 +49,8 @@
           "sso-verified",
           "hrms-sync",
           "webhooks",
-          "email-sms"
+          "email-sms",
+          "query-perf"
         ]
       },
       "qa": {
