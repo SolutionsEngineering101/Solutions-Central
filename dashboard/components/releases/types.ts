@@ -9,6 +9,7 @@ export interface CheckSection { key: SectionKey; title: string; items: CheckItem
 export interface SectionState {
   status: SectionStatus
   completedChecks: string[]
+  naChecks?: string[]
   signedOffBy?: string
   signedOffAt?: string
   notes?: string

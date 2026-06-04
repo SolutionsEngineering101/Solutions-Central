@@ -323,6 +323,7 @@ export default function ReleaseTracker() {
           release={selectedRelease}
           onClose={() => setSelectedRelease(null)}
           onUpdated={() => mutateReleases()}
+          onDeleted={() => { setSelectedRelease(null); mutateReleases(); }}
         />
       )}
     </div>

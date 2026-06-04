@@ -65,3 +65,20 @@ export async function PUT(
 
   return NextResponse.json(existing);
 }
+
+export async function DELETE(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const session = await getServerSession(authOptions);
+  if (!session && process.env.NEXT_PUBLIC_DEV_NO_AUTH !== "1") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { id } = await params;
+  const releases = (await getJSON<Release[]>(DATA_PATH)) ?? [];
+  const filtered = releases.filter((r) => r.id !== id);
+
+  if (filtered.length === releases.length) return NextResponse.json({ error: "Release not found" }, { status: 404 });
+
+  await writeJSON(DATA_PATH, filtered, `release: delete ${id}`);
+  return NextResponse.json({ ok: true });
+}
