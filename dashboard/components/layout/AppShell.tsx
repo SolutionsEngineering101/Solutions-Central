@@ -10,11 +10,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession();
   const router = useRouter();
 
-  useEffect(() => {
-    if (status === "unauthenticated") router.push("/login");
-  }, [status, router]);
+  const devMode = process.env.NEXT_PUBLIC_DEV_NO_AUTH === "1";
 
-  if (status === "loading") {
+  useEffect(() => {
+    if (!devMode && status === "unauthenticated") router.push("/login");
+  }, [status, router, devMode]);
+
+  if (!devMode && status === "loading") {
     return (
       <div className="h-screen flex items-center justify-center bg-gray-950">
         <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
@@ -22,7 +24,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!session) return null;
+  if (!devMode && !session) return null;
 
   return (
     <AssistantProvider>
