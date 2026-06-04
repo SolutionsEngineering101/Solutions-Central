@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { getJSON, writeJSON } from "@/lib/github";
-import type { Release, ReleaseType, SectionKey, SectionState } from "@/components/releases/types";
+import type { Release, ReleaseType, SectionKey, SectionState, JiraCategory } from "@/components/releases/types";
 import { SECTIONS_FOR_TYPE, CHECKLIST_DEFINITIONS, HOTFIX_CHECKS } from "@/components/releases/types";
 
 const DATA_PATH = "dashboard-data/releases.json";
@@ -35,8 +35,8 @@ export async function POST(req: Request) {
     name: string;
     releaseType: ReleaseType;
     clients: string[];
-    product: string;
-    jiraTickets: string[];
+    products: string[];
+    jiraTickets: { key: string; category: JiraCategory }[];
     deploymentDate: string;
     pmOwner: string;
   };
@@ -58,7 +58,7 @@ export async function POST(req: Request) {
     name: body.name,
     releaseType: body.releaseType,
     clients: body.clients ?? [],
-    product: body.product ?? "",
+    products: body.products ?? [],
     jiraTickets: body.jiraTickets ?? [],
     deploymentDate: body.deploymentDate,
     pmOwner: body.pmOwner,

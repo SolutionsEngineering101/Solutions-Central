@@ -308,11 +308,11 @@ export default function ReleaseDetail({ release, onClose, onUpdated }: Props) {
                 >
                   {RELEASE_TYPE_LABELS[localRelease.releaseType] ?? localRelease.releaseType}
                 </span>
-                {localRelease.product && (
-                  <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-gray-800 border border-gray-700 text-gray-300">
-                    {localRelease.product}
+                {localRelease.products?.map((p) => (
+                  <span key={p} className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-gray-800 border border-gray-700 text-gray-300">
+                    {p}
                   </span>
-                )}
+                ))}
                 <span
                   className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full border ${
                     STATUS_COLORS[overallStatus] ?? ""
@@ -357,7 +357,7 @@ export default function ReleaseDetail({ release, onClose, onUpdated }: Props) {
               <span>
                 <span className="text-gray-600">Tickets:</span>{" "}
                 <span className="font-mono text-gray-300">
-                  {localRelease.jiraTickets.join(", ")}
+                  {localRelease.jiraTickets.map((t) => typeof t === "string" ? t : t.key).join(", ")}
                 </span>
               </span>
             )}

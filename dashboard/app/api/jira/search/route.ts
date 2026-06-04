@@ -75,7 +75,7 @@ export async function GET(req: Request) {
       const linkedTickets = new Set<string>();
       for (const release of releases) {
         for (const t of release.jiraTickets ?? []) {
-          linkedTickets.add(t.toUpperCase());
+          linkedTickets.add(t.key.toUpperCase());
         }
       }
 

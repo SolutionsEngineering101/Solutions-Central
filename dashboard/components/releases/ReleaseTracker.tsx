@@ -235,10 +235,14 @@ export default function ReleaseTracker() {
 
                       {/* Product */}
                       <td className="px-4 py-3">
-                        {release.product ? (
-                          <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-gray-800 border border-gray-700 text-gray-300 whitespace-nowrap">
-                            {release.product}
-                          </span>
+                        {release.products?.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {release.products.map((p) => (
+                              <span key={p} className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-gray-800 border border-gray-700 text-gray-300 whitespace-nowrap">
+                                {p}
+                              </span>
+                            ))}
+                          </div>
                         ) : (
                           <span className="text-gray-600">—</span>
                         )}

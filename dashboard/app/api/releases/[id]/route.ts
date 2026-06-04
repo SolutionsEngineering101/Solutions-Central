@@ -40,7 +40,7 @@ export async function PUT(
     status?: Release["status"];
     deploymentDate?: string;
     pmOwner?: string;
-    jiraTickets?: string[];
+    jiraTickets?: Release["jiraTickets"];
   };
 
   const existing = releases[idx];

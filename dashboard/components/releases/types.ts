@@ -1,4 +1,4 @@
-export type ReleaseType = 'new-feature' | 'customization' | 'hotfix' | 'integration'
+export type ReleaseType = 'new-feature' | 'customization' | 'hotfix' | 'integration' | 'enhancement'
 export type SectionKey = 'solutions' | 'engineering' | 'qa' | 'devops' | 'clientConfig' | 'deployment' | 'clientValidation'
 export type SectionStatus = 'pending' | 'in-progress' | 'complete' | 'na'
 export type ReleaseStatus = 'draft' | 'in-progress' | 'blocked' | 'ready' | 'deployed'
@@ -14,13 +14,21 @@ export interface SectionState {
   notes?: string
 }
 
+export type JiraCategory = 'frontend' | 'backend' | 'qa' | 'general'
+
+export interface JiraTicketEntry {
+  key: string
+  category: JiraCategory
+  summary?: string
+}
+
 export interface Release {
   id: string
   name: string
   releaseType: ReleaseType
   clients: string[]
-  product: string
-  jiraTickets: string[]
+  products: string[]
+  jiraTickets: JiraTicketEntry[]
   deploymentDate: string
   pmOwner: string
   status: ReleaseStatus
@@ -168,6 +176,7 @@ export const SECTIONS_FOR_TYPE: Record<ReleaseType, SectionKey[]> = {
   'new-feature': ['solutions', 'engineering', 'qa', 'devops', 'clientConfig', 'deployment', 'clientValidation'],
   'integration': ['solutions', 'engineering', 'qa', 'devops', 'clientConfig', 'deployment', 'clientValidation'],
   'customization': ['solutions', 'engineering', 'qa', 'devops', 'clientConfig', 'deployment', 'clientValidation'],
+  'enhancement': ['solutions', 'engineering', 'qa', 'devops', 'clientConfig', 'deployment', 'clientValidation'],
   'hotfix': ['engineering', 'devops', 'qa'],
 }
 
