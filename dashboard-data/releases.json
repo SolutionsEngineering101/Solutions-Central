@@ -57,13 +57,11 @@
     "pmOwner": "pankaj-chakrabarty",
     "status": "in-progress",
     "createdAt": "2026-06-04T11:58:37.969Z",
-    "updatedAt": "2026-06-04T11:58:54.262Z",
+    "updatedAt": "2026-06-04T11:58:55.768Z",
     "sections": {
       "solutions": {
-        "status": "in-progress",
-        "completedChecks": [
-          "scope-freeze"
-        ]
+        "status": "pending",
+        "completedChecks": []
       },
       "engineering": {
         "status": "pending",
