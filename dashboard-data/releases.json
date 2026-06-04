@@ -12,7 +12,7 @@
     "pmOwner": "pankaj-chakrabarty",
     "status": "in-progress",
     "createdAt": "2026-06-04T11:57:30.033Z",
-    "updatedAt": "2026-06-04T12:27:50.637Z",
+    "updatedAt": "2026-06-04T12:27:52.593Z",
     "sections": {
       "solutions": {
         "status": "in-progress",
@@ -22,7 +22,8 @@
           "requirements-docs",
           "acceptance-criteria",
           "edge-cases",
-          "dependencies"
+          "dependencies",
+          "impacted-modules"
         ]
       },
       "engineering": {
