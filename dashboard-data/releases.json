@@ -12,7 +12,7 @@
     "pmOwner": "pankaj-chakrabarty",
     "status": "in-progress",
     "createdAt": "2026-06-04T11:57:30.033Z",
-    "updatedAt": "2026-06-04T12:29:02.147Z",
+    "updatedAt": "2026-06-04T12:29:03.874Z",
     "sections": {
       "solutions": {
         "status": "complete",
@@ -40,7 +40,8 @@
           "backward-compat",
           "migration-scripts",
           "staging-migrations",
-          "logging-added"
+          "logging-added",
+          "db-indexes"
         ]
       },
       "qa": {
