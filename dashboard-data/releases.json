@@ -170,7 +170,7 @@
     "pmOwner": "pankaj-chakrabarty",
     "status": "in-progress",
     "createdAt": "2026-06-04T11:58:37.969Z",
-    "updatedAt": "2026-06-04T12:48:55.428Z",
+    "updatedAt": "2026-06-04T12:48:57.069Z",
     "sections": {
       "solutions": {
         "status": "in-progress",
@@ -180,7 +180,8 @@
           "prd-linked",
           "requirements-docs",
           "edge-cases",
-          "dependencies"
+          "dependencies",
+          "impacted-modules"
         ]
       },
       "engineering": {
