@@ -12,7 +12,7 @@
     "pmOwner": "pankaj-chakrabarty",
     "status": "in-progress",
     "createdAt": "2026-06-04T11:57:30.033Z",
-    "updatedAt": "2026-06-04T12:35:46.192Z",
+    "updatedAt": "2026-06-04T12:35:47.999Z",
     "sections": {
       "solutions": {
         "status": "complete",
@@ -117,7 +117,8 @@
           "budget-limits",
           "approval-matrix",
           "branding",
-          "notification-templates"
+          "notification-templates",
+          "sow-verified"
         ]
       },
       "deployment": {
