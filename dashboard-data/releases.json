@@ -12,7 +12,7 @@
     "pmOwner": "pankaj-chakrabarty",
     "status": "in-progress",
     "createdAt": "2026-06-04T11:57:30.033Z",
-    "updatedAt": "2026-06-04T12:37:22.741Z",
+    "updatedAt": "2026-06-04T12:37:24.984Z",
     "sections": {
       "solutions": {
         "status": "complete",
@@ -140,7 +140,8 @@
         "status": "in-progress",
         "completedChecks": [
           "sso-login",
-          "role-access"
+          "role-access",
+          "feature-visibility"
         ]
       }
     }
