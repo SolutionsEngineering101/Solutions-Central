@@ -12,7 +12,7 @@
     "pmOwner": "pankaj-chakrabarty",
     "status": "in-progress",
     "createdAt": "2026-06-04T11:57:30.033Z",
-    "updatedAt": "2026-06-04T12:35:19.872Z",
+    "updatedAt": "2026-06-04T12:35:21.380Z",
     "sections": {
       "solutions": {
         "status": "complete",
@@ -101,7 +101,8 @@
           "debug-disabled",
           "test-endpoints-disabled",
           "role-permissions",
-          "pii-checked"
+          "pii-checked",
+          "ssl-verified"
         ]
       },
       "clientConfig": {
