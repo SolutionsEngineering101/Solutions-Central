@@ -12,7 +12,7 @@
     "pmOwner": "pankaj-chakrabarty",
     "status": "in-progress",
     "createdAt": "2026-06-04T11:57:30.033Z",
-    "updatedAt": "2026-06-04T12:28:17.347Z",
+    "updatedAt": "2026-06-04T12:28:30.668Z",
     "sections": {
       "solutions": {
         "status": "complete",
@@ -31,7 +31,8 @@
           "cx-pace-informed"
         ],
         "signedOffBy": "Hemanga",
-        "signedOffAt": "2026-06-04T12:28:17.005Z"
+        "signedOffAt": "2026-06-04T12:28:17.005Z",
+        "notes": "neatly done"
       },
       "engineering": {
         "status": "pending",
