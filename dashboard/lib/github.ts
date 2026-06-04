@@ -110,3 +110,43 @@ export async function getMarkdownFiles(dir: string) {
   }
   return files;
 }
+
+// ─── Commit activity (who pushed what) ─────────────────────────────────────────
+
+export interface CommitInfo {
+  sha: string;
+  message: string;      // first line
+  fullMessage: string;
+  author: string;       // git author name (the real person)
+  login: string | null; // GitHub login if resolvable
+  avatarUrl: string | null;
+  date: string;
+}
+
+export async function listCommits(limit = 40): Promise<CommitInfo[]> {
+  const { data } = await octokit.repos.listCommits({ owner: OWNER, repo: REPO, per_page: Math.min(limit, 100) });
+  return data.map((c) => ({
+    sha: c.sha,
+    message: c.commit.message.split("\n")[0],
+    fullMessage: c.commit.message,
+    author: c.commit.author?.name ?? c.author?.login ?? "Unknown",
+    login: c.author?.login ?? null,
+    avatarUrl: c.author?.avatar_url ?? null,
+    date: c.commit.author?.date ?? "",
+  }));
+}
+
+export async function getCommitFiles(sha: string): Promise<{
+  files: { filename: string; status: string; additions: number; deletions: number }[];
+  additions: number;
+  deletions: number;
+}> {
+  const { data } = await octokit.repos.getCommit({ owner: OWNER, repo: REPO, ref: sha });
+  return {
+    files: (data.files ?? []).map((f) => ({
+      filename: f.filename, status: f.status, additions: f.additions ?? 0, deletions: f.deletions ?? 0,
+    })),
+    additions: data.stats?.additions ?? 0,
+    deletions: data.stats?.deletions ?? 0,
+  };
+}

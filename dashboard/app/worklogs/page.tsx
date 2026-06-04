@@ -2,6 +2,7 @@ import { AppShell } from "@/components/layout/AppShell";
 import { getMarkdownFiles } from "@/lib/github";
 import { formatDate } from "@/lib/utils";
 import { ClipboardList } from "lucide-react";
+import { CommitActivity } from "@/components/worklogs/CommitActivity";
 
 const MEMBERS = [
   "bhargav-nath", "hemanga-bharadwaj", "pankaj-chakrabarty",
@@ -28,8 +29,14 @@ export default async function WorklogsPage() {
       <div className="space-y-6">
         <div>
           <h1 className="text-white text-2xl font-semibold">Worklogs</h1>
-          <p className="text-gray-400 text-sm mt-1">Recent activity across the team</p>
+          <p className="text-gray-400 text-sm mt-1">Code activity from GitHub + manual worklogs</p>
         </div>
+
+        {/* Live commit activity — who pushed what */}
+        <CommitActivity />
+
+        {/* Manual worklog entries */}
+        <h2 className="text-white font-semibold text-sm pt-2">Worklog entries</h2>
         <div className="space-y-3">
           {flat.map((log) => {
             const { date, member: memberName } = log.frontmatter as Record<string, string>;
