@@ -12,12 +12,13 @@
     "pmOwner": "pankaj-chakrabarty",
     "status": "in-progress",
     "createdAt": "2026-06-04T11:57:30.033Z",
-    "updatedAt": "2026-06-04T12:26:35.485Z",
+    "updatedAt": "2026-06-04T12:26:37.816Z",
     "sections": {
       "solutions": {
         "status": "in-progress",
         "completedChecks": [
-          "scope-freeze"
+          "scope-freeze",
+          "prd-linked"
         ]
       },
       "engineering": {
