@@ -170,11 +170,13 @@
     "pmOwner": "pankaj-chakrabarty",
     "status": "in-progress",
     "createdAt": "2026-06-04T11:58:37.969Z",
-    "updatedAt": "2026-06-04T11:58:55.768Z",
+    "updatedAt": "2026-06-04T12:43:43.041Z",
     "sections": {
       "solutions": {
-        "status": "pending",
-        "completedChecks": []
+        "status": "in-progress",
+        "completedChecks": [
+          "prd-linked"
+        ]
       },
       "engineering": {
         "status": "pending",
