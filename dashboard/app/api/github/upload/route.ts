@@ -56,7 +56,7 @@ export async function POST(req: Request) {
   try {
     const path = await uniquePath(dir, date, slug);
     const label = kind === "playbook" ? "playbook" : "blueprint";
-    const author = (session.user?.name as string | undefined) ?? "dashboard";
+    const author = (session?.user?.name as string | undefined) ?? "dashboard";
     await writeFile(path, content, `${label}: upload "${rawName || slug}" via dashboard (${author})`);
     return NextResponse.json({ ok: true, path });
   } catch (err) {
