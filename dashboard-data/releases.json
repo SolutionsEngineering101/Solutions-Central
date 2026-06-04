@@ -12,7 +12,7 @@
     "pmOwner": "pankaj-chakrabarty",
     "status": "in-progress",
     "createdAt": "2026-06-04T11:57:30.033Z",
-    "updatedAt": "2026-06-04T12:26:42.011Z",
+    "updatedAt": "2026-06-04T12:27:48.483Z",
     "sections": {
       "solutions": {
         "status": "in-progress",
@@ -20,7 +20,8 @@
           "scope-freeze",
           "prd-linked",
           "requirements-docs",
-          "acceptance-criteria"
+          "acceptance-criteria",
+          "edge-cases"
         ]
       },
       "engineering": {
