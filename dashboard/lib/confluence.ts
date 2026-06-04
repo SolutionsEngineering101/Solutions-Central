@@ -245,6 +245,24 @@ export async function listSpacePages(spaceKey: string, excludeIds: string[] = []
   return all.sort((a, b) => a.title.localeCompare(b.title));
 }
 
+// Confluence image URLs are relative and/or need auth, so the browser can't load
+// them directly. Rewrite <img> src to go through our authenticated image proxy.
+function rewriteImages(html: string): string {
+  const domain = process.env.CONFLUENCE_DOMAIN ?? "";
+  const noSrcset = html.replace(/\s(?:data-)?srcset="[^"]*"/gi, "");
+  return noSrcset.replace(/(<img\b[^>]*?\bsrc=")([^"]+)(")/gi, (m, pre, src, post) => {
+    if (/^data:/i.test(src)) return m;
+    let abs = src;
+    if (src.startsWith("//")) abs = "https:" + src;
+    else if (src.startsWith("/")) abs = `https://${domain}${src}`;
+    else if (!/^https?:/i.test(src)) abs = `https://${domain}/wiki/${src.replace(/^wiki\//, "")}`;
+    try {
+      if (new URL(abs).hostname !== domain) return pre + abs + post; // external image — leave as-is
+    } catch { return m; }
+    return `${pre}/api/confluence/image?url=${encodeURIComponent(abs)}${post}`;
+  });
+}
+
 export async function getPageView(pageId: string): Promise<{ id: string; title: string; version: number; body: string; url: string }> {
   const res = await fetch(
     `https://${process.env.CONFLUENCE_DOMAIN}/wiki/rest/api/content/${pageId}?expand=body.view,version`,
@@ -264,7 +282,7 @@ export async function getPageView(pageId: string): Promise<{ id: string; title: 
     id: d.id,
     title: d.title,
     version: d.version.number,
-    body: d.body.view.value,
+    body: rewriteImages(d.body.view.value),
     url: `https://${process.env.CONFLUENCE_DOMAIN}/wiki${d._links.webui}`,
   };
 }
