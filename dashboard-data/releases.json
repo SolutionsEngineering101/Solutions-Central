@@ -12,7 +12,7 @@
     "pmOwner": "pankaj-chakrabarty",
     "status": "in-progress",
     "createdAt": "2026-06-04T11:57:30.033Z",
-    "updatedAt": "2026-06-04T12:30:22.699Z",
+    "updatedAt": "2026-06-04T12:30:24.684Z",
     "sections": {
       "solutions": {
         "status": "complete",
@@ -75,7 +75,8 @@
           "data-accuracy",
           "points-mapping",
           "data-consistency",
-          "reporting-accuracy"
+          "reporting-accuracy",
+          "approval-workflows"
         ]
       },
       "devops": {
