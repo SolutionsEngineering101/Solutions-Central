@@ -12,7 +12,7 @@
     "pmOwner": "pankaj-chakrabarty",
     "status": "in-progress",
     "createdAt": "2026-06-04T11:57:30.033Z",
-    "updatedAt": "2026-06-04T12:30:33.345Z",
+    "updatedAt": "2026-06-04T12:33:19.656Z",
     "sections": {
       "solutions": {
         "status": "complete",
@@ -63,7 +63,7 @@
         "signedOffAt": "2026-06-04T12:29:40.034Z"
       },
       "qa": {
-        "status": "in-progress",
+        "status": "complete",
         "completedChecks": [
           "acceptance-validated",
           "positive-flow",
@@ -81,7 +81,9 @@
           "no-critical-bugs",
           "no-high-bugs",
           "medium-bugs-documented"
-        ]
+        ],
+        "signedOffBy": "dfgh",
+        "signedOffAt": "2026-06-04T12:33:19.061Z"
       },
       "devops": {
         "status": "pending",
