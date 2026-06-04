@@ -12,7 +12,7 @@
     "pmOwner": "pankaj-chakrabarty",
     "status": "in-progress",
     "createdAt": "2026-06-04T11:57:30.033Z",
-    "updatedAt": "2026-06-04T12:37:37.072Z",
+    "updatedAt": "2026-06-04T12:37:38.886Z",
     "sections": {
       "solutions": {
         "status": "complete",
@@ -148,7 +148,8 @@
           "reports-correct",
           "no-duplicate-accounts",
           "no-incorrect-balances",
-          "historical-intact"
+          "historical-intact",
+          "hrms-sync-client"
         ]
       }
     }
