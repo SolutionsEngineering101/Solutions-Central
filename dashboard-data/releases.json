@@ -12,7 +12,7 @@
     "pmOwner": "pankaj-chakrabarty",
     "status": "in-progress",
     "createdAt": "2026-06-04T11:57:30.033Z",
-    "updatedAt": "2026-06-04T12:35:38.613Z",
+    "updatedAt": "2026-06-04T12:35:40.804Z",
     "sections": {
       "solutions": {
         "status": "complete",
@@ -114,7 +114,8 @@
           "feature-flags-client",
           "catalog-config",
           "points-rules",
-          "budget-limits"
+          "budget-limits",
+          "approval-matrix"
         ]
       },
       "deployment": {
