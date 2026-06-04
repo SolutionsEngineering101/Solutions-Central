@@ -12,7 +12,7 @@
     "pmOwner": "pankaj-chakrabarty",
     "status": "in-progress",
     "createdAt": "2026-06-04T11:57:30.033Z",
-    "updatedAt": "2026-06-04T12:37:40.607Z",
+    "updatedAt": "2026-06-04T12:37:43.880Z",
     "sections": {
       "solutions": {
         "status": "complete",
@@ -137,7 +137,7 @@
         "notes": "dfgh"
       },
       "clientValidation": {
-        "status": "in-progress",
+        "status": "complete",
         "completedChecks": [
           "sso-login",
           "role-access",
@@ -151,7 +151,9 @@
           "historical-intact",
           "hrms-sync-client",
           "client-champion-confirmed"
-        ]
+        ],
+        "signedOffBy": "dfgh",
+        "signedOffAt": "2026-06-04T12:37:43.568Z"
       }
     }
   },
