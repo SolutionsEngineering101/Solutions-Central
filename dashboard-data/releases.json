@@ -12,7 +12,7 @@
     "pmOwner": "pankaj-chakrabarty",
     "status": "in-progress",
     "createdAt": "2026-06-04T11:57:30.033Z",
-    "updatedAt": "2026-06-04T12:36:12.383Z",
+    "updatedAt": "2026-06-04T12:36:17.420Z",
     "sections": {
       "solutions": {
         "status": "complete",
@@ -133,7 +133,8 @@
           "support-informed-deploy"
         ],
         "signedOffBy": "dfg",
-        "signedOffAt": "2026-06-04T12:36:11.843Z"
+        "signedOffAt": "2026-06-04T12:36:11.843Z",
+        "notes": "dfgh"
       },
       "clientValidation": {
         "status": "pending",
