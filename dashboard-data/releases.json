@@ -12,7 +12,7 @@
     "pmOwner": "pankaj-chakrabarty",
     "status": "in-progress",
     "createdAt": "2026-06-04T11:57:30.033Z",
-    "updatedAt": "2026-06-04T12:29:29.699Z",
+    "updatedAt": "2026-06-04T12:29:31.041Z",
     "sections": {
       "solutions": {
         "status": "complete",
@@ -54,7 +54,8 @@
           "no-n-plus-1",
           "caching",
           "load-impact",
-          "fe-backward-compat"
+          "fe-backward-compat",
+          "fe-error-logging"
         ]
       },
       "qa": {
