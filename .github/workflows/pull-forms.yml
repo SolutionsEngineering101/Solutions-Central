@@ -1,12 +1,11 @@
 name: Pull MS Forms Responses
 
 on:
-  schedule:                 # Times are UTC; IST is UTC+5:30. GitHub may delay runs under load.
-    - cron: '30 3 * * *'    #  9:00 AM IST
-    - cron: '30 5 * * *'    # 11:00 AM IST
-    - cron: '30 8 * * *'    #  2:00 PM IST
-    - cron: '30 10 * * *'   #  4:00 PM IST
-  workflow_dispatch:        # Allow manual trigger from GitHub UI
+  schedule:                    # Every 15 min, 9 AM–6 PM IST, Mon–Fri. Times are UTC (IST = UTC+5:30).
+    - cron: '30,45 3 * * 1-5'   # 9:00, 9:15 AM IST
+    - cron: '*/15 4-11 * * 1-5' # 9:30 AM – 5:15 PM IST
+    - cron: '0,15,30 12 * * 1-5'# 5:30, 5:45, 6:00 PM IST
+  workflow_dispatch:           # Allow manual trigger from GitHub UI
 
 jobs:
   pull-forms:
