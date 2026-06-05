@@ -23,6 +23,15 @@ export interface JiraTicketEntry {
   summary?: string
 }
 
+export interface ReleaseAttachment {
+  name: string
+  path: string
+  size: number
+  uploadedBy: string
+  uploadedAt: string
+  mimeType?: string
+}
+
 export interface Release {
   id: string
   name: string
@@ -36,6 +45,7 @@ export interface Release {
   createdAt: string
   updatedAt: string
   sections: Partial<Record<SectionKey, SectionState>>
+  attachments?: ReleaseAttachment[]
 }
 
 export const CHECKLIST_DEFINITIONS: Record<SectionKey, CheckSection> = {

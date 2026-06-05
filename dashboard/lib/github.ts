@@ -67,6 +67,45 @@ export async function writeJSON(path: string, data: unknown, message: string): P
   await writeFile(path, JSON.stringify(data, null, 2) + "\n", message);
 }
 
+// Binary file helpers (PDFs, images, etc.) — content is raw base64, not UTF-8
+
+export async function getFileBinary(path: string): Promise<Buffer | null> {
+  try {
+    const { data } = await octokit.repos.getContent({ owner: OWNER, repo: REPO, path });
+    if ("content" in data) return Buffer.from(data.content.replace(/\n/g, ""), "base64");
+    return null;
+  } catch (err: unknown) {
+    if (err && typeof err === "object" && "status" in err && (err as { status: number }).status === 404) return null;
+    throw err;
+  }
+}
+
+export async function writeFileBinary(path: string, base64: string, message: string): Promise<void> {
+  let sha: string | undefined;
+  try {
+    const { data } = await octokit.repos.getContent({ owner: OWNER, repo: REPO, path });
+    if ("sha" in data) sha = data.sha;
+  } catch {}
+
+  await octokit.repos.createOrUpdateFileContents({
+    owner: OWNER, repo: REPO, path, message,
+    content: base64,
+    ...(sha ? { sha } : {}),
+  });
+}
+
+export async function deleteFile(path: string, message: string): Promise<boolean> {
+  try {
+    const { data } = await octokit.repos.getContent({ owner: OWNER, repo: REPO, path });
+    if (!("sha" in data)) return false;
+    await octokit.repos.deleteFile({ owner: OWNER, repo: REPO, path, message, sha: (data as { sha: string }).sha });
+    return true;
+  } catch (err: unknown) {
+    if (err && typeof err === "object" && "status" in err && (err as { status: number }).status === 404) return false;
+    throw err;
+  }
+}
+
 // ─── Markdown helpers ─────────────────────────────────────────────────────────
 
 // One GraphQL call fetches the whole directory tree AND every file's text, instead

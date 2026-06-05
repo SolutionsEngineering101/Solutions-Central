@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useCallback, useRef } from "react";
-import { X, Loader2, Trash2, Check, Minus, ChevronDown, ChevronRight } from "lucide-react";
+import { X, Loader2, Trash2, Check, Minus, ChevronDown, ChevronRight, Paperclip, Upload } from "lucide-react";
 import { useSession } from "next-auth/react";
-import type { Release, SectionKey, SectionState, SectionStatus } from "./types";
+import type { Release, SectionKey, SectionState, SectionStatus, ReleaseAttachment } from "./types";
 import { CHECKLIST_DEFINITIONS, SECTIONS_FOR_TYPE, getEffectiveChecks, computeReleaseStatus } from "./types";
 
 type ItemState = "done" | "na" | "pending";
@@ -74,6 +74,121 @@ function computeSectionStatus(
   return "in-progress";
 }
 
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+// ── AttachmentsSection ────────────────────────────────────────────────────────
+
+interface AttachmentsSectionProps {
+  release: Release;
+  userName: string;
+  onChanged: () => void;
+}
+
+function AttachmentsSection({ release, userName, onChanged }: AttachmentsSectionProps) {
+  const [uploading, setUploading] = useState(false);
+  const [deletingName, setDeletingName] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const attachments = release.attachments ?? [];
+
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      await fetch(`/api/releases/${release.id}/attachments`, { method: "POST", body: fd });
+      onChanged();
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
+
+  async function handleDelete(a: ReleaseAttachment) {
+    setDeletingName(a.name);
+    try {
+      await fetch(`/api/releases/${release.id}/attachments?name=${encodeURIComponent(a.name)}`, {
+        method: "DELETE",
+      });
+      onChanged();
+    } finally {
+      setDeletingName(null);
+    }
+  }
+
+  return (
+    <div className="border border-gray-800 rounded-xl overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-3 bg-gray-900">
+        <div className="flex items-center gap-3">
+          <Paperclip size={13} className="text-gray-500" />
+          <span className="text-white text-sm font-medium">Attachments</span>
+          {attachments.length > 0 && (
+            <span className="text-gray-500 text-xs">{attachments.length}</span>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={uploading}
+          className="flex items-center gap-1.5 text-xs text-indigo-400 hover:text-indigo-300 transition-colors disabled:opacity-50"
+        >
+          {uploading ? <Loader2 size={12} className="animate-spin" /> : <Upload size={12} />}
+          {uploading ? "Uploading…" : "Upload file"}
+        </button>
+        <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileChange} />
+      </div>
+
+      {attachments.length > 0 && (
+        <div className="bg-gray-950 px-4 py-3 space-y-2">
+          {attachments.map((a) => (
+            <div key={a.name} className="flex items-center gap-3 group">
+              <Paperclip size={12} className="text-gray-600 shrink-0" />
+              <a
+                href={`/api/releases/${release.id}/attachments/${encodeURIComponent(a.name)}`}
+                download={a.name}
+                className="text-sm text-gray-300 hover:text-white flex-1 truncate transition-colors"
+              >
+                {a.name}
+              </a>
+              <span className="text-xs text-gray-600 shrink-0">{formatBytes(a.size)}</span>
+              <span className="text-[10px] text-gray-700 shrink-0 hidden group-hover:block">
+                {a.uploadedBy}
+              </span>
+              <button
+                type="button"
+                onClick={() => handleDelete(a)}
+                disabled={deletingName === a.name}
+                className="text-gray-700 hover:text-red-400 transition-colors shrink-0 opacity-0 group-hover:opacity-100"
+                title="Remove attachment"
+              >
+                {deletingName === a.name ? (
+                  <Loader2 size={12} className="animate-spin" />
+                ) : (
+                  <X size={12} />
+                )}
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {attachments.length === 0 && (
+        <div
+          className="bg-gray-950 px-4 py-6 text-center cursor-pointer"
+          onClick={() => fileInputRef.current?.click()}
+        >
+          <p className="text-xs text-gray-600">No attachments yet — click Upload file or drop files here</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── SectionPanel ──────────────────────────────────────────────────────────────
 
 interface SectionPanelProps {
@@ -90,6 +205,7 @@ function SectionPanel({ release, sectionKey, sectionState, userName, onUpdate }:
   const [notesValue, setNotesValue] = useState(sectionState.notes ?? "");
   const [signingOff, setSigningOff] = useState(false);
   const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [bulkUpdating, setBulkUpdating] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
 
   const definition = CHECKLIST_DEFINITIONS[sectionKey];
@@ -103,7 +219,6 @@ function SectionPanel({ release, sectionKey, sectionState, userName, onUpdate }:
   function handleToggle() {
     setExpanded((v) => {
       if (!v) {
-        // Scroll into view after expand renders
         setTimeout(() => panelRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" }), 80);
       }
       return !v;
@@ -111,18 +226,20 @@ function SectionPanel({ release, sectionKey, sectionState, userName, onUpdate }:
   }
 
   async function cycleItemState(itemId: string) {
-    if (togglingId) return;
+    if (togglingId || bulkUpdating) return;
     setTogglingId(itemId);
     const current = getItemState(itemId, completed, naItems);
     const next = nextItemState(current);
 
-    const newCompleted = next === "done"
-      ? [...completed.filter((id) => id !== itemId), itemId]
-      : completed.filter((id) => id !== itemId);
+    const newCompleted =
+      next === "done"
+        ? [...completed.filter((id) => id !== itemId), itemId]
+        : completed.filter((id) => id !== itemId);
 
-    const newNa = next === "na"
-      ? [...naItems.filter((id) => id !== itemId), itemId]
-      : naItems.filter((id) => id !== itemId);
+    const newNa =
+      next === "na"
+        ? [...naItems.filter((id) => id !== itemId), itemId]
+        : naItems.filter((id) => id !== itemId);
 
     const newStatus = computeSectionStatus(newCompleted, newNa, effectiveItems.length, sectionState.signedOffBy);
 
@@ -130,6 +247,20 @@ function SectionPanel({ release, sectionKey, sectionState, userName, onUpdate }:
       await onUpdate(sectionKey, { completedChecks: newCompleted, naChecks: newNa, status: newStatus });
     } finally {
       setTogglingId(null);
+    }
+  }
+
+  async function handleMarkAll(action: "done" | "na" | "reset") {
+    if (bulkUpdating || togglingId) return;
+    setBulkUpdating(true);
+    const allIds = effectiveItems.map((item) => item.id);
+    const newCompleted = action === "done" ? allIds : [];
+    const newNa = action === "na" ? allIds : [];
+    const newStatus = computeSectionStatus(newCompleted, newNa, effectiveItems.length, sectionState.signedOffBy);
+    try {
+      await onUpdate(sectionKey, { completedChecks: newCompleted, naChecks: newNa, status: newStatus });
+    } finally {
+      setBulkUpdating(false);
     }
   }
 
@@ -150,8 +281,11 @@ function SectionPanel({ release, sectionKey, sectionState, userName, onUpdate }:
   async function handleNotesBlur() {
     if (notesValue === (sectionState.notes ?? "")) return;
     setSavingNotes(true);
-    try { await onUpdate(sectionKey, { notes: notesValue }); }
-    finally { setSavingNotes(false); }
+    try {
+      await onUpdate(sectionKey, { notes: notesValue });
+    } finally {
+      setSavingNotes(false);
+    }
   }
 
   return (
@@ -164,7 +298,9 @@ function SectionPanel({ release, sectionKey, sectionState, userName, onUpdate }:
         <div className="flex items-center gap-3 flex-wrap">
           <span className="text-white text-sm font-medium">{definition?.title ?? sectionKey}</span>
           <span className="text-gray-500 text-xs">{resolved}/{effectiveItems.length}</span>
-          <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full border ${SECTION_STATUS_COLORS[dynamicStatus]}`}>
+          <span
+            className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full border ${SECTION_STATUS_COLORS[dynamicStatus]}`}
+          >
             {dynamicStatus}
           </span>
           {sectionState.signedOffBy && (
@@ -173,11 +309,45 @@ function SectionPanel({ release, sectionKey, sectionState, userName, onUpdate }:
             </span>
           )}
         </div>
-        {expanded ? <ChevronDown size={15} className="text-gray-500 shrink-0" /> : <ChevronRight size={15} className="text-gray-500 shrink-0" />}
+        {expanded ? (
+          <ChevronDown size={15} className="text-gray-500 shrink-0" />
+        ) : (
+          <ChevronRight size={15} className="text-gray-500 shrink-0" />
+        )}
       </button>
 
       {expanded && (
         <div className="bg-gray-950 px-4 py-4 space-y-4">
+          {/* Bulk actions */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-600">Mark all:</span>
+            <button
+              type="button"
+              onClick={() => handleMarkAll("done")}
+              disabled={bulkUpdating}
+              className="text-xs text-green-500 hover:text-green-400 px-2 py-0.5 rounded border border-green-900/50 hover:border-green-700 transition-colors disabled:opacity-40"
+            >
+              Done
+            </button>
+            <button
+              type="button"
+              onClick={() => handleMarkAll("na")}
+              disabled={bulkUpdating}
+              className="text-xs text-gray-500 hover:text-gray-400 px-2 py-0.5 rounded border border-gray-800 hover:border-gray-600 transition-colors disabled:opacity-40"
+            >
+              N/A
+            </button>
+            <button
+              type="button"
+              onClick={() => handleMarkAll("reset")}
+              disabled={bulkUpdating}
+              className="text-xs text-gray-600 hover:text-gray-400 px-2 py-0.5 rounded border border-gray-800 hover:border-gray-600 transition-colors disabled:opacity-40"
+            >
+              Reset
+            </button>
+            {bulkUpdating && <Loader2 size={12} className="text-indigo-400 animate-spin" />}
+          </div>
+
           {/* Checklist items — 3 states */}
           <div className="space-y-1">
             {effectiveItems.map((item) => {
@@ -188,14 +358,20 @@ function SectionPanel({ release, sectionKey, sectionState, userName, onUpdate }:
                   key={item.id}
                   type="button"
                   onClick={() => cycleItemState(item.id)}
-                  disabled={isLoading}
-                  className="flex items-center gap-3 w-full text-left group hover:bg-gray-900 rounded-lg px-2 py-1.5 transition-colors"
+                  disabled={isLoading || bulkUpdating}
+                  className="flex items-center gap-3 w-full text-left group hover:bg-gray-900 rounded-lg px-2 py-1.5 transition-colors disabled:cursor-wait"
                 >
-                  {/* State indicator */}
-                  <div className="shrink-0 w-5 h-5 rounded flex items-center justify-center border transition-colors"
+                  <div
+                    className="shrink-0 w-5 h-5 rounded flex items-center justify-center border transition-colors"
                     style={{
-                      backgroundColor: state === "done" ? "#16a34a22" : state === "na" ? "#37415122" : "#1f293722",
-                      borderColor: state === "done" ? "#16a34a" : state === "na" ? "#6b7280" : "#374151",
+                      backgroundColor:
+                        state === "done"
+                          ? "#16a34a22"
+                          : state === "na"
+                          ? "#37415122"
+                          : "#1f293722",
+                      borderColor:
+                        state === "done" ? "#16a34a" : state === "na" ? "#6b7280" : "#374151",
                     }}
                   >
                     {isLoading ? (
@@ -207,19 +383,27 @@ function SectionPanel({ release, sectionKey, sectionState, userName, onUpdate }:
                     ) : null}
                   </div>
 
-                  <span className={`text-sm flex-1 transition-colors ${
-                    state === "done" ? "text-gray-500 line-through" :
-                    state === "na" ? "text-gray-600 line-through" :
-                    "text-gray-300 group-hover:text-white"
-                  }`}>
+                  <span
+                    className={`text-sm flex-1 transition-colors ${
+                      state === "done"
+                        ? "text-gray-500 line-through"
+                        : state === "na"
+                        ? "text-gray-600 line-through"
+                        : "text-gray-300 group-hover:text-white"
+                    }`}
+                  >
                     {item.label}
                   </span>
 
-                  <span className={`text-[10px] shrink-0 ${
-                    state === "done" ? "text-green-500" :
-                    state === "na" ? "text-gray-600" :
-                    "text-gray-700 group-hover:text-gray-500"
-                  }`}>
+                  <span
+                    className={`text-[10px] shrink-0 ${
+                      state === "done"
+                        ? "text-green-500"
+                        : state === "na"
+                        ? "text-gray-600"
+                        : "text-gray-700 group-hover:text-gray-500"
+                    }`}
+                  >
                     {state === "done" ? "Done" : state === "na" ? "N/A" : "Pending"}
                   </span>
                 </button>
@@ -245,7 +429,8 @@ function SectionPanel({ release, sectionKey, sectionState, userName, onUpdate }:
               ) : (
                 <div className="flex items-center gap-3">
                   <p className="text-sm text-gray-400 flex-1">
-                    All items resolved. Sign off as <span className="text-white font-medium">{userName || "you"}</span>?
+                    All items resolved. Sign off as{" "}
+                    <span className="text-white font-medium">{userName || "you"}</span>?
                   </p>
                   <button
                     type="button"
@@ -273,7 +458,9 @@ function SectionPanel({ release, sectionKey, sectionState, userName, onUpdate }:
                 placeholder="Add notes…"
                 className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500 resize-none"
               />
-              {savingNotes && <Loader2 size={12} className="absolute right-2.5 top-2.5 text-indigo-400 animate-spin" />}
+              {savingNotes && (
+                <Loader2 size={12} className="absolute right-2.5 top-2.5 text-indigo-400 animate-spin" />
+              )}
             </div>
           </div>
         </div>
@@ -301,6 +488,15 @@ export default function ReleaseDetail({ release, onClose, onUpdated, onDeleted }
 
   const overallStatus = computeReleaseStatus(localRelease);
   const requiredSections = SECTIONS_FOR_TYPE[localRelease.releaseType];
+
+  async function refreshLocalRelease() {
+    const res = await fetch(`/api/releases/${localRelease.id}`);
+    if (res.ok) {
+      const updated: Release = await res.json();
+      setLocalRelease(updated);
+    }
+    onUpdated();
+  }
 
   const handleSectionUpdate = useCallback(
     async (key: SectionKey, update: Partial<SectionState>) => {
@@ -341,14 +537,29 @@ export default function ReleaseDetail({ release, onClose, onUpdated, onDeleted }
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 flex-wrap mb-1">
-                <span className="font-mono text-indigo-400 text-sm font-semibold">{localRelease.id}</span>
-                <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full border ${RELEASE_TYPE_COLORS[localRelease.releaseType] ?? ""}`}>
+                <span className="font-mono text-indigo-400 text-sm font-semibold">
+                  {localRelease.id}
+                </span>
+                <span
+                  className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full border ${
+                    RELEASE_TYPE_COLORS[localRelease.releaseType] ?? ""
+                  }`}
+                >
                   {RELEASE_TYPE_LABELS[localRelease.releaseType] ?? localRelease.releaseType}
                 </span>
                 {localRelease.products?.map((p) => (
-                  <span key={p} className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-gray-800 border border-gray-700 text-gray-300">{p}</span>
+                  <span
+                    key={p}
+                    className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-gray-800 border border-gray-700 text-gray-300"
+                  >
+                    {p}
+                  </span>
                 ))}
-                <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full border ${STATUS_COLORS[overallStatus] ?? ""}`}>
+                <span
+                  className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full border ${
+                    STATUS_COLORS[overallStatus] ?? ""
+                  }`}
+                >
                   {overallStatus}
                 </span>
               </div>
@@ -368,7 +579,10 @@ export default function ReleaseDetail({ release, onClose, onUpdated, onDeleted }
                     {deleting ? <Loader2 size={11} className="animate-spin" /> : null}
                     Yes, delete
                   </button>
-                  <button onClick={() => setConfirmDelete(false)} className="text-xs text-gray-500 hover:text-white px-2 py-1">
+                  <button
+                    onClick={() => setConfirmDelete(false)}
+                    className="text-xs text-gray-500 hover:text-white px-2 py-1"
+                  >
                     Cancel
                   </button>
                 </div>
@@ -388,19 +602,31 @@ export default function ReleaseDetail({ release, onClose, onUpdated, onDeleted }
           </div>
 
           <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-xs text-gray-500">
-            <span><span className="text-gray-600">Clients:</span> <span className="text-gray-300">{localRelease.clients.join(", ") || "—"}</span></span>
+            <span>
+              <span className="text-gray-600">Clients:</span>{" "}
+              <span className="text-gray-300">{localRelease.clients.join(", ") || "—"}</span>
+            </span>
             <span>
               <span className="text-gray-600">Deploy:</span>{" "}
               <span className="text-gray-300">
-                {localRelease.deploymentDate ? new Date(localRelease.deploymentDate + "T00:00:00").toLocaleDateString() : "—"}
+                {localRelease.deploymentDate
+                  ? new Date(localRelease.deploymentDate + "T00:00:00").toLocaleDateString()
+                  : "—"}
               </span>
             </span>
-            <span><span className="text-gray-600">PM:</span> <span className="text-gray-300">{TEAM_MEMBER_LABELS[localRelease.pmOwner] ?? localRelease.pmOwner}</span></span>
+            <span>
+              <span className="text-gray-600">PM:</span>{" "}
+              <span className="text-gray-300">
+                {TEAM_MEMBER_LABELS[localRelease.pmOwner] ?? localRelease.pmOwner}
+              </span>
+            </span>
             {localRelease.jiraTickets?.length > 0 && (
               <span>
                 <span className="text-gray-600">Tickets:</span>{" "}
                 <span className="font-mono text-gray-300">
-                  {localRelease.jiraTickets.map((t) => typeof t === "string" ? t : t.key).join(", ")}
+                  {localRelease.jiraTickets
+                    .map((t) => (typeof t === "string" ? t : t.key))
+                    .join(", ")}
                 </span>
               </span>
             )}
@@ -414,11 +640,20 @@ export default function ReleaseDetail({ release, onClose, onUpdated, onDeleted }
               key={key}
               release={localRelease}
               sectionKey={key}
-              sectionState={localRelease.sections[key] ?? { status: "pending", completedChecks: [] }}
+              sectionState={
+                localRelease.sections[key] ?? { status: "pending", completedChecks: [] }
+              }
               userName={userName}
               onUpdate={handleSectionUpdate}
             />
           ))}
+
+          {/* Attachments */}
+          <AttachmentsSection
+            release={localRelease}
+            userName={userName}
+            onChanged={refreshLocalRelease}
+          />
         </div>
       </div>
     </>
