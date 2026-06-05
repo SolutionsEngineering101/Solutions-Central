@@ -54,12 +54,6 @@ function getItemState(id: string, completedChecks: string[], naChecks: string[])
   return "pending";
 }
 
-function nextItemState(current: ItemState): ItemState {
-  if (current === "pending") return "done";
-  if (current === "done") return "na";
-  return "pending";
-}
-
 function computeSectionStatus(
   completedChecks: string[],
   naChecks: string[],
@@ -225,11 +219,9 @@ function SectionPanel({ release, sectionKey, sectionState, userName, onUpdate }:
     });
   }
 
-  async function cycleItemState(itemId: string) {
+  async function setItemState(itemId: string, next: ItemState) {
     if (togglingId || bulkUpdating) return;
     setTogglingId(itemId);
-    const current = getItemState(itemId, completed, naItems);
-    const next = nextItemState(current);
 
     const newCompleted =
       next === "done"
@@ -248,6 +240,15 @@ function SectionPanel({ release, sectionKey, sectionState, userName, onUpdate }:
     } finally {
       setTogglingId(null);
     }
+  }
+
+  function handleCheckboxClick(itemId: string, current: ItemState) {
+    // Checkbox toggles Done ↔ Pending (also clears N/A back to Pending)
+    setItemState(itemId, current === "done" ? "pending" : "done");
+  }
+
+  function handleNaClick(itemId: string, current: ItemState) {
+    setItemState(itemId, current === "na" ? "pending" : "na");
   }
 
   async function handleMarkAll(action: "done" | "na" | "reset") {
@@ -348,30 +349,26 @@ function SectionPanel({ release, sectionKey, sectionState, userName, onUpdate }:
             {bulkUpdating && <Loader2 size={12} className="text-indigo-400 animate-spin" />}
           </div>
 
-          {/* Checklist items — 3 states */}
+          {/* Checklist items */}
           <div className="space-y-1">
             {effectiveItems.map((item) => {
               const state = getItemState(item.id, completed, naItems);
               const isLoading = togglingId === item.id;
+              const disabled = isLoading || bulkUpdating;
               return (
-                <button
+                <div
                   key={item.id}
-                  type="button"
-                  onClick={() => cycleItemState(item.id)}
-                  disabled={isLoading || bulkUpdating}
-                  className="flex items-center gap-3 w-full text-left group hover:bg-gray-900 rounded-lg px-2 py-1.5 transition-colors disabled:cursor-wait"
+                  className="flex items-center gap-2 group hover:bg-gray-900 rounded-lg px-2 py-1.5 transition-colors"
                 >
-                  <div
-                    className="shrink-0 w-5 h-5 rounded flex items-center justify-center border transition-colors"
+                  {/* Checkbox — toggles Done / Pending */}
+                  <button
+                    type="button"
+                    onClick={() => handleCheckboxClick(item.id, state)}
+                    disabled={disabled}
+                    className="shrink-0 w-5 h-5 rounded flex items-center justify-center border transition-colors disabled:cursor-wait"
                     style={{
-                      backgroundColor:
-                        state === "done"
-                          ? "#16a34a22"
-                          : state === "na"
-                          ? "#37415122"
-                          : "#1f293722",
-                      borderColor:
-                        state === "done" ? "#16a34a" : state === "na" ? "#6b7280" : "#374151",
+                      backgroundColor: state === "done" ? "#16a34a22" : "#1f293722",
+                      borderColor: state === "done" ? "#16a34a" : state === "na" ? "#6b728055" : "#374151",
                     }}
                   >
                     {isLoading ? (
@@ -379,10 +376,11 @@ function SectionPanel({ release, sectionKey, sectionState, userName, onUpdate }:
                     ) : state === "done" ? (
                       <Check size={11} className="text-green-400" />
                     ) : state === "na" ? (
-                      <Minus size={11} className="text-gray-500" />
+                      <Minus size={11} className="text-gray-700" />
                     ) : null}
-                  </div>
+                  </button>
 
+                  {/* Label */}
                   <span
                     className={`text-sm flex-1 transition-colors ${
                       state === "done"
@@ -395,18 +393,20 @@ function SectionPanel({ release, sectionKey, sectionState, userName, onUpdate }:
                     {item.label}
                   </span>
 
-                  <span
-                    className={`text-[10px] shrink-0 ${
-                      state === "done"
-                        ? "text-green-500"
-                        : state === "na"
-                        ? "text-gray-600"
-                        : "text-gray-700 group-hover:text-gray-500"
+                  {/* N/A button — explicit toggle */}
+                  <button
+                    type="button"
+                    onClick={() => handleNaClick(item.id, state)}
+                    disabled={disabled}
+                    className={`text-[10px] px-1.5 py-0.5 rounded border transition-colors shrink-0 disabled:cursor-wait ${
+                      state === "na"
+                        ? "text-gray-400 border-gray-600 bg-gray-800"
+                        : "text-gray-700 border-gray-800 opacity-0 group-hover:opacity-100 hover:text-gray-400 hover:border-gray-600"
                     }`}
                   >
-                    {state === "done" ? "Done" : state === "na" ? "N/A" : "Pending"}
-                  </span>
-                </button>
+                    N/A
+                  </button>
+                </div>
               );
             })}
           </div>
