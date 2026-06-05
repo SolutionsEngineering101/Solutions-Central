@@ -53,7 +53,7 @@ function get(fm: Record<string, unknown>, ...keys: string[]): string {
 export function RequestsTable({ requests }: { requests: Request[] }) {
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
-  const [sort, setSort] = useState<"none" | "desc" | "asc">("none");
+  const [sort, setSort] = useState<"none" | "desc" | "asc">("desc");
   const [selected, setSelected] = useState<Request | null>(null);
   const { open: openAssistant } = useAssistant();
 
