@@ -219,36 +219,5 @@
         "completedChecks": []
       }
     }
-  },
-  {
-    "id": "REL-2026-003",
-    "name": "test 123",
-    "releaseType": "hotfix",
-    "clients": [
-      "Accenture"
-    ],
-    "products": [
-      "Redemption"
-    ],
-    "jiraTickets": [],
-    "deploymentDate": "2026-06-19",
-    "pmOwner": "hemanga-bharadwaj",
-    "status": "in-progress",
-    "createdAt": "2026-06-05T04:05:03.968Z",
-    "updatedAt": "2026-06-05T04:05:03.968Z",
-    "sections": {
-      "engineering": {
-        "status": "pending",
-        "completedChecks": []
-      },
-      "devops": {
-        "status": "pending",
-        "completedChecks": []
-      },
-      "qa": {
-        "status": "pending",
-        "completedChecks": []
-      }
-    }
   }
 ]
