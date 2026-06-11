@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { X, Search, ArrowDownWideNarrow, ArrowUpNarrowWide, Sparkles } from "lucide-react";
+import { useState, useMemo, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { X, Search, ArrowDownWideNarrow, ArrowUpNarrowWide, Sparkles, RefreshCw } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { useAssistant, type AssistantRequest } from "@/components/ai/AssistantProvider";
 
@@ -50,12 +51,23 @@ function get(fm: Record<string, unknown>, ...keys: string[]): string {
   return "—";
 }
 
+function parseId(id: string): number {
+  const m = id.match(/(\d+)$/);
+  return m ? parseInt(m[1], 10) : -1;
+}
+
 export function RequestsTable({ requests }: { requests: Request[] }) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
-  const [sort, setSort] = useState<"none" | "desc" | "asc">("desc");
+  const [sort, setSort] = useState<"id-asc" | "id-desc" | "date-desc" | "date-asc" | "none">("id-asc");
   const [selected, setSelected] = useState<Request | null>(null);
   const { open: openAssistant } = useAssistant();
+
+  function handleRefresh() {
+    startTransition(() => router.refresh());
+  }
 
   // Build the assistant's request context from a row's frontmatter.
   const toAssistant = (r: Request): AssistantRequest => ({
@@ -98,17 +110,26 @@ export function RequestsTable({ requests }: { requests: Request[] }) {
 
   const sorted = useMemo(() => {
     if (sort === "none") return filtered;
+    if (sort === "id-asc" || sort === "id-desc") {
+      return [...filtered].sort((a, b) => {
+        const ia = parseId(get(a.frontmatter, "form_id"));
+        const ib = parseId(get(b.frontmatter, "form_id"));
+        if (ia === -1 && ib === -1) return 0;
+        if (ia === -1) return 1;
+        if (ib === -1) return -1;
+        return sort === "id-asc" ? ia - ib : ib - ia;
+      });
+    }
     const ts = (r: Request): number | null => {
       const t = new Date(get(r.frontmatter, "submitted_at", "date")).getTime();
       return isNaN(t) ? null : t;
     };
     return [...filtered].sort((a, b) => {
       const ta = ts(a), tb = ts(b);
-      // Rows without a valid date always sink to the bottom, in either direction.
       if (ta === null && tb === null) return 0;
       if (ta === null) return 1;
       if (tb === null) return -1;
-      return sort === "desc" ? tb - ta : ta - tb;
+      return sort === "date-desc" ? tb - ta : ta - tb;
     });
   }, [filtered, sort]);
 
@@ -147,7 +168,7 @@ export function RequestsTable({ requests }: { requests: Request[] }) {
           })}
         </div>
 
-        {/* Search + date sort */}
+        {/* Search + sort + refresh */}
         <div className="flex items-center gap-2 mb-4">
           <div className="relative flex-1 min-w-0">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
@@ -161,26 +182,37 @@ export function RequestsTable({ requests }: { requests: Request[] }) {
           </div>
           <div className="flex items-center gap-1 shrink-0">
             <button
-              onClick={() => setSort(sort === "desc" ? "none" : "desc")}
-              title="Sort by date — newest first"
+              onClick={() => setSort(sort === "id-asc" ? "id-desc" : "id-asc")}
+              title="Sort by Solution ID"
               className={`flex items-center gap-1.5 px-3 py-2.5 rounded-lg text-xs font-medium border transition-colors ${
-                sort === "desc"
+                sort === "id-asc" || sort === "id-desc"
                   ? "bg-indigo-600 border-indigo-500 text-white"
                   : "bg-gray-900 border-gray-800 text-gray-400 hover:text-white hover:border-gray-700"
               }`}
             >
-              <ArrowDownWideNarrow size={14} /> Newest
+              {sort === "id-desc" ? <ArrowUpNarrowWide size={14} /> : <ArrowDownWideNarrow size={14} />}
+              ID
             </button>
             <button
-              onClick={() => setSort(sort === "asc" ? "none" : "asc")}
-              title="Sort by date — oldest first"
+              onClick={() => setSort(sort === "date-desc" ? "date-asc" : "date-desc")}
+              title="Sort by submitted date"
               className={`flex items-center gap-1.5 px-3 py-2.5 rounded-lg text-xs font-medium border transition-colors ${
-                sort === "asc"
+                sort === "date-desc" || sort === "date-asc"
                   ? "bg-indigo-600 border-indigo-500 text-white"
                   : "bg-gray-900 border-gray-800 text-gray-400 hover:text-white hover:border-gray-700"
               }`}
             >
-              <ArrowUpNarrowWide size={14} /> Oldest
+              {sort === "date-asc" ? <ArrowUpNarrowWide size={14} /> : <ArrowDownWideNarrow size={14} />}
+              Date
+            </button>
+            <button
+              onClick={handleRefresh}
+              disabled={isPending}
+              title="Refresh requests"
+              className="flex items-center gap-1.5 px-3 py-2.5 rounded-lg text-xs font-medium border transition-colors bg-gray-900 border-gray-800 text-gray-400 hover:text-white hover:border-gray-700 disabled:opacity-50"
+            >
+              <RefreshCw size={14} className={isPending ? "animate-spin" : ""} />
+              Refresh
             </button>
           </div>
         </div>
