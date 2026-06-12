@@ -16,6 +16,7 @@ Required env vars - copy scripts/.env.example to scripts/.env and fill in:
 """
 
 import os
+import json
 import argparse
 from pathlib import Path
 from datetime import datetime, timedelta
@@ -211,6 +212,45 @@ def pull(update: bool = False):
         print(f"  #{num:>3} | {date} | {client_name[:45]} [{action}]")
         new_n += 1
     print(f"Done - {new_n} file(s) written." if new_n else "No new responses.")
+    update_impact_json()
+
+
+def update_impact_json():
+    """Recompute impact.json from the current intake/solutions-forms/ directory."""
+    status_counts: dict = {}
+    clients: set = set()
+    for f in OUTPUT_DIR.glob("SF-*.md"):
+        text = f.read_text(encoding="utf-8")
+        for line in text.splitlines():
+            if line.startswith("status:"):
+                val = line.split(":", 1)[1].strip().strip('"')
+                status_counts[val] = status_counts.get(val, 0) + 1
+            if line.startswith("client:"):
+                val = line.split(":", 1)[1].strip().strip('"')
+                if val and val != "Unknown Client":
+                    clients.add(val.lower())
+
+    total = sum(status_counts.values())
+    impact_path = REPO_ROOT / "dashboard-data" / "impact.json"
+    data = {
+        "last_updated": datetime.now().strftime("%Y-%m-%d"),
+        "metrics": {
+            "total_requests": total,
+            "solutions_delivered": status_counts.get("Solution Given Closed", 0),
+            "to_product": status_counts.get("To Product Closed", 0),
+            "open": status_counts.get("Open", 0),
+            "rejected": status_counts.get("Rejected", 0),
+            "no_response_closed": status_counts.get("No Response Closed", 0),
+            "unknown": status_counts.get("Unknown", 0),
+            "playbook_entries": 0,
+            "blueprints_created": 0,
+            "active_projects": 0,
+            "clients_served": len(clients),
+        },
+        "highlights": [],
+    }
+    impact_path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+    print(f"  impact.json updated — {total} total, {data['metrics']['solutions_delivered']} delivered")
 
 
 def list_debug():

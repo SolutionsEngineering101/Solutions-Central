@@ -36,11 +36,11 @@ jobs:
         run: |
           git config user.name "solutions-bot"
           git config user.email "solutions-bot@vantagecircle.com"
-          git add intake/solutions-forms/
+          git add intake/solutions-forms/ dashboard-data/impact.json
           if git diff --cached --quiet; then
             echo "No new responses — nothing to commit."
           else
-            COUNT=$(git diff --cached --name-only | wc -l | tr -d ' ')
+            COUNT=$(git diff --cached --name-only -- intake/solutions-forms/ | wc -l | tr -d ' ')
             git commit -m "intake: $COUNT new form response(s) $(date +%Y-%m-%d)"
             git pull --rebase origin main
             git push
