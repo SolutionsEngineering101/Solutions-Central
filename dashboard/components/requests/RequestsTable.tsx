@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { X, Search, ArrowDownWideNarrow, ArrowUpNarrowWide, Sparkles, RefreshCw } from "lucide-react";
+import { X, Search, ArrowDownWideNarrow, ArrowUpNarrowWide, Sparkles, RefreshCw, CloudDownload } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { useAssistant, type AssistantRequest } from "@/components/ai/AssistantProvider";
 
@@ -63,10 +63,28 @@ export function RequestsTable({ requests }: { requests: Request[] }) {
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [sort, setSort] = useState<"id-asc" | "id-desc" | "date-desc" | "date-asc" | "none">("id-asc");
   const [selected, setSelected] = useState<Request | null>(null);
+  const [pullState, setPullState] = useState<"idle" | "pulling" | "done" | "error">("idle");
   const { open: openAssistant } = useAssistant();
 
   function handleRefresh() {
     startTransition(() => router.refresh());
+  }
+
+  async function handlePull() {
+    setPullState("pulling");
+    try {
+      const res = await fetch("/api/github/pull-forms", { method: "POST" });
+      if (!res.ok) throw new Error();
+      setPullState("done");
+      // Give the workflow a moment to queue, then refresh the page data
+      setTimeout(() => {
+        startTransition(() => router.refresh());
+        setPullState("idle");
+      }, 3000);
+    } catch {
+      setPullState("error");
+      setTimeout(() => setPullState("idle"), 3000);
+    }
   }
 
   // Build the assistant's request context from a row's frontmatter.
@@ -208,11 +226,26 @@ export function RequestsTable({ requests }: { requests: Request[] }) {
             <button
               onClick={handleRefresh}
               disabled={isPending}
-              title="Refresh requests"
+              title="Refresh page data"
               className="flex items-center gap-1.5 px-3 py-2.5 rounded-lg text-xs font-medium border transition-colors bg-gray-900 border-gray-800 text-gray-400 hover:text-white hover:border-gray-700 disabled:opacity-50"
             >
               <RefreshCw size={14} className={isPending ? "animate-spin" : ""} />
               Refresh
+            </button>
+            <button
+              onClick={handlePull}
+              disabled={pullState === "pulling" || isPending}
+              title="Pull new responses from MS Forms"
+              className={`flex items-center gap-1.5 px-3 py-2.5 rounded-lg text-xs font-medium border transition-colors disabled:opacity-50 ${
+                pullState === "done"
+                  ? "bg-emerald-950 border-emerald-700 text-emerald-400"
+                  : pullState === "error"
+                  ? "bg-red-950 border-red-700 text-red-400"
+                  : "bg-gray-900 border-gray-800 text-gray-400 hover:text-white hover:border-gray-700"
+              }`}
+            >
+              <CloudDownload size={14} className={pullState === "pulling" ? "animate-pulse" : ""} />
+              {pullState === "pulling" ? "Pulling…" : pullState === "done" ? "Queued!" : pullState === "error" ? "Failed" : "Pull"}
             </button>
           </div>
         </div>

@@ -154,8 +154,10 @@ def to_markdown(row: dict) -> str:
         f'form_id: "SF-{int(float(eid)):03d}"',
         f'submitted_at: "{date}"', f'submitted_by: "{clean(row["name"])}"',
         f'email: "{clean(row["email"])}"', f'client: "{cli}"',
+        f'feature_name: "{clean(row["feature"])}"',
         f'status: "{stat}"', f'complexity: "{comp}"',
         f'solution_spoc: "{clean(row["solution_spoc"])}"',
+        f'vc_spoc: "{clean(row["vc_spoc"])}"',
         f'department: "{clean(row["department"])}"',
         f'priority: "{clean(row["priority"])}"',
         f'go_live_requirement: "{clean(row["go_live_req"])}"',
@@ -179,7 +181,7 @@ def to_markdown(row: dict) -> str:
     return "\n".join(lines)
 
 
-def pull():
+def pull(update: bool = False):
     token = get_token()
     print("Authenticated")
     site_id = find_site(token, SHAREPOINT_HOST, SHAREPOINT_SITE)
@@ -202,12 +204,13 @@ def pull():
         try: num = int(float(eid))
         except (ValueError, TypeError): continue
         f = OUTPUT_DIR / f"SF-{date}-{num:03d}.md"
-        if f.exists(): continue
+        if f.exists() and not update: continue
         f.write_text(to_markdown(row), encoding="utf-8")
         client_name = clean(row['client'])
-        print(f"  #{num:>3} | {date} | {client_name[:45]}")
+        action = "updated" if (f.exists() and update) else "new"
+        print(f"  #{num:>3} | {date} | {client_name[:45]} [{action}]")
         new_n += 1
-    print(f"Done - {new_n} new file(s)." if new_n else "No new responses.")
+    print(f"Done - {new_n} file(s) written." if new_n else "No new responses.")
 
 
 def list_debug():
@@ -222,5 +225,10 @@ def list_debug():
 if __name__ == "__main__":
     p = argparse.ArgumentParser()
     p.add_argument("--list", action="store_true")
+    p.add_argument("--update", action="store_true",
+                   help="Overwrite existing files (use once to backfill frontmatter fields)")
     a = p.parse_args()
-    list_debug() if a.list else pull()
+    if a.list:
+        list_debug()
+    else:
+        pull(update=a.update)
