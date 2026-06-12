@@ -205,10 +205,15 @@ def pull(update: bool = False):
         try: num = int(float(eid))
         except (ValueError, TypeError): continue
         f = OUTPUT_DIR / f"SF-{date}-{num:03d}.md"
-        if f.exists() and not update: continue
-        f.write_text(to_markdown(row), encoding="utf-8")
+        new_content = to_markdown(row)
+        if f.exists():
+            if not update: continue
+            if f.read_text(encoding="utf-8") == new_content: continue  # no change
+            action = "updated"
+        else:
+            action = "new"
+        f.write_text(new_content, encoding="utf-8")
         client_name = clean(row['client'])
-        action = "updated" if (f.exists() and update) else "new"
         print(f"  #{num:>3} | {date} | {client_name[:45]} [{action}]")
         new_n += 1
     print(f"Done - {new_n} file(s) written." if new_n else "No new responses.")
