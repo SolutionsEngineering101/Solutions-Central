@@ -182,6 +182,24 @@ def to_markdown(row: dict) -> str:
     return "\n".join(lines)
 
 
+# Fields that consultants fill in after a request arrives.
+# When the Excel cell is blank for these keys, we preserve whatever value the
+# dashboard already wrote to the markdown file — preventing a blank Excel cell
+# from silently wiping a consultant edit.
+CONSULTANT_KEYS = {
+    "status", "complexity", "solution_spoc", "vc_spoc",
+    "dev_sprint", "ticket", "closed_on", "solution", "remarks",
+}
+
+
+def _read_frontmatter_value(path: Path, key: str) -> str:
+    """Extract a single YAML frontmatter value from an existing markdown file."""
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if line.startswith(f"{key}:"):
+            return line.split(":", 1)[1].strip().strip('"')
+    return ""
+
+
 def pull(update: bool = False):
     token = get_token()
     print("Authenticated")
@@ -205,13 +223,21 @@ def pull(update: bool = False):
         try: num = int(float(eid))
         except (ValueError, TypeError): continue
         f = OUTPUT_DIR / f"SF-{date}-{num:03d}.md"
-        new_content = to_markdown(row)
         if f.exists():
             if not update: continue
+            # For consultant-owned fields: if Excel is blank but the file has a
+            # value (set via dashboard), preserve the dashboard value.
+            for key in CONSULTANT_KEYS:
+                if key in row and not clean(row[key]):
+                    existing = _read_frontmatter_value(f, key)
+                    if existing:
+                        row[key] = existing
+            new_content = to_markdown(row)
             if f.read_text(encoding="utf-8") == new_content: continue  # no change
             action = "updated"
         else:
             action = "new"
+            new_content = to_markdown(row)
         f.write_text(new_content, encoding="utf-8")
         client_name = clean(row['client'])
         print(f"  #{num:>3} | {date} | {client_name[:45]} [{action}]")

@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { X, Search, ArrowDownWideNarrow, ArrowUpNarrowWide, Sparkles, RefreshCw, CloudDownload } from "lucide-react";
+import { X, Search, ArrowDownWideNarrow, ArrowUpNarrowWide, Sparkles, RefreshCw, CloudDownload, Pencil, Check, Loader2 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { useAssistant, type AssistantRequest } from "@/components/ai/AssistantProvider";
 
@@ -56,6 +56,18 @@ function parseId(id: string): number {
   return m ? parseInt(m[1], 10) : -1;
 }
 
+function extractSection(body: string, heading: string): string {
+  const re = new RegExp(`##\\s+${heading}\\s*\\n([\\s\\S]*?)(?=\\n##\\s|$)`, "i");
+  const m = body.match(re);
+  return m ? m[1].trim() : "";
+}
+
+const STATUS_OPTIONS = [
+  "Open", "Solution Given Closed", "To Product Closed",
+  "Rejected", "No Response Closed", "Unknown",
+];
+const COMPLEXITY_OPTIONS = ["Not Set", "Low", "Medium", "High"];
+
 export function RequestsTable({ requests }: { requests: Request[] }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -64,6 +76,10 @@ export function RequestsTable({ requests }: { requests: Request[] }) {
   const [sort, setSort] = useState<"id-asc" | "id-desc" | "date-desc" | "date-asc" | "none">("id-asc");
   const [selected, setSelected] = useState<Request | null>(null);
   const [pullState, setPullState] = useState<"idle" | "pulling" | "done" | "error">("idle");
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveMsg, setSaveMsg] = useState<"" | "saved" | "error">("");
+  const [editFields, setEditFields] = useState<Record<string, string>>({});
   const { open: openAssistant } = useAssistant();
 
   function handleRefresh() {
@@ -85,6 +101,53 @@ export function RequestsTable({ requests }: { requests: Request[] }) {
       setPullState("error");
       setTimeout(() => setPullState("idle"), 3000);
     }
+  }
+
+  function openEditMode(r: Request) {
+    setEditFields({
+      status:       get(r.frontmatter, "status"),
+      complexity:   get(r.frontmatter, "complexity"),
+      solution_spoc: get(r.frontmatter, "solution_spoc"),
+      vc_spoc:      get(r.frontmatter, "vc_spoc"),
+      dev_sprint:   get(r.frontmatter, "dev_sprint"),
+      ticket:       get(r.frontmatter, "ticket"),
+      closed_on:    get(r.frontmatter, "closed_on"),
+      solution:     extractSection(r.content, "Solution Given"),
+      remarks:      extractSection(r.content, "Remarks"),
+    });
+    setIsEditing(true);
+    setSaveMsg("");
+  }
+
+  async function handleSave() {
+    if (!selected) return;
+    setIsSaving(true);
+    setSaveMsg("");
+    try {
+      const res = await fetch(`/api/github/forms/${encodeURIComponent(get(selected.frontmatter, "form_id").replace(/\D/g, ""))}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ path: selected.path, fields: editFields }),
+      });
+      if (!res.ok) throw new Error();
+      // Optimistically update the selected row's frontmatter so the panel reflects changes immediately
+      const updatedFrontmatter = { ...selected.frontmatter, ...editFields };
+      setSelected({ ...selected, frontmatter: updatedFrontmatter });
+      setIsEditing(false);
+      setSaveMsg("saved");
+      setTimeout(() => {
+        setSaveMsg("");
+        startTransition(() => router.refresh());
+      }, 1800);
+    } catch {
+      setSaveMsg("error");
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  function setField(key: string, val: string) {
+    setEditFields((prev) => ({ ...prev, [key]: val }));
   }
 
   // Build the assistant's request context from a row's frontmatter.
@@ -318,6 +381,7 @@ export function RequestsTable({ requests }: { requests: Request[] }) {
       {selected && (
         <div className="w-[420px] shrink-0 ml-5 sticky top-0 self-start">
           <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden flex flex-col max-h-[calc(100vh-2.5rem)]">
+
             {/* Panel header */}
             <div className="flex items-start justify-between gap-3 px-6 py-5 border-b border-gray-800 shrink-0">
               <div>
@@ -328,88 +392,229 @@ export function RequestsTable({ requests }: { requests: Request[] }) {
                   {get(selected.frontmatter, "client", "client_name")}
                 </h2>
               </div>
-              <button
-                onClick={() => setSelected(null)}
-                className="text-gray-600 hover:text-white transition-colors mt-0.5"
-              >
-                <X size={16} />
-              </button>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                {!isEditing && (
+                  <button
+                    onClick={() => openEditMode(selected)}
+                    title="Edit consultant fields"
+                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium border border-gray-700 text-gray-400 hover:text-white hover:border-gray-500 transition-colors"
+                  >
+                    <Pencil size={12} /> Edit
+                  </button>
+                )}
+                <button
+                  onClick={() => { setSelected(null); setIsEditing(false); setSaveMsg(""); }}
+                  className="text-gray-600 hover:text-white transition-colors"
+                >
+                  <X size={16} />
+                </button>
+              </div>
             </div>
 
-            {/* Draft with AI */}
-            <div className="px-6 py-3 border-b border-gray-800 shrink-0">
-              <button
-                onClick={() => openAssistant(toAssistant(selected))}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-sm font-semibold transition-colors"
-              >
-                <Sparkles size={15} /> Draft a solution with AI
-              </button>
-            </div>
+            {/* Draft with AI (read mode only) */}
+            {!isEditing && (
+              <div className="px-6 py-3 border-b border-gray-800 shrink-0">
+                <button
+                  onClick={() => openAssistant(toAssistant(selected))}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-sm font-semibold transition-colors"
+                >
+                  <Sparkles size={15} /> Draft a solution with AI
+                </button>
+              </div>
+            )}
 
-            {/* Status badge */}
+            {/* Status row */}
             <div className="px-6 py-3 border-b border-gray-800 flex items-center gap-3 shrink-0">
-              <span className={`inline-block px-2.5 py-1 rounded-full text-xs border ${statusStyle(get(selected.frontmatter, "status"))}`}>
-                {get(selected.frontmatter, "status")}
-              </span>
-              {get(selected.frontmatter, "complexity") !== "—" && (
-                <span className="text-gray-500 text-xs">{get(selected.frontmatter, "complexity")}</span>
-              )}
-              {get(selected.frontmatter, "submitted_at") !== "—" && (
-                <span className="text-gray-600 text-xs ml-auto">
-                  {formatDate(get(selected.frontmatter, "submitted_at"))}
-                </span>
-              )}
-            </div>
-
-            {/* Detail rows */}
-            <div className="px-6 py-4 space-y-4 flex-1 min-h-0 overflow-y-auto">
-              {[
-                { label: "Submitted by", keys: ["submitted_by"] },
-                { label: "Email", keys: ["email"] },
-                { label: "Department", keys: ["department"] },
-                { label: "Feature", keys: ["feature_name"] },
-                { label: "SPOC", keys: ["solution_spoc", "vc_spoc"] },
-                { label: "Go-live requirement", keys: ["go_live_requirement"] },
-                { label: "Go-live date", keys: ["go_live_date"] },
-                { label: "Closed on", keys: ["closed_on"] },
-                { label: "Priority", keys: ["priority", "priority_justification"] },
-                { label: "Dev sprint", keys: ["dev_sprint"] },
-                { label: "Ticket", keys: ["ticket"] },
-              ].map(({ label, keys }) => {
-                const val = get(selected.frontmatter, ...keys);
-                if (val === "—") return null;
-                return (
-                  <div key={label}>
-                    <p className="text-gray-600 text-xs mb-0.5">{label}</p>
-                    <p className="text-gray-300 text-sm">{val}</p>
-                  </div>
-                );
-              })}
-
-              {/* Description / brief */}
-              {(() => {
-                const desc = get(selected.frontmatter, "description", "brief");
-                if (desc === "—") return null;
-                return (
-                  <div>
-                    <p className="text-gray-600 text-xs mb-0.5">Description</p>
-                    <p className="text-gray-300 text-sm leading-relaxed">{desc}</p>
-                  </div>
-                );
-              })()}
-
-              {/* Markdown body if present */}
-              {selected.content.trim() && (
-                <div>
-                  <p className="text-gray-600 text-xs mb-2">Notes</p>
-                  <div className="bg-gray-950 rounded-lg p-3">
-                    <pre className="text-gray-300 text-xs whitespace-pre-wrap break-words font-mono leading-relaxed">
-                      {selected.content.trim()}
-                    </pre>
-                  </div>
+              {isEditing ? (
+                <div className="flex items-center gap-3 w-full">
+                  <select
+                    value={editFields.status ?? ""}
+                    onChange={(e) => setField("status", e.target.value)}
+                    className="flex-1 px-2 py-1 bg-gray-950 border border-gray-700 rounded-lg text-xs text-white focus:outline-none focus:border-indigo-500"
+                  >
+                    {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                  <select
+                    value={editFields.complexity ?? ""}
+                    onChange={(e) => setField("complexity", e.target.value)}
+                    className="w-28 px-2 py-1 bg-gray-950 border border-gray-700 rounded-lg text-xs text-white focus:outline-none focus:border-indigo-500"
+                  >
+                    {COMPLEXITY_OPTIONS.map((c) => <option key={c} value={c}>{c}</option>)}
+                  </select>
                 </div>
+              ) : (
+                <>
+                  <span className={`inline-block px-2.5 py-1 rounded-full text-xs border ${statusStyle(get(selected.frontmatter, "status"))}`}>
+                    {get(selected.frontmatter, "status")}
+                  </span>
+                  {get(selected.frontmatter, "complexity") !== "—" && (
+                    <span className="text-gray-500 text-xs">{get(selected.frontmatter, "complexity")}</span>
+                  )}
+                  {get(selected.frontmatter, "submitted_at") !== "—" && (
+                    <span className="text-gray-600 text-xs ml-auto">
+                      {formatDate(get(selected.frontmatter, "submitted_at"))}
+                    </span>
+                  )}
+                </>
               )}
             </div>
+
+            {/* Scrollable content */}
+            <div className="px-6 py-4 space-y-4 flex-1 min-h-0 overflow-y-auto">
+
+              {isEditing ? (
+                /* ── Edit mode ────────────────────────────────────────────── */
+                <>
+                  {/* Read-only context fields */}
+                  {[
+                    { label: "Submitted by", keys: ["submitted_by"] },
+                    { label: "Email", keys: ["email"] },
+                    { label: "Department", keys: ["department"] },
+                    { label: "Feature", keys: ["feature_name"] },
+                    { label: "Go-live requirement", keys: ["go_live_requirement"] },
+                    { label: "Priority", keys: ["priority"] },
+                  ].map(({ label, keys }) => {
+                    const val = get(selected.frontmatter, ...keys);
+                    if (val === "—") return null;
+                    return (
+                      <div key={label}>
+                        <p className="text-gray-600 text-xs mb-0.5">{label}</p>
+                        <p className="text-gray-400 text-sm">{val}</p>
+                      </div>
+                    );
+                  })}
+
+                  <div className="border-t border-gray-800 pt-4 space-y-3">
+                    <p className="text-indigo-400 text-xs font-semibold uppercase tracking-widest">Consultant Fields</p>
+
+                    {([
+                      { label: "Solution SPOC", key: "solution_spoc" },
+                      { label: "VC SPOC", key: "vc_spoc" },
+                      { label: "Dev Sprint", key: "dev_sprint" },
+                      { label: "Ticket / Link", key: "ticket" },
+                    ] as const).map(({ label, key }) => (
+                      <div key={key}>
+                        <label className="block text-gray-500 text-xs mb-1">{label}</label>
+                        <input
+                          type="text"
+                          value={editFields[key] === "—" ? "" : (editFields[key] ?? "")}
+                          onChange={(e) => setField(key, e.target.value)}
+                          className="w-full px-3 py-2 bg-gray-950 border border-gray-700 rounded-lg text-sm text-white placeholder-gray-700 focus:outline-none focus:border-indigo-500 transition-colors"
+                        />
+                      </div>
+                    ))}
+
+                    <div>
+                      <label className="block text-gray-500 text-xs mb-1">Closed On</label>
+                      <input
+                        type="date"
+                        value={editFields.closed_on === "—" ? "" : (editFields.closed_on ?? "")}
+                        onChange={(e) => setField("closed_on", e.target.value)}
+                        className="w-full px-3 py-2 bg-gray-950 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-gray-500 text-xs mb-1">Solution Given</label>
+                      <textarea
+                        rows={4}
+                        value={editFields.solution ?? ""}
+                        onChange={(e) => setField("solution", e.target.value)}
+                        placeholder="Describe the solution provided…"
+                        className="w-full px-3 py-2 bg-gray-950 border border-gray-700 rounded-lg text-sm text-white placeholder-gray-700 focus:outline-none focus:border-indigo-500 transition-colors resize-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-gray-500 text-xs mb-1">Remarks</label>
+                      <textarea
+                        rows={3}
+                        value={editFields.remarks ?? ""}
+                        onChange={(e) => setField("remarks", e.target.value)}
+                        placeholder="Internal notes…"
+                        className="w-full px-3 py-2 bg-gray-950 border border-gray-700 rounded-lg text-sm text-white placeholder-gray-700 focus:outline-none focus:border-indigo-500 transition-colors resize-none"
+                      />
+                    </div>
+                  </div>
+                </>
+              ) : (
+                /* ── Read mode ────────────────────────────────────────────── */
+                <>
+                  {[
+                    { label: "Submitted by", keys: ["submitted_by"] },
+                    { label: "Email", keys: ["email"] },
+                    { label: "Department", keys: ["department"] },
+                    { label: "Feature", keys: ["feature_name"] },
+                    { label: "SPOC", keys: ["solution_spoc", "vc_spoc"] },
+                    { label: "Go-live requirement", keys: ["go_live_requirement"] },
+                    { label: "Go-live date", keys: ["go_live_date"] },
+                    { label: "Closed on", keys: ["closed_on"] },
+                    { label: "Priority", keys: ["priority", "priority_justification"] },
+                    { label: "Dev sprint", keys: ["dev_sprint"] },
+                    { label: "Ticket", keys: ["ticket"] },
+                  ].map(({ label, keys }) => {
+                    const val = get(selected.frontmatter, ...keys);
+                    if (val === "—") return null;
+                    return (
+                      <div key={label}>
+                        <p className="text-gray-600 text-xs mb-0.5">{label}</p>
+                        <p className="text-gray-300 text-sm">{val}</p>
+                      </div>
+                    );
+                  })}
+
+                  {(() => {
+                    const desc = get(selected.frontmatter, "description", "brief");
+                    if (desc === "—") return null;
+                    return (
+                      <div>
+                        <p className="text-gray-600 text-xs mb-0.5">Description</p>
+                        <p className="text-gray-300 text-sm leading-relaxed">{desc}</p>
+                      </div>
+                    );
+                  })()}
+
+                  {selected.content.trim() && (
+                    <div>
+                      <p className="text-gray-600 text-xs mb-2">Notes</p>
+                      <div className="bg-gray-950 rounded-lg p-3">
+                        <pre className="text-gray-300 text-xs whitespace-pre-wrap break-words font-mono leading-relaxed">
+                          {selected.content.trim()}
+                        </pre>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+
+            {/* Edit mode footer */}
+            {isEditing && (
+              <div className="px-6 py-4 border-t border-gray-800 shrink-0 flex items-center gap-2">
+                <button
+                  onClick={handleSave}
+                  disabled={isSaving}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 text-white text-sm font-semibold transition-colors"
+                >
+                  {isSaving
+                    ? <><Loader2 size={14} className="animate-spin" /> Saving…</>
+                    : saveMsg === "saved"
+                    ? <><Check size={14} /> Saved</>
+                    : "Save"}
+                </button>
+                <button
+                  onClick={() => { setIsEditing(false); setSaveMsg(""); }}
+                  disabled={isSaving}
+                  className="px-4 py-2 rounded-lg border border-gray-700 text-gray-400 hover:text-white text-sm font-medium transition-colors disabled:opacity-60"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
+            {saveMsg === "error" && (
+              <p className="px-6 pb-3 text-xs text-red-400 shrink-0">Save failed — check your connection and try again.</p>
+            )}
+
           </div>
         </div>
       )}
