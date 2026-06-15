@@ -62,6 +62,21 @@ The repo serves as: intake hub, documentation library, team workspace, playbook,
 - [x] **15. Tech Docs page** — `/confluence` nav renamed to "Tech Docs". New `TechDocs` component replaces old `ConfluenceViewer`. Fetches all pages from Confluence space `PMT` (env var `CONFLUENCE_SPACE_KEY=PMT`), excludes tracker page. Features: searchable card grid, slide-in side panel (read + edit + new page), three-dot menu per card (Edit / Open in Confluence / Remove from view). Remove from view is local-only — persisted in `localStorage` under `techdocs_hidden_ids`, Confluence untouched. Three-dot menu uses fixed-position dropdown + transparent backdrop to avoid React 18 event / `overflow-y-auto` clipping bugs. New API routes: `GET/POST/PUT /api/confluence/docs`.
 - [x] **16. Overview page full redesign** — Removed Active Sprint. New layout: 3 KPI cards (Delivered, Win Rate, Open Now) + Quarterly Breakdown (interactive quarter tabs + All, status bars + mini KPIs) + bottom row (Team Leaderboard by SPOC / Complexity Donut / Recent Requests). Donut uses Recharts PieChart with custom `ActiveShape` (+5px controlled expansion, no center-label overlap), tooltip shows count + %, legend in card header top-right. Full-canvas layout: AppShell changed to `h-screen p-5`, overview uses `flex flex-col h-full` with bottom row `flex-1 min-h-0`. New files: `components/overview/QuarterlyBreakdown.tsx`, `components/overview/ComplexityDonut.tsx`.
 
+- [x] **17. Solution Requests — Pull button + status sync (2026-06-12)**
+  - Added **Pull** button to toolbar — triggers `workflow_dispatch` on `pull-forms.yml` via `POST /api/github/pull-forms`. Needed because GitHub scheduler runs only 2–3×/day with 8–12h delays.
+  - `pull_forms.py --update` flag added — rewrites files where content changed (smart diff, no git churn). Workflow now always runs with `--update` so status changes in Excel propagate automatically.
+  - `feature_name` and `vc_spoc` added to YAML frontmatter (were body-only before — dashboard showed "—").
+  - `solutions-provided.json` fixed (was wrong shape: object, must be array `[]`).
+  - `impact.json` populated with live counts (was all zeros); `pull_forms.py` now calls `update_impact_json()` after every run; workflow stages it in commits.
+  - **Pending:** Run `python scripts/pull_forms.py --update && git add intake/solutions-forms/ dashboard-data/impact.json && git commit -m "intake: backfill feature_name and vc_spoc" && git push` to backfill all 266 existing files.
+
+- [x] **18. Consultant edit mode for Solution Requests (2026-06-15)**
+  - Side panel now has a pencil **Edit** button. Edit mode exposes all 9 consultant-fillable fields: Status (dropdown), Complexity (dropdown), Solution SPOC, VC SPOC, Dev Sprint, Ticket, Closed On (date), Solution Given (textarea), Remarks (textarea).
+  - **Save** writes to two places simultaneously: GitHub markdown (via `writeFile()`) + SharePoint Excel row (via `lib/sharepoint.ts` Microsoft Graph API). Excel write is fire-and-forget — GitHub save confirms to user immediately.
+  - New files: `dashboard/lib/sharepoint.ts` (Graph API client, plain fetch, no new packages), `dashboard/app/api/github/forms/[id]/route.ts` (PATCH + GET).
+  - Pull script guard added: if Excel cell is blank for a consultant field but markdown already has a value, markdown value is preserved (prevents `--update` from wiping dashboard edits).
+  - **Pending:** Add Azure credentials to `dashboard/.env.local` (see env vars section below) to enable Excel write-back.
+
 ---
 
 ## To Do
@@ -103,6 +118,14 @@ NEXTAUTH_URL=http://localhost:3000
 GITHUB_PAT=             # Personal Access Token, repo scope
 GITHUB_REPO_OWNER=SolutionsEngineering101
 GITHUB_REPO_NAME=Solutions-Central
+
+# Azure / SharePoint (consultant edit write-back)
+AZURE_CLIENT_ID=
+AZURE_TENANT_ID=
+AZURE_CLIENT_SECRET=
+MS_SHAREPOINT_HOST=vantagecircle.sharepoint.com
+MS_SHAREPOINT_SITE=Solutions
+MS_EXCEL_NAME=Solution Request Form
 
 # Confluence integration
 CONFLUENCE_EMAIL=bhargav.nath@vantagecircle.com
