@@ -126,16 +126,43 @@ async function gather(queryText: string): Promise<Candidate[]> {
       });
     });
 
-  // Semantic scoring: embed query + all candidates in one batched call (parallel chunks).
-  const texts = [queryText, ...all.map((c) => c.embedText)];
-  const embeddings = await batchEmbedTexts(texts);
+  // Step 1 — keyword pre-filter to reduce candidates before embedding.
+  // Keeps the embed call count small (~45 items) regardless of repo size.
+  const qTokens = new Set(
+    (queryText.toLowerCase().match(/[a-z0-9]+/g) ?? []).filter((w) => w.length >= 3)
+  );
+  function kwScore(text: string): number {
+    const seen = new Set<string>();
+    let n = 0;
+    for (const t of (text.toLowerCase().match(/[a-z0-9]+/g) ?? [])) {
+      if (t.length >= 3 && qTokens.has(t) && !seen.has(t)) { seen.add(t); n++; }
+    }
+    return n;
+  }
+
+  const preFilter = (type: CandidateInternal["type"], n: number): CandidateInternal[] => {
+    const typed = all.filter((c) => c.type === type);
+    typed.forEach((c) => { c.score = kwScore(c.embedText); });
+    return [...typed].sort((a, b) => b.score - a.score).slice(0, n);
+  };
+
+  const pool: CandidateInternal[] = [
+    ...preFilter("form", 25),
+    ...preFilter("playbook", 12),
+    ...preFilter("blueprint", 8),
+  ];
+  pool.forEach((c) => { c.score = 0; });
+
+  // Step 2 — semantic reranking on the pre-filtered pool (query + ~45 texts).
+  const embedTexts = [queryText, ...pool.map((c) => c.embedText)];
+  const embeddings = await batchEmbedTexts(embedTexts);
   const queryEmbed = embeddings[0];
-  for (let i = 0; i < all.length; i++) {
-    all[i].score = cosineSim(queryEmbed, embeddings[i + 1]);
+  for (let i = 0; i < pool.length; i++) {
+    pool[i].score = cosineSim(queryEmbed, embeddings[i + 1]);
   }
 
   const top = (type: Candidate["type"], n: number) =>
-    all.filter((c) => c.type === type).sort((a, b) => b.score - a.score).slice(0, n);
+    pool.filter((c) => c.type === type).sort((a, b) => b.score - a.score).slice(0, n);
 
   const picked = [...top("form", 6), ...top("playbook", 4), ...top("blueprint", 4)];
   let f = 1, p = 1, b = 1;

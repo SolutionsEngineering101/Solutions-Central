@@ -61,38 +61,40 @@ export function parseJsonLoose<T>(raw: string): T {
 
 // ── Embeddings ────────────────────────────────────────────────────────────────
 
+// batchEmbedContents is not universally available — use parallel individual embedContent calls instead.
 export async function batchEmbedTexts(texts: string[]): Promise<number[][]> {
   const key = process.env.GEMINI_API_KEY;
   if (!key) throw new Error("GEMINI_API_KEY not set");
   if (texts.length === 0) return [];
 
-  const CHUNK = 100;
-  const chunks: string[][] = [];
-  for (let i = 0; i < texts.length; i += CHUNK) chunks.push(texts.slice(i, i + CHUNK));
+  const CONCURRENCY = 20;
+  const results: number[][] = new Array(texts.length);
 
-  const results = await Promise.all(
-    chunks.map(async (chunk) => {
-      const res = await fetch(
-        `${API}/${encodeURIComponent(EMBED_MODEL)}:batchEmbedContents?key=${key}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            requests: chunk.map((t) => ({
+  for (let i = 0; i < texts.length; i += CONCURRENCY) {
+    const slice = texts.slice(i, i + CONCURRENCY);
+    const batch = await Promise.all(
+      slice.map(async (text) => {
+        const res = await fetch(
+          `${API}/${encodeURIComponent(EMBED_MODEL)}:embedContent?key=${key}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
               model: `models/${EMBED_MODEL}`,
-              content: { parts: [{ text: t }] },
-            })),
-          }),
-          cache: "no-store",
-        }
-      );
-      if (!res.ok) throw new Error(`Gemini batchEmbed ${res.status}: ${(await res.text()).slice(0, 300)}`);
-      const data = await res.json();
-      return (data.embeddings as { values: number[] }[]).map((e) => e.values);
-    })
-  );
+              content: { parts: [{ text }] },
+            }),
+            cache: "no-store",
+          }
+        );
+        if (!res.ok) throw new Error(`Gemini embed ${res.status}: ${(await res.text()).slice(0, 300)}`);
+        const data = await res.json();
+        return (data.embedding?.values ?? []) as number[];
+      })
+    );
+    for (let j = 0; j < batch.length; j++) results[i + j] = batch[j];
+  }
 
-  return results.flat();
+  return results;
 }
 
 export function cosineSim(a: number[], b: number[]): number {
