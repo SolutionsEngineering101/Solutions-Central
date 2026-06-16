@@ -3,6 +3,7 @@
 
 const API = "https://generativelanguage.googleapis.com/v1beta/models";
 const MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+const EMBED_MODEL = "text-embedding-004";
 
 export function geminiConfigured(): boolean {
   return !!process.env.GEMINI_API_KEY;
@@ -56,4 +57,46 @@ export async function callGemini(opts: {
 export function parseJsonLoose<T>(raw: string): T {
   const cleaned = raw.trim().replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
   return JSON.parse(cleaned) as T;
+}
+
+// ── Embeddings ────────────────────────────────────────────────────────────────
+
+export async function batchEmbedTexts(texts: string[]): Promise<number[][]> {
+  const key = process.env.GEMINI_API_KEY;
+  if (!key) throw new Error("GEMINI_API_KEY not set");
+  if (texts.length === 0) return [];
+
+  const CHUNK = 100;
+  const chunks: string[][] = [];
+  for (let i = 0; i < texts.length; i += CHUNK) chunks.push(texts.slice(i, i + CHUNK));
+
+  const results = await Promise.all(
+    chunks.map(async (chunk) => {
+      const res = await fetch(
+        `${API}/${encodeURIComponent(EMBED_MODEL)}:batchEmbedContents?key=${key}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            requests: chunk.map((t) => ({
+              model: `models/${EMBED_MODEL}`,
+              content: { parts: [{ text: t }] },
+            })),
+          }),
+          cache: "no-store",
+        }
+      );
+      if (!res.ok) throw new Error(`Gemini batchEmbed ${res.status}: ${(await res.text()).slice(0, 300)}`);
+      const data = await res.json();
+      return (data.embeddings as { values: number[] }[]).map((e) => e.values);
+    })
+  );
+
+  return results.flat();
+}
+
+export function cosineSim(a: number[], b: number[]): number {
+  let dot = 0, na = 0, nb = 0;
+  for (let i = 0; i < a.length; i++) { dot += a[i] * b[i]; na += a[i] * a[i]; nb += b[i] * b[i]; }
+  return dot / (Math.sqrt(na) * Math.sqrt(nb) || 1);
 }

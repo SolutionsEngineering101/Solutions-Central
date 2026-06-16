@@ -2,12 +2,11 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { getMarkdownFiles } from "@/lib/github";
-import { callGemini, geminiConfigured, parseJsonLoose } from "@/lib/gemini";
+import { callGemini, geminiConfigured, parseJsonLoose, batchEmbedTexts, cosineSim } from "@/lib/gemini";
 
 const OWNER = process.env.GITHUB_REPO_OWNER ?? "";
 const REPO = process.env.GITHUB_REPO_NAME ?? "";
 
-// ── Incoming request context (from the selected Solution Request) ─────────────
 interface ReqContext {
   id?: string;
   client?: string;
@@ -19,16 +18,19 @@ interface ReqContext {
   content?: string;
 }
 
-// ── Retrieval: pull the most relevant past sources from the repo ──────────────
+interface Candidate {
+  ref: string;
+  type: "form" | "playbook" | "blueprint";
+  id: string;
+  title: string;
+  path: string;
+  url: string;
+  snippet: string;
+  score: number;
+}
 
-const STOP = new Set([
-  "the","and","for","with","that","this","from","are","was","will","have","has","not","you","your",
-  "our","their","they","its","into","onto","per","via","client","solution","request","feature","department",
-  "requirement","requirements","need","needs","want","wants","please","would","could","should","new",
-]);
-
-function tokenize(s: string): string[] {
-  return (s.toLowerCase().match(/[a-z0-9]+/g) ?? []).filter((w) => w.length >= 3 && !STOP.has(w));
+function ghUrl(path: string): string {
+  return OWNER && REPO ? `https://github.com/${OWNER}/${REPO}/blob/main/${path}` : "";
 }
 
 function fmStr(fm: Record<string, unknown>, ...keys: string[]): string {
@@ -39,43 +41,45 @@ function fmStr(fm: Record<string, unknown>, ...keys: string[]): string {
   return "";
 }
 
-interface Candidate {
-  ref: string;        // stable handle the model cites: F1, P1, B1…
-  type: "form" | "playbook" | "blueprint";
-  id: string;         // human id/title
-  title: string;
-  path: string;
-  url: string;
-  snippet: string;    // compact context for the prompt
-  score: number;
-}
-
-function ghUrl(path: string): string {
-  return OWNER && REPO ? `https://github.com/${OWNER}/${REPO}/blob/main/${path}` : "";
-}
-
 function clip(s: string, n = 400): string {
   const t = s.replace(/\s+/g, " ").trim();
   return t.length > n ? t.slice(0, n) + "…" : t;
 }
 
-async function gather(query: Set<string>): Promise<Candidate[]> {
+function extractSec(content: string, heading: string): string {
+  const re = new RegExp(`##\\s+${heading}\\s*\\n([\\s\\S]*?)(?=\\n##\\s|$)`, "i");
+  const m = content.match(re);
+  return m ? m[1].trim() : "";
+}
+
+// Build a compact text representation for embedding a candidate.
+function candidateEmbedText(type: "form" | "playbook" | "blueprint", fm: Record<string, unknown>, content: string): string {
+  if (type === "form") {
+    const parts = [
+      fmStr(fm, "feature_name"),
+      fmStr(fm, "department"),
+      fmStr(fm, "description", "brief"),
+      extractSec(content, "Brief"),
+      extractSec(content, "Subject"),
+      extractSec(content, "Solution Given"),
+    ].filter(Boolean);
+    return parts.join(". ").slice(0, 1500);
+  }
+  const title = fmStr(fm, "title");
+  const domain = fmStr(fm, "domain");
+  const tags = Array.isArray(fm.tags) ? (fm.tags as string[]).join(", ") : "";
+  return [title, domain, tags, content.slice(0, 800)].filter(Boolean).join(". ");
+}
+
+async function gather(queryText: string): Promise<Candidate[]> {
   const [forms, playbook, blueprints] = await Promise.all([
     getMarkdownFiles("intake/solutions-forms"),
     getMarkdownFiles("playbook/entries"),
     getMarkdownFiles("pre-built-solutions/blueprints"),
   ]);
 
-  const score = (text: string): number => {
-    const seen = new Set<string>();
-    let n = 0;
-    for (const t of tokenize(text)) {
-      if (query.has(t) && !seen.has(t)) { seen.add(t); n++; }
-    }
-    return n;
-  };
-
-  const out: Candidate[] = [];
+  type CandidateInternal = Candidate & { embedText: string };
+  const all: CandidateInternal[] = [];
 
   forms
     .filter((f) => !f.path.includes("skeleton-") && !f.path.endsWith("README.md"))
@@ -83,12 +87,13 @@ async function gather(query: Set<string>): Promise<Candidate[]> {
       const fm = f.frontmatter;
       const id = fmStr(fm, "form_id") || f.path.split("/").pop()!.replace(/\.md$/, "");
       const client = fmStr(fm, "client", "client_name");
-      const text = [client, fmStr(fm, "department"), fmStr(fm, "feature_name"), fmStr(fm, "status"),
-        fmStr(fm, "complexity"), fmStr(fm, "description", "brief"), f.content].join(" ");
-      out.push({
+      const feature = fmStr(fm, "feature_name");
+      const brief = extractSec(f.content, "Brief") || fmStr(fm, "description", "brief");
+      all.push({
         ref: "", type: "form", id, title: client || id, path: f.path, url: ghUrl(f.path),
-        snippet: `${id} — Client: ${client || "—"} | Dept: ${fmStr(fm, "department") || "—"} | Feature: ${fmStr(fm, "feature_name") || "—"} | Status: ${fmStr(fm, "status") || "—"} | Complexity: ${fmStr(fm, "complexity") || "—"}\n  ${clip(fmStr(fm, "description", "brief") || f.content)}`,
-        score: score(text),
+        snippet: `${id} — Client: ${client || "—"} | Feature: ${feature || "—"} | Status: ${fmStr(fm, "status") || "—"}\n  ${clip(brief || f.content)}`,
+        score: 0,
+        embedText: candidateEmbedText("form", fm, f.content),
       });
     });
 
@@ -98,10 +103,11 @@ async function gather(query: Set<string>): Promise<Candidate[]> {
       const fm = p.frontmatter;
       const title = fmStr(fm, "title") || p.path.split("/").pop()!.replace(/\.md$/, "");
       const tags = Array.isArray(fm.tags) ? (fm.tags as string[]).join(", ") : "";
-      out.push({
+      all.push({
         ref: "", type: "playbook", id: title, title, path: p.path, url: ghUrl(p.path),
         snippet: `"${title}"${tags ? ` (tags: ${tags})` : ""}\n  ${clip(p.content)}`,
-        score: score([title, tags, p.content].join(" ")),
+        score: 0,
+        embedText: candidateEmbedText("playbook", fm, p.content),
       });
     });
 
@@ -112,16 +118,24 @@ async function gather(query: Set<string>): Promise<Candidate[]> {
       const title = fmStr(fm, "title") || b.path.split("/").pop()!.replace(/\.md$/, "");
       const domain = fmStr(fm, "domain");
       const tags = Array.isArray(fm.tags) ? (fm.tags as string[]).join(", ") : "";
-      out.push({
+      all.push({
         ref: "", type: "blueprint", id: title, title, path: b.path, url: ghUrl(b.path),
         snippet: `"${title}"${domain ? ` (domain: ${domain})` : ""}${tags ? ` (tags: ${tags})` : ""}\n  ${clip(b.content)}`,
-        score: score([title, domain, tags, b.content].join(" ")),
+        score: 0,
+        embedText: candidateEmbedText("blueprint", fm, b.content),
       });
     });
 
-  // Top-N per type so each knowledge source is represented; fall back to recent if nothing scores.
+  // Semantic scoring: embed query + all candidates in one batched call (parallel chunks).
+  const texts = [queryText, ...all.map((c) => c.embedText)];
+  const embeddings = await batchEmbedTexts(texts);
+  const queryEmbed = embeddings[0];
+  for (let i = 0; i < all.length; i++) {
+    all[i].score = cosineSim(queryEmbed, embeddings[i + 1]);
+  }
+
   const top = (type: Candidate["type"], n: number) =>
-    out.filter((c) => c.type === type).sort((a, b) => b.score - a.score).slice(0, n);
+    all.filter((c) => c.type === type).sort((a, b) => b.score - a.score).slice(0, n);
 
   const picked = [...top("form", 6), ...top("playbook", 4), ...top("blueprint", 4)];
   let f = 1, p = 1, b = 1;
@@ -131,7 +145,7 @@ async function gather(query: Set<string>): Promise<Candidate[]> {
   return picked;
 }
 
-// ── Schemas for structured output ─────────────────────────────────────────────
+// ── Schemas ───────────────────────────────────────────────────────────────────
 
 const GENERATE_SCHEMA = {
   type: "object",
@@ -217,11 +231,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ draft: out.draft });
     }
 
-    // generate
-    const query = new Set(tokenize([
-      request.client, request.department, request.feature, request.description, request.content,
-    ].filter(Boolean).join(" ")));
-    const cands = await gather(query);
+    // Semantic gather: build query from feature + description/brief
+    const queryText = [
+      request.feature,
+      request.department,
+      request.description,
+      (request.content ?? "").slice(0, 500),
+    ].filter(Boolean).join(". ");
+
+    const cands = await gather(queryText);
 
     const focus = (body.instruction ?? "").trim();
     const user = `INCOMING REQUEST:\n${reqBlock(request)}\n\n${focus ? `CONSULTANT'S FOCUS: ${focus}\n\n` : ""}CANDIDATE SOURCES (cite these by ref):\n${sourcesBlock(cands)}`;
@@ -236,7 +254,6 @@ export async function POST(req: Request) {
       references: { ref: string; why: string }[];
     }>(raw);
 
-    // Map cited refs back to real sources (drop any hallucinated refs).
     const byRef = new Map(cands.map((c) => [c.ref, c]));
     const references = (out.references ?? [])
       .map((r) => {
