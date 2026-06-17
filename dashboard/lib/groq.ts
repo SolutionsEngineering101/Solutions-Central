@@ -22,7 +22,7 @@ export async function callGroq(opts: {
   if (!key) throw new Error("GROQ_API_KEY not set");
 
   const messages = [
-    { role: "system", content: opts.system },
+    { role: "system", content: opts.schema ? `${opts.system}\n\nRespond with valid JSON.` : opts.system },
     ...opts.contents.map((c) => ({
       role: c.role === "model" ? "assistant" : "user",
       content: c.parts.map((p) => p.text).join(""),
