@@ -206,15 +206,27 @@ A consultant has received a new client solution request. Help them draft a solut
 Rules:
 - Ground your answer in the CANDIDATE SOURCES provided (past solution forms, playbook entries, blueprints). These are the team's prior work.
 - For citations, you may ONLY cite the candidate sources by their ref handle (e.g. F1, P3, B2). Never invent ticket numbers or sources. Only cite sources you genuinely used.
-- The "draft" must be clean Markdown a consultant can send/tweak, using this structure:
-  ## Problem Summary
-  ## Recommended Approach
-  ## Components
-  ## Implementation Steps
-  ## Suggested Attachments
-  ## Open Questions
-- "suggestions" = specific, actionable things the consultant should confirm or fill in for THIS request (e.g. exact fields, missing info to ask the client).
-- Be concrete and concise. Reuse approaches from similar past requests where relevant.`;
+- Be concrete and concise. Reuse approaches from similar past requests where relevant.
+- If no relevant past sources exist, still produce a best-effort draft based on the request details alone, and note in ## Open Questions what additional context would help.
+
+You MUST respond with a JSON object using EXACTLY these keys — no other keys, no wrapper objects:
+
+{
+  "draft": "<full Markdown solution draft using all six sections below>",
+  "suggestions": ["<actionable item 1>", "<actionable item 2>"],
+  "references": [{"ref": "F1", "why": "<why this source was used>"}, {"ref": "P2", "why": "..."}]
+}
+
+The "draft" value must be a Markdown string structured exactly as:
+## Problem Summary
+## Recommended Approach
+## Components
+## Implementation Steps
+## Suggested Attachments
+## Open Questions
+
+"suggestions" = specific things the consultant should confirm or fill in (e.g. missing client info, field configs).
+"references" = only cite refs from CANDIDATE SOURCES that you actually used. Empty array if none apply.`;
 
 function reqBlock(r: ReqContext): string {
   return [
@@ -293,8 +305,32 @@ export async function POST(req: Request) {
       })
       .filter(Boolean);
 
+    const draft = out.draft?.trim() || [
+      "## Problem Summary",
+      `No closely matching past solutions were found for this request (${cands.length} sources scanned).`,
+      "",
+      "## Recommended Approach",
+      "This appears to be a novel request. Please provide additional context so a more tailored solution can be drafted.",
+      "",
+      "## Components",
+      "- To be determined based on client requirements",
+      "",
+      "## Implementation Steps",
+      "1. Gather detailed requirements from the client",
+      "2. Identify applicable Vantage Circle product features",
+      "3. Draft a customised solution",
+      "",
+      "## Suggested Attachments",
+      "- Relevant product demo or feature spec",
+      "",
+      "## Open Questions",
+      `- What is the client's primary goal for this feature?`,
+      "- Are there any integration requirements with existing systems?",
+      "- What is the expected timeline?",
+    ].join("\n");
+
     return NextResponse.json({
-      draft: out.draft,
+      draft,
       suggestions: out.suggestions ?? [],
       references,
       sourcesScanned: cands.length,
