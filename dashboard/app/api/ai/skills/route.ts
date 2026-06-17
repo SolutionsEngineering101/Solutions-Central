@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { callGemini, geminiConfigured } from "@/lib/gemini";
+import { callGroq, groqConfigured } from "@/lib/groq";
 
 // Drafts a Claude-ready skills.md for a team member, grounded in the work they've done.
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
   if (!session && process.env.NEXT_PUBLIC_DEV_NO_AUTH !== "1") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (!geminiConfigured())
-    return NextResponse.json({ error: "AI not configured — add GEMINI_API_KEY" }, { status: 503 });
+  if (!groqConfigured())
+    return NextResponse.json({ error: "AI not configured — add GROQ_API_KEY" }, { status: 503 });
 
   let body: {
     name?: string; role?: string; currentSkills?: string;
@@ -43,7 +43,7 @@ Tickets this person worked on:
 ${ticketBlock}`;
 
   try {
-    const out = await callGemini({
+    const out = await callGroq({
       system,
       contents: [{ role: "user", parts: [{ text: user }] }],
       temperature: 0.4,

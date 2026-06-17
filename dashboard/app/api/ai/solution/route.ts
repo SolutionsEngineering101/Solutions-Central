@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { getMarkdownFiles } from "@/lib/github";
-import { callGemini, geminiConfigured, parseJsonLoose, batchEmbedTexts, cosineSim } from "@/lib/gemini";
+import { callGroq, groqConfigured, parseJsonLoose, batchEmbedTexts, cosineSim } from "@/lib/groq";
 
 const OWNER = process.env.GITHUB_REPO_OWNER ?? "";
 const REPO = process.env.GITHUB_REPO_NAME ?? "";
@@ -154,11 +154,14 @@ async function gather(queryText: string): Promise<Candidate[]> {
   pool.forEach((c) => { c.score = 0; });
 
   // Step 2 — semantic reranking on the pre-filtered pool (query + ~45 texts).
+  // Falls back to keyword scores from step 1 when embeddings are unavailable (e.g. Groq).
   const embedTexts = [queryText, ...pool.map((c) => c.embedText)];
   const embeddings = await batchEmbedTexts(embedTexts);
-  const queryEmbed = embeddings[0];
-  for (let i = 0; i < pool.length; i++) {
-    pool[i].score = cosineSim(queryEmbed, embeddings[i + 1]);
+  if (embeddings.length > 0) {
+    const queryEmbed = embeddings[0];
+    for (let i = 0; i < pool.length; i++) {
+      pool[i].score = cosineSim(queryEmbed, embeddings[i + 1]);
+    }
   }
 
   const top = (type: Candidate["type"], n: number) =>
@@ -235,8 +238,8 @@ function sourcesBlock(cands: Candidate[]): string {
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
   if (!session && process.env.NEXT_PUBLIC_DEV_NO_AUTH !== "1") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (!geminiConfigured())
-    return NextResponse.json({ error: "AI not configured — add GEMINI_API_KEY" }, { status: 503 });
+  if (!groqConfigured())
+    return NextResponse.json({ error: "AI not configured — add GROQ_API_KEY" }, { status: 503 });
 
   let body: { mode?: string; request?: ReqContext; draft?: string; instruction?: string };
   try { body = await req.json(); }
@@ -249,7 +252,7 @@ export async function POST(req: Request) {
     if (mode === "refine") {
       const system = `${SYSTEM}\n\nThe consultant wants to refine an existing draft. Apply their instruction and return the full updated Markdown draft.`;
       const user = `CURRENT DRAFT:\n${body.draft ?? ""}\n\nORIGINAL REQUEST:\n${reqBlock(request)}\n\nINSTRUCTION:\n${body.instruction ?? "Improve the draft."}`;
-      const raw = await callGemini({
+      const raw = await callGroq({
         system,
         contents: [{ role: "user", parts: [{ text: user }] }],
         schema: REFINE_SCHEMA,
@@ -270,7 +273,7 @@ export async function POST(req: Request) {
 
     const focus = (body.instruction ?? "").trim();
     const user = `INCOMING REQUEST:\n${reqBlock(request)}\n\n${focus ? `CONSULTANT'S FOCUS: ${focus}\n\n` : ""}CANDIDATE SOURCES (cite these by ref):\n${sourcesBlock(cands)}`;
-    const raw = await callGemini({
+    const raw = await callGroq({
       system: SYSTEM,
       contents: [{ role: "user", parts: [{ text: user }] }],
       schema: GENERATE_SCHEMA,
