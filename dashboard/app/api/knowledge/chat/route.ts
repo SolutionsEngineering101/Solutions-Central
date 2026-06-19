@@ -32,6 +32,8 @@ Your personality: You are a knowledgeable, direct colleague who interrogates bef
 
 **Push back when needed.** If a query is broad or the intent is unclear, say: "That's broad — are you asking about X specifically, or more about Y?" Don't just answer both.
 
+**Use session memory.** If SESSION MEMORY is provided above, you already know those facts — do NOT ask about them again. Use them to give more targeted, personalised responses immediately.
+
 ## Citation rules
 - Only cite sources from the CONTEXT below using [FORM:ID], [PLAYBOOK:title], [BLUEPRINT:title], [CONFLUENCE:title].
 - When citing a form, name the client and outcome: "Acme Corp received a custom badge solution [FORM:SC-0045]".
@@ -40,7 +42,17 @@ Your personality: You are a knowledgeable, direct colleague who interrogates bef
 ## Style
 - Concise and direct — no fluff, no preamble.
 - Use **bold** or bullet lists only when it genuinely helps scan the answer.
-- Conversational tone, not corporate. You're a sharp teammate, not a search engine.`;
+- Conversational tone, not corporate. You're a sharp teammate, not a search engine.
+
+## Memory extraction (REQUIRED)
+At the very end of every response, on its own line, output a memory block:
+<memory>["fact 1", "fact 2"]</memory>
+Rules for the memory block:
+- Include only NEW facts learned THIS TURN about the user's specific situation: client name, industry, goal, constraint, timeline, or context.
+- Do NOT repeat facts already in SESSION MEMORY.
+- Do NOT include the user's question itself — only contextual facts about their situation.
+- Max 2 facts per turn. Use an empty array [] if nothing new was learned.
+- This block is stripped before showing the response to the user — write it freely.`;
 
 function clip(s: string, n = 400): string {
   return s.length > n ? s.slice(0, n) + "…" : s;
@@ -61,12 +73,13 @@ export async function POST(req: Request) {
   if (!groqConfigured())
     return NextResponse.json({ error: "AI not configured — add GROQ_API_KEY" }, { status: 503 });
 
-  let body: { query?: string; history?: { role: string; text: string }[] };
+  let body: { query?: string; history?: { role: string; text: string }[]; memory?: string[] };
   try { body = await req.json(); }
   catch { return NextResponse.json({ error: "Invalid body" }, { status: 400 }); }
 
   const query = (body.query ?? "").trim();
   if (!query) return NextResponse.json({ error: "query is required" }, { status: 400 });
+  const sessionMemory: string[] = Array.isArray(body.memory) ? body.memory.filter((f) => typeof f === "string") : [];
 
   try {
     const index = await getJSON<KnowledgeIndex>("dashboard-data/knowledge-index.json");
@@ -91,7 +104,11 @@ export async function POST(req: Request) {
       ? contextLines.join("\n\n")
       : "(No matching documents found in the knowledge base.)";
 
-    const systemWithContext = `${SYSTEM}\n\nCONTEXT:\n${contextBlock}`;
+    const memorySection = sessionMemory.length
+      ? `\n\n## SESSION MEMORY (facts you already know — do NOT ask about these again)\n${sessionMemory.map((f) => `- ${f}`).join("\n")}`
+      : "";
+
+    const systemWithContext = `${SYSTEM}${memorySection}\n\nCONTEXT:\n${contextBlock}`;
 
     // Convert history to GeminiContent shape
     const history: GeminiContent[] = (body.history ?? [])
@@ -101,11 +118,22 @@ export async function POST(req: Request) {
         parts: [{ text: m.text }],
       }));
 
-    const answer = await callGroq({
+    const raw = await callGroq({
       system: systemWithContext,
       contents: [...history, { role: "user", parts: [{ text: query }] }],
       temperature: 0.5,
     });
+
+    // Extract <memory> block before showing answer to user
+    const memoryMatch = raw.match(/<memory>([\s\S]*?)<\/memory>/i);
+    let newFacts: string[] = [];
+    if (memoryMatch) {
+      try {
+        const parsed = JSON.parse(memoryMatch[1].trim());
+        if (Array.isArray(parsed)) newFacts = parsed.filter((f) => typeof f === "string" && f.trim());
+      } catch { /* malformed — ignore */ }
+    }
+    const answer = raw.replace(/<memory>[\s\S]*?<\/memory>/gi, "").trim();
 
     // Extract cited source IDs from the answer
     const citedIds = new Set<string>();
@@ -129,7 +157,7 @@ export async function POST(req: Request) {
       }
     }
 
-    return NextResponse.json({ answer, sources });
+    return NextResponse.json({ answer, sources, newFacts });
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Chat request failed" },

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { BrainCircuit, FileText, BookOpen, Layers, Globe, Send, RefreshCw, AlertCircle, Database } from "lucide-react";
+import { BrainCircuit, FileText, BookOpen, Layers, Globe, Send, RefreshCw, AlertCircle, Database, X, Zap } from "lucide-react";
 import type { KnowledgeStats } from "@/app/knowledge/page";
 import type { SourceRef } from "@/lib/knowledge";
 
@@ -41,6 +41,7 @@ export function KnowledgeHub({ initialStats }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [rebuilding, setRebuilding] = useState(false);
   const [stats, setStats] = useState<KnowledgeStats | null>(initialStats);
+  const [sessionMemory, setSessionMemory] = useState<string[]>([]);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -62,11 +63,20 @@ export function KnowledgeHub({ initialStats }: Props) {
       const res = await fetch("/api/knowledge/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: q, history }),
+        body: JSON.stringify({ query: q, history, memory: sessionMemory }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "Request failed");
       setMessages((m) => [...m, { id: uid(), role: "assistant", text: json.answer, sources: json.sources }]);
+      if (Array.isArray(json.newFacts) && json.newFacts.length > 0) {
+        setSessionMemory((prev) => {
+          const merged = [...prev];
+          for (const f of json.newFacts as string[]) {
+            if (!merged.some((e) => e.toLowerCase() === f.toLowerCase())) merged.push(f);
+          }
+          return merged;
+        });
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
       setMessages((m) => m.filter((msg) => msg.id !== userMsg.id));
@@ -136,6 +146,40 @@ export function KnowledgeHub({ initialStats }: Props) {
           {rebuilding ? "Rebuilding…" : "Rebuild Index"}
         </button>
       </div>
+
+      {/* Session memory strip */}
+      {sessionMemory.length > 0 && (
+        <div className="mt-3 flex items-start gap-2 shrink-0">
+          <div className="flex items-center gap-1.5 text-amber-500 shrink-0 mt-0.5">
+            <Zap size={12} />
+            <span className="text-[11px] font-medium uppercase tracking-wider">Memory</span>
+          </div>
+          <div className="flex flex-wrap gap-1.5 flex-1">
+            {sessionMemory.map((fact, i) => (
+              <span
+                key={i}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px]
+                           bg-amber-950/40 border border-amber-800/50 text-amber-300"
+              >
+                {fact}
+                <button
+                  onClick={() => setSessionMemory((m) => m.filter((_, j) => j !== i))}
+                  className="text-amber-500 hover:text-amber-200 transition-colors"
+                  aria-label="Remove memory"
+                >
+                  <X size={10} />
+                </button>
+              </span>
+            ))}
+            <button
+              onClick={() => setSessionMemory([])}
+              className="text-[11px] text-gray-600 hover:text-gray-400 transition-colors px-1"
+            >
+              Clear all
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Error banner */}
       {error && (
