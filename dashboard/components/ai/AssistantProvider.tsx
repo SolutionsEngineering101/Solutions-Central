@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useCallback, useRef, useEffect, ReactNode } from "react";
+import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import {
   Sparkles, X, Loader2, Send, FileText, BookOpen, Layers,
@@ -80,6 +81,7 @@ function extractBrief(fm: Record<string, unknown>, content: string): string {
 
 export function AssistantProvider({ children }: { children: ReactNode }) {
   const { data: session } = useSession();
+  const pathname = usePathname();
   const userName = session?.user?.name?.split(" ")[0] ?? "there";
   const author = session?.user?.name ?? "Solutions Central";
 
@@ -256,14 +258,16 @@ export function AssistantProvider({ children }: { children: ReactNode }) {
     <Ctx.Provider value={{ open, close }}>
       {children}
 
-      {/* Floating orb */}
-      <button
-        onClick={() => open(request)}
-        title="Solution Assistant"
-        className="fixed bottom-6 right-6 z-40 w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 shadow-xl shadow-indigo-900/40 flex items-center justify-center text-white hover:scale-105 transition-transform"
-      >
-        <Sparkles size={20} />
-      </button>
+      {/* Floating orb — Overview only */}
+      {pathname === "/" && (
+        <button
+          onClick={() => open(request)}
+          title="Solution Assistant"
+          className="fixed bottom-6 right-6 z-40 w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 shadow-xl shadow-indigo-900/40 flex items-center justify-center text-white hover:scale-105 transition-transform"
+        >
+          <Sparkles size={20} />
+        </button>
+      )}
 
       {/* Backdrop */}
       <div
