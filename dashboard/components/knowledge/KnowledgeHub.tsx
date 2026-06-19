@@ -29,9 +29,9 @@ function SourceIcon({ source }: { source: SourceRef["source"] }) {
 }
 
 const SUGGESTIONS = [
-  "What solutions have we delivered for gamification?",
-  "Show me past work for retail or FMCG clients",
-  "What playbook entries exist for onboarding?",
+  "I have a new client asking about gamification — what have we done before?",
+  "We lost a deal last quarter on a feature we've built before. Help me find it.",
+  "What's the fastest solution we can reuse for a mid-market retail client?",
 ];
 
 export function KnowledgeHub({ initialStats }: Props) {
