@@ -15,6 +15,7 @@ import {
   UserCog,
   LogOut,
   Rocket,
+  BrainCircuit,
 } from "lucide-react";
 
 const nav = [
@@ -25,6 +26,7 @@ const nav = [
   { href: "/confluence", label: "Tech Docs", icon: BookOpen },
   { href: "/playbook", label: "Playbook", icon: BookOpen },
   { href: "/blueprints", label: "Blueprints", icon: Layers },
+  { href: "/knowledge", label: "Knowledge Hub", icon: BrainCircuit },
   { href: "/team", label: "Team & Skills", icon: Users },
   { href: "/worklogs", label: "Worklogs", icon: ClipboardList },
   { href: "/profile", label: "My Profile", icon: UserCog },
