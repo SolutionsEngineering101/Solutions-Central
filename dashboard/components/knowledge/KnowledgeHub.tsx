@@ -80,7 +80,7 @@ export function KnowledgeHub({ initialStats }: Props) {
     setRebuilding(true);
     setError(null);
     try {
-      const res = await fetch("/api/knowledge/build", { method: "POST" });
+      const res = await fetch("/api/knowledge/rebuild", { method: "POST" });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "Rebuild failed");
       setStats({ chunkCount: json.chunkCount, builtAt: json.builtAt, bySource: json.bySource });
