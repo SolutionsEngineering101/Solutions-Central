@@ -1,17 +1,17 @@
 ---
 name: "Garima Kayal"
-role: ""
-email: ""
-updated: 2026-05-25
+role: "Solutions Consultant"
+email: "garima.kayal@vantagecircle.com"
+updated: 2026-06-19
 ---
 
 # Garima Kayal — Capability Profile
 
 ## Core Skills
-- 
+-
 
 ## Product Knowledge
-- 
+-
 
 ## Technical Capabilities
 - Tools:
@@ -19,9 +19,12 @@ updated: 2026-05-25
 - Integrations:
 
 ## Client / Domain Experience
-- 
+-
+
+## Focus / Working On
+
 
 ## Past Solutions Led
-- 
+-
 
 ## Notes
