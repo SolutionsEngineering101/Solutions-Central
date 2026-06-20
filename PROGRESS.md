@@ -77,12 +77,24 @@ The repo serves as: intake hub, documentation library, team workspace, playbook,
   - Pull script guard added: if Excel cell is blank for a consultant field but markdown already has a value, markdown value is preserved (prevents `--update` from wiping dashboard edits).
   - **Pending:** Add Azure credentials to `dashboard/.env.local` (see env vars section below) to enable Excel write-back.
 
+- [x] **19. Central Knowledge Hub + AI chatbot (2026-06-19)**
+  - New `/knowledge` route ("Knowledge Hub" in sidebar, BrainCircuit icon) consolidating all 4 data sources.
+  - **Index** (`dashboard-data/knowledge-index.json`): pre-computed BM25 token-frequency JSON built by `POST /api/knowledge/rebuild`. Indexes 268+ solution forms, playbook entries, blueprints, and all Confluence PMT space pages. Gitignore trap: route was originally named `build/` — matched `build/` rule in root `.gitignore` and was silently excluded from commits. Renamed to `rebuild/`.
+  - **Search**: Okapi BM25 (`lib/knowledge.ts`) — pre-computed `tf` maps at index time, IDF + length normalisation at query time. No embeddings, no external vector DB.
+  - **Chat API** (`/api/knowledge/chat`): BM25 retrieves top-15 chunks → Groq (llama-3.3-70b) answers with inline source citations → source pills rendered below each assistant message linking back to GitHub files or Confluence pages.
+  - **Chatbot personality**: interrogative and aggressive — asks clarifying questions before answering broad queries, ends every answer with a follow-up probe, pushes back on vague requests. Temperature 0.5.
+  - **Session memory**: AI extracts key facts per turn (client, industry, goal, constraint) via hidden `<memory>[...]</memory>` block. Server strips it from the visible answer and returns `newFacts[]`. Client merges into `sessionMemory` state, passes on every request. UI shows amber dismissible chips. Resets on page refresh (session-only).
+  - **Floating AI orb** moved to Overview-only (was showing on all pages).
+  - New files: `lib/knowledge.ts`, `app/api/knowledge/rebuild/route.ts`, `app/api/knowledge/chat/route.ts`, `app/knowledge/page.tsx`, `components/knowledge/KnowledgeHub.tsx`.
+
 ---
 
 ## To Do
 
 - [ ] **5. Fill in team roles** — `intake/team-and-roles.md` has all members listed but Role, Focus Areas, and Contact are blank for everyone.
-- [ ] **Deploy to Vercel** — see steps below.
+- [ ] **Deploy to Vercel** — ✅ Already live at `solutions-central.vercel.app`. Auto-deploys on push to `main`.
+- [ ] **Knowledge Hub — first index build** — Go to `/knowledge` and click **Rebuild Index** to populate `dashboard-data/knowledge-index.json` for the first time.
+- [ ] **Azure credentials for edit write-back** — Add `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_CLIENT_SECRET` to `dashboard/.env.local` and Vercel env vars to enable Excel write-back from the consultant edit panel.
 - [ ] **⚠️ REMINDER — Portfolio Health formula review** — Current formula in `SprintDashboard.tsx` is a simplified weighted-count approach that can go negative. Agreed to improve it with: (1) clamp output to 0–100, (2) add timeline pressure using Actual Release Date for In Progress / To Do items past their release date. Pankaj's full 3-factor formula (status × 0.4 + timeline × 0.35 + blockers × 0.25) is NOT suitable for the Confluence tracker because it only has a single Overall Status column and no blocker relationships. Fix is small — ask Bhargav to revisit this when ready.
 
 ---
@@ -98,6 +110,7 @@ The repo serves as: intake hub, documentation library, team workspace, playbook,
 | `/confluence` | Tech Docs | Live — PMT space pages, slide-in panel, edit/create, local hide via localStorage |
 | `/playbook` | Playbook | Live |
 | `/blueprints` | Blueprints | Live |
+| `/knowledge` | Knowledge Hub | Live — BM25 index over 4 sources, Groq RAG chat, session memory, source pills |
 | `/team` | Team & Skills | Live — member profiles mostly blank |
 | `/worklogs` | Worklogs | Live — 404 noise fixed |
 
