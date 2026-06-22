@@ -114,7 +114,7 @@ export function KnowledgeHub({ initialStats }: Props) {
     : null;
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full bg-gray-900 rounded-xl p-5">
       {/* Header */}
       <div className="flex items-center justify-between pb-4 border-b border-gray-800 shrink-0">
         <div className="flex items-center gap-3">

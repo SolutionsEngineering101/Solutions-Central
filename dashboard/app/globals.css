@@ -10,38 +10,39 @@ body {
 }
 
 /* ─── Light mode ─────────────────────────────────────────────────────────────
-   Design: light blue-gray page background + dark slate cards.
-   Cards stay dark so text inside them remains readable.
-   Page-level headings get dark text via white→dark remap.
-   CSS variable cascade restores white text INSIDE dark cards.
+   Scope: <main> only. Sidebar and overlays stay fully dark.
+   Strategy:
+     1. Give <main> a light page background.
+     2. Remap text tokens inside <main> so page-level text (headings,
+        subtitles) reads dark on the light background.
+     3. Inside any dark surface (bg-gray-900/800/950) within <main>,
+        restore light text via CSS variable cascade — so card/panel text
+        stays readable against dark card backgrounds.
 ─────────────────────────────────────────────────────────────────────────── */
-html:not(.dark) {
+
+html:not(.dark) main {
+  background-color: #eef2f7;
   color-scheme: light;
 
-  /* Page & layout backgrounds */
-  --color-gray-950: #eef2f7;    /* app bg → soft blue-gray           */
-
-  /* Cards and sidebar → dark slate (stays readable) */
-  --color-gray-900: #1e293b;    /* card bg → slate-800               */
-  --color-gray-800: #2c3e52;    /* hover / input bg → slightly lighter*/
-  --color-gray-700: #3d4f63;    /* borders inside dark surfaces       */
-
-  /* Page-level text (directly on light bg) → dark */
-  --color-white:     #0f172a;   /* text-white headings → near-black   */
-  --color-gray-300:  #1e293b;   /* body text on light bg              */
-  --color-gray-400:  #334155;   /* secondary text on light bg         */
-  --color-gray-500:  #475569;   /* muted text on light bg             */
-  --color-gray-600:  #64748b;   /* dimmer muted                       */
+  /* Page-level text (sits directly on the light bg) → dark */
+  --color-white:    #0f172a;
+  --color-gray-300: #1e293b;
+  --color-gray-400: #334155;
+  --color-gray-500: #475569;
+  --color-gray-600: #64748b;
+  --color-gray-700: #94a3b8;
 }
 
-/* Restore light text INSIDE dark cards (bg-gray-900 = #1e293b in light mode).
-   CSS variables cascade, so anything inside a card gets white text back.    */
-html:not(.dark) .bg-gray-900 {
+/* Inside any dark surface card/panel/input → restore light text */
+html:not(.dark) main .bg-gray-900,
+html:not(.dark) main .bg-gray-800,
+html:not(.dark) main .bg-gray-950 {
   --color-white:    #f8fafc;
   --color-gray-300: #cbd5e1;
   --color-gray-400: #94a3b8;
   --color-gray-500: #64748b;
   --color-gray-600: #475569;
+  --color-gray-700: #3d4f63;
 }
 
 /* ─── Scrollbar utility ─────────────────────────────────────────────────── */
