@@ -353,6 +353,26 @@ export function ProjectTracker() {
         </span>
       );
     }
+    // URL values (Jira tickets / links) → ticket key + open-in-new-tab icon
+    if (/^https?:\/\//i.test(cell)) {
+      let label = cell;
+      try {
+        const parts = new URL(cell).pathname.split("/").filter(Boolean);
+        label = parts[parts.length - 1] ?? cell;
+      } catch { /* keep full URL as label */ }
+      return (
+        <a
+          href={cell}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={e => e.stopPropagation()}
+          className="inline-flex items-center gap-1.5 text-indigo-400 hover:text-indigo-300 text-sm font-medium transition-colors group/link"
+        >
+          <span>{label}</span>
+          <ExternalLink size={11} className="shrink-0 opacity-50 group-hover/link:opacity-100 transition-opacity" />
+        </a>
+      );
+    }
     return <span className="text-gray-300 text-sm">{cell}</span>;
   };
 

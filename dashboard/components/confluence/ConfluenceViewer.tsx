@@ -289,17 +289,25 @@ CONFLUENCE_PAGE_ID=567050244`}</pre>
                           {isStatusCol(table.headers[ci] ?? "") && row[ci]
                             ? <StatusBadge text={row[ci]!} />
                             : /^https?:\/\//i.test(row[ci] ?? "")
-                              ? (
-                                <a
-                                  href={row[ci]}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-indigo-400 hover:text-indigo-300 underline truncate"
-                                  onClick={e => e.stopPropagation()}
-                                >
-                                  {(() => { try { return new URL(row[ci]!).pathname.split("/").filter(Boolean).pop() ?? row[ci]; } catch { return row[ci]; } })()}
-                                </a>
-                              )
+                              ? (() => {
+                                  let label = row[ci]!;
+                                  try {
+                                    const parts = new URL(row[ci]!).pathname.split("/").filter(Boolean);
+                                    label = parts[parts.length - 1] ?? row[ci]!;
+                                  } catch { /* keep full URL */ }
+                                  return (
+                                    <a
+                                      href={row[ci]}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      onClick={e => e.stopPropagation()}
+                                      className="inline-flex items-center gap-1.5 text-indigo-400 hover:text-indigo-300 text-sm font-medium transition-colors group/link"
+                                    >
+                                      <span>{label}</span>
+                                      <ExternalLink size={11} className="shrink-0 opacity-50 group-hover/link:opacity-100 transition-opacity" />
+                                    </a>
+                                  );
+                                })()
                               : row[ci] || <span className="text-gray-700">—</span>}
                         </td>
                       ))}
