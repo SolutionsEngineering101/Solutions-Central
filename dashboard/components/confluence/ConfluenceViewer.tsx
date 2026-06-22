@@ -288,7 +288,19 @@ CONFLUENCE_PAGE_ID=567050244`}</pre>
                         <td key={ci} className="px-4 py-3 text-gray-300 max-w-[240px] truncate">
                           {isStatusCol(table.headers[ci] ?? "") && row[ci]
                             ? <StatusBadge text={row[ci]!} />
-                            : row[ci] || <span className="text-gray-700">—</span>}
+                            : /^https?:\/\//i.test(row[ci] ?? "")
+                              ? (
+                                <a
+                                  href={row[ci]}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-indigo-400 hover:text-indigo-300 underline truncate"
+                                  onClick={e => e.stopPropagation()}
+                                >
+                                  {(() => { try { return new URL(row[ci]!).pathname.split("/").filter(Boolean).pop() ?? row[ci]; } catch { return row[ci]; } })()}
+                                </a>
+                              )
+                              : row[ci] || <span className="text-gray-700">—</span>}
                         </td>
                       ))}
                       <td className="px-4 py-3">

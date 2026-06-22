@@ -64,7 +64,12 @@ function stripTags(html: string): string {
     /<time[^>]+datetime="([^"]+)"[^>]*\/?>/gi,
     (_, dt) => dt
   );
-  return withDates
+  // Preserve the href from anchor tags so URLs round-trip correctly
+  const withLinks = withDates.replace(
+    /<a\b[^>]*?\bhref="([^"]+)"[^>]*>[\s\S]*?<\/a>/gi,
+    (_, href) => href.replace(/&amp;/g, "&").replace(/&quot;/g, '"')
+  );
+  return withLinks
     .replace(/<[^>]+>/g, " ")
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
@@ -163,10 +168,19 @@ function escapeXml(str: string): string {
     .replace(/"/g, "&quot;");
 }
 
+// Wraps a cell value as Confluence storage XML — URLs become proper <a> hyperlinks.
+function cellToXml(value: string): string {
+  const v = value.trim();
+  if (/^https?:\/\//i.test(v)) {
+    return `<td><p><a href="${escapeXml(v)}">${escapeXml(v)}</a></p></td>`;
+  }
+  return `<td><p>${escapeXml(v)}</p></td>`;
+}
+
 export function appendTableRow(storageXml: string, cells: string[]): string {
   const row =
     "<tr>" +
-    cells.map((c) => `<td><p>${escapeXml(c)}</p></td>`).join("") +
+    cells.map((c) => cellToXml(c)).join("") +
     "</tr>";
   // Insert after the last </tr> inside the first table
   const firstTableEnd = storageXml.indexOf("</table>");
@@ -196,7 +210,7 @@ export function updateTableRow(
 
   const newRow =
     "<tr>" +
-    cells.map((c) => `<td><p>${escapeXml(c)}</p></td>`).join("") +
+    cells.map((c) => cellToXml(c)).join("") +
     "</tr>";
 
   return storageXml.replace(targetTr[0], newRow);
