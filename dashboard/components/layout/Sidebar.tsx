@@ -41,8 +41,8 @@ export function Sidebar() {
   const { theme, toggle } = useTheme();
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-56 bg-gray-950 border-r border-gray-800 flex flex-col">
-      <div className="px-5 py-5 border-b border-gray-800">
+    <aside className="fixed left-0 top-0 h-screen w-56 bg-gray-900 border-r border-gray-700 flex flex-col">
+      <div className="px-5 py-5 border-b border-gray-700">
         <p className="text-white font-semibold text-sm tracking-wide">Solutions Central</p>
         <p className="text-gray-500 text-xs mt-0.5">SE Team Dashboard</p>
       </div>
@@ -66,7 +66,7 @@ export function Sidebar() {
       </nav>
 
       {session?.user && (
-        <div className="px-4 py-4 border-t border-gray-800">
+        <div className="px-4 py-4 border-t border-gray-700">
           <div className="flex items-center gap-2 mb-3">
             {session.user.image && (
               <img src={session.user.image} className="w-7 h-7 rounded-full" alt="" />
