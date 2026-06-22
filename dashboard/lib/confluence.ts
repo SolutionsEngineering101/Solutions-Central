@@ -64,8 +64,19 @@ function stripTags(html: string): string {
     /<time[^>]+datetime="([^"]+)"[^>]*\/?>/gi,
     (_, dt) => dt
   );
+  // Confluence Jira issue macro — extract the ticket key and build a browse URL
+  // Storage format: <ac:structured-macro ac:name="jira">...<ac:parameter ac:name="key">VC-123</ac:parameter>...</ac:structured-macro>
+  const withJira = withDates.replace(
+    /<ac:structured-macro\b[^>]*ac:name="jira"[\s\S]*?<\/ac:structured-macro>/gi,
+    (macro) => {
+      const keyMatch = macro.match(/<ac:parameter[^>]*ac:name="key"[^>]*>([\s\S]*?)<\/ac:parameter>/i);
+      if (!keyMatch) return "";
+      const ticketKey = keyMatch[1].trim();
+      return `https://${process.env.CONFLUENCE_DOMAIN}/browse/${ticketKey}`;
+    }
+  );
   // Preserve the href from anchor tags so URLs round-trip correctly
-  const withLinks = withDates.replace(
+  const withLinks = withJira.replace(
     /<a\b[^>]*?\bhref="([^"]+)"[^>]*>[\s\S]*?<\/a>/gi,
     (_, href) => href.replace(/&amp;/g, "&").replace(/&quot;/g, '"')
   );
