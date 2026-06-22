@@ -1,30 +1,36 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: system-ui, -apple-system, sans-serif;
 }
 
+/* ─── Light mode: remap Tailwind gray scale so the dark-first UI inverts cleanly ─── */
+html:not(.dark) {
+  color-scheme: light;
+
+  /* App surfaces */
+  --color-gray-950: #f8fafc;   /* was near-black  → off-white page bg  */
+  --color-gray-900: #ffffff;   /* was very dark   → white card bg       */
+  --color-gray-800: #f1f5f9;   /* was dark        → light hover / input */
+  --color-gray-700: #e2e8f0;   /* was dim         → subtle borders      */
+
+  /* Text & muted tones */
+  --color-gray-600: #94a3b8;
+  --color-gray-500: #64748b;
+  --color-gray-400: #475569;
+  --color-gray-300: #334155;
+  --color-gray-200: #1e293b;
+
+  /* Primary text: text-white → slate-950 */
+  --color-white: #0f172a;
+}
+
+/* ─── Scrollbar utility ─── */
 .hide-scrollbar {
   scrollbar-width: none;
   -ms-overflow-style: none;
