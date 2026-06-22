@@ -594,7 +594,7 @@ CONFLUENCE_PAGE_ID=567050244`}</pre>
 
       {/* Table */}
       <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
-        <div className="overflow-auto max-h-[72vh]">
+        <div className="overflow-auto max-h-[72vh] hide-scrollbar">
           <table className="w-full text-sm">
 
             {/* Header — sticky on vertical scroll */}
