@@ -29,9 +29,10 @@ function SourceIcon({ source }: { source: SourceRef["source"] }) {
 }
 
 const SUGGESTIONS = [
-  "I have a new client asking about gamification — what have we done before?",
-  "We lost a deal last quarter on a feature we've built before. Help me find it.",
-  "What's the fastest solution we can reuse for a mid-market retail client?",
+  "Which clients in our intake have asked for recognition or rewards program integrations, and what did we deliver?",
+  "What does the playbook say about handling integration challenges or blockers during client onboarding?",
+  "Is there a pre-built blueprint for employee engagement or gamification use cases we can reuse?",
+  "Summarise what the Confluence docs cover for the current sprint's active projects.",
 ];
 
 export function KnowledgeHub({ initialStats }: Props) {
