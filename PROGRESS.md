@@ -125,6 +125,24 @@ The repo serves as: intake hub, documentation library, team workspace, playbook,
 - [ ] **Commit and push extension + dashboard changes** — Nothing from session 2026-06-26 has been committed yet. Commit: extension shell, dashboard auth changes, github.ts large-file fix.
 - [ ] **Distribute extension** — Package `chrome-extension/` as a zip and upload to Chrome Web Store (unlisted) for one-click install by the sales team.
 
+### Chrome Extension — Distribution Methods
+
+**Option 1: Load unpacked (Developer mode) — for SE team**
+1. Clone/download the repo
+2. Go to `chrome://extensions` → enable Developer mode
+3. Click Load unpacked → select `chrome-extension/` folder
+- Works for technical users who already have the repo. No packaging needed.
+
+**Option 2: Chrome Web Store Unlisted — for sales team (recommended)**
+1. Go to chrome.google.com/webstore/devconsole
+2. Pay one-time $5 developer registration fee
+3. Zip the `chrome-extension/` folder
+4. New Item → upload zip → fill name/description/screenshot
+5. Visibility → set to Unlisted
+6. Publish → share the private install link with the team
+- No Developer mode needed. One-click install. Auto-updates when a new version is uploaded.
+- ⚠️ Before publishing: update `chrome-extension/config.js` DASHBOARD_URL to `https://solutions-central.vercel.app`, commit and push first.
+
 ---
 
 ## Dashboard Pages
