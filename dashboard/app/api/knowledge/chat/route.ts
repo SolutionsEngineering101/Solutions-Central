@@ -4,6 +4,21 @@ import { authOptions } from "@/lib/auth";
 import { getJSON } from "@/lib/github";
 import { callGroq, groqConfigured, type GeminiContent } from "@/lib/groq";
 import { bm25Search, type KnowledgeIndex, type SourceRef } from "@/lib/knowledge";
+import { verifyExtensionToken } from "@/lib/extension-token";
+
+function extensionCorsHeaders(req: Request): HeadersInit {
+  const origin = req.headers.get("origin") ?? "";
+  if (!origin.startsWith("chrome-extension://")) return {};
+  return {
+    "Access-Control-Allow-Origin": origin,
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+  };
+}
+
+export async function OPTIONS(req: Request) {
+  return new Response(null, { status: 204, headers: extensionCorsHeaders(req) });
+}
 
 const SYSTEM = `You are a sharp, proactive knowledge assistant for Vantage Circle's Solutions Engineering team. You have access to solution requests, playbook entries, blueprints, and Confluence docs — all indexed below as CONTEXT.
 
@@ -66,19 +81,25 @@ function sourceLabel(source: string): string {
 }
 
 export async function POST(req: Request) {
+  // Accept either a NextAuth session (dashboard) or a Bearer token (extension)
+  const authHeader = req.headers.get("authorization") ?? "";
+  const bearerToken = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
+  const extensionUser = bearerToken ? verifyExtensionToken(bearerToken) : null;
+
   const session = await getServerSession(authOptions);
-  if (!session && process.env.NEXT_PUBLIC_DEV_NO_AUTH !== "1")
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const isAuthed = !!session || !!extensionUser || process.env.NEXT_PUBLIC_DEV_NO_AUTH === "1";
+  if (!isAuthed)
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: extensionCorsHeaders(req) });
 
   if (!groqConfigured())
-    return NextResponse.json({ error: "AI not configured — add GROQ_API_KEY" }, { status: 503 });
+    return NextResponse.json({ error: "AI not configured — add GROQ_API_KEY" }, { status: 503, headers: extensionCorsHeaders(req) });
 
-  let body: { query?: string; history?: { role: string; text: string }[]; memory?: string[] };
+  let body: { query?: string; history?: { role: string; text: string }[]; memory?: string[]; pageContext?: string };
   try { body = await req.json(); }
-  catch { return NextResponse.json({ error: "Invalid body" }, { status: 400 }); }
+  catch { return NextResponse.json({ error: "Invalid body" }, { status: 400, headers: extensionCorsHeaders(req) }); }
 
   const query = (body.query ?? "").trim();
-  if (!query) return NextResponse.json({ error: "query is required" }, { status: 400 });
+  if (!query) return NextResponse.json({ error: "query is required" }, { status: 400, headers: extensionCorsHeaders(req) });
   const sessionMemory: string[] = Array.isArray(body.memory) ? body.memory.filter((f) => typeof f === "string") : [];
 
   try {
@@ -108,7 +129,11 @@ export async function POST(req: Request) {
       ? `\n\n## SESSION MEMORY (facts you already know — do NOT ask about these again)\n${sessionMemory.map((f) => `- ${f}`).join("\n")}`
       : "";
 
-    const systemWithContext = `${SYSTEM}${memorySection}\n\nCONTEXT:\n${contextBlock}`;
+    const pageSection = body.pageContext
+      ? `\n\n## CURRENT PAGE CONTEXT (what the user is looking at right now)\n${body.pageContext.slice(0, 1500)}`
+      : "";
+
+    const systemWithContext = `${SYSTEM}${memorySection}${pageSection}\n\nCONTEXT:\n${contextBlock}`;
 
     // Convert history to GeminiContent shape
     const history: GeminiContent[] = (body.history ?? [])
@@ -157,11 +182,11 @@ export async function POST(req: Request) {
       }
     }
 
-    return NextResponse.json({ answer, sources, newFacts });
+    return NextResponse.json({ answer, sources, newFacts }, { headers: extensionCorsHeaders(req) });
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Chat request failed" },
-      { status: 500 }
+      { status: 500, headers: extensionCorsHeaders(req) }
     );
   }
 }

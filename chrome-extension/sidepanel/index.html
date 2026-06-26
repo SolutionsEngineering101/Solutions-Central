@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SC Assistant</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- Auth screen -->
+  <div id="auth-screen" class="screen">
+    <div class="auth-inner">
+      <div class="logo-mark">SC</div>
+      <h1>Solutions Central</h1>
+      <p>Sign in with your team GitHub account to access the assistant.</p>
+      <button id="auth-btn" class="btn-primary">Sign in with GitHub</button>
+      <p class="auth-note">Opens the dashboard login in a new tab.</p>
+    </div>
+  </div>
+
+  <!-- Chat screen -->
+  <div id="chat-screen" class="screen hidden">
+
+    <div class="header">
+      <div class="header-left">
+        <div class="logo-small">SC</div>
+        <span class="header-title">SC Assistant</span>
+      </div>
+      <button id="signout-btn" class="icon-btn" title="Sign out">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <path d="M5 2H2a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h3M9 10l3-3-3-3M12 7H5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
+
+    <div id="context-bar" class="context-bar">
+      <div class="dot-live"></div>
+      <span id="context-label">Fetching page…</span>
+    </div>
+
+    <div id="messages" class="messages">
+      <div class="welcome">
+        <div class="welcome-name" id="welcome-name">Hello</div>
+        <div class="welcome-sub">Ask about solutions, playbooks, blueprints, or past client work.</div>
+        <div class="chips">
+          <button class="chip" data-prompt="What are our most recent solutions?">Recent solutions</button>
+          <button class="chip" data-prompt="Show me relevant playbook entries for what I'm working on">Relevant playbooks</button>
+          <button class="chip" data-prompt="Do we have a blueprint for this?">Find a blueprint</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="input-area">
+      <textarea
+        id="input"
+        placeholder="Ask about solutions, clients, playbooks…"
+        rows="1"
+        maxlength="2000"
+      ></textarea>
+      <button id="send-btn" class="send-btn" disabled>
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <path d="M1 7h12M7 1l6 6-6 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
+
+  </div>
+
+  <script type="module" src="chat.js"></script>
+</body>
+</html>

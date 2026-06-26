@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "Solutions Central Assistant",
+  "version": "1.0.0",
+  "description": "Context-aware AI assistant for the Solutions Engineering team.",
+  "permissions": ["sidePanel", "activeTab", "scripting", "storage", "tabs"],
+  "host_permissions": ["<all_urls>"],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "side_panel": {
+    "default_path": "sidepanel/index.html"
+  },
+  "action": {
+    "default_title": "Solutions Central Assistant"
+  }
+}

@@ -1,0 +1,2 @@
+// Update DASHBOARD_URL to your deployed dashboard before loading the extension in production.
+export const DASHBOARD_URL = "http://localhost:3000";

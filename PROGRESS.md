@@ -77,6 +77,25 @@ The repo serves as: intake hub, documentation library, team workspace, playbook,
   - Pull script guard added: if Excel cell is blank for a consultant field but markdown already has a value, markdown value is preserved (prevents `--update` from wiping dashboard edits).
   - **Pending:** Add Azure credentials to `dashboard/.env.local` (see env vars section below) to enable Excel write-back.
 
+- [x] **20. Chrome Extension — SC Assistant Side Panel (2026-06-26)**
+  - Google Gemini-style side panel assistant for Chrome. Click the extension icon on any tab → side panel opens with a context-aware AI chatbot grounded in the Solutions Central knowledge base.
+  - **Auth flow**: Extension opens `${DASHBOARD_URL}/extension-auth` → user logs in via GitHub OAuth (NextAuth) → dashboard generates a signed HMAC-SHA256 JWT (7-day expiry) → content script reads token from hidden DOM element → stores in `chrome.storage.sync` → tab closes automatically. Bearer token sent on every `/api/knowledge/chat` request.
+  - **Page context**: Content script reads current tab title, URL, visible text (2500 chars), and selected text. Injected as `PAGE CONTEXT` section into the AI system prompt. Context bar in panel shows active page. Updates on tab switch and navigation.
+  - **Conversation history**: Persisted in `chrome.storage.local` (last 10 turns). Session memory facts (extracted by AI per turn) also persisted. Both survive panel close/reopen.
+  - **Knowledge chat**: Reuses existing `/api/knowledge/chat` endpoint — BM25 search over the knowledge index, Groq llama-3.3-70b answers with source citations rendered as clickable chips.
+  - **CORS**: Added `OPTIONS` handler + `chrome-extension://` origin allowlist to `/api/knowledge/chat`. Extension origins are dynamic so headers are set per-request.
+  - **Large file fix**: `getFile()` in `lib/github.ts` now falls back to `download_url` when GitHub API omits inline content (files > 1MB). Knowledge index (270+ chunks) was silently returning `null` — this was the root cause of the "Knowledge index not built" 503 error even after rebuilding.
+  - **New files**:
+    - `chrome-extension/manifest.json` — MV3, side panel, content script, service worker
+    - `chrome-extension/background.js` — opens side panel on icon click, relays auth token
+    - `chrome-extension/content.js` — page context extraction + auth callback handler
+    - `chrome-extension/config.js` — `DASHBOARD_URL` (update to prod URL before distributing)
+    - `chrome-extension/sidepanel/index.html` + `style.css` + `chat.js` — full chat UI
+    - `dashboard/lib/extension-token.ts` — HMAC token create/verify (no external deps)
+    - `dashboard/app/extension-auth/page.tsx` — auth callback page, token in hidden DOM element
+  - **Modified**: `dashboard/app/api/knowledge/chat/route.ts` (Bearer auth + CORS + page context), `dashboard/lib/github.ts` (large file fallback), `dashboard/.env.local.example` (EXTENSION_JWT_SECRET)
+  - **Status**: Working locally at `localhost:3000`. Not yet committed or pushed.
+
 - [x] **19. Central Knowledge Hub + AI chatbot (2026-06-19)**
   - New `/knowledge` route ("Knowledge Hub" in sidebar, BrainCircuit icon) consolidating all 4 data sources.
   - **Index** (`dashboard-data/knowledge-index.json`): pre-computed BM25 token-frequency JSON built by `POST /api/knowledge/rebuild`. Indexes 268+ solution forms, playbook entries, blueprints, and all Confluence PMT space pages. Gitignore trap: route was originally named `build/` — matched `build/` rule in root `.gitignore` and was silently excluded from commits. Renamed to `rebuild/`.
@@ -96,6 +115,15 @@ The repo serves as: intake hub, documentation library, team workspace, playbook,
 - [ ] **Knowledge Hub — first index build** — Go to `/knowledge` and click **Rebuild Index** to populate `dashboard-data/knowledge-index.json` for the first time.
 - [ ] **Azure credentials for edit write-back** — Add `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_CLIENT_SECRET` to `dashboard/.env.local` and Vercel env vars to enable Excel write-back from the consultant edit panel.
 - [ ] **⚠️ REMINDER — Portfolio Health formula review** — Current formula in `SprintDashboard.tsx` is a simplified weighted-count approach that can go negative. Agreed to improve it with: (1) clamp output to 0–100, (2) add timeline pressure using Actual Release Date for In Progress / To Do items past their release date. Pankaj's full 3-factor formula (status × 0.4 + timeline × 0.35 + blockers × 0.25) is NOT suitable for the Confluence tracker because it only has a single Overall Status column and no blocker relationships. Fix is small — ask Bhargav to revisit this when ready.
+
+### Chrome Extension — Next Steps (paused, pending Azure AD setup)
+
+- [ ] **Register Azure AD app** — portal.azure.com → Azure Active Directory → App registrations → New registration. Single tenant (Vantage Circle org only). Redirect URIs: `https://solutions-central.vercel.app/api/auth/callback/azure-ad` and `http://localhost:3000/api/auth/callback/azure-ad`. Collect: `AZURE_AD_CLIENT_ID`, `AZURE_AD_CLIENT_SECRET`, `AZURE_AD_TENANT_ID`.
+- [ ] **Add Microsoft OAuth + role system** — Once Azure AD app is registered: add `AzureADProvider` to NextAuth alongside existing GitHub provider. Add `role` field to JWT/session (`team` = GitHub login, `sales` = Microsoft login). Add Next.js middleware to block `sales` role from all dashboard routes except `/extension-auth` and `/api/knowledge/chat`. Add `/extension-only` page for sales users who try to access the dashboard directly.
+- [ ] **Automated knowledge index rebuild** — Two-layer: (1) GitHub Actions workflow triggers `POST /api/knowledge/rebuild` on push to `main` when `intake/solutions-forms/**`, `playbook/entries/**`, or `pre-built-solutions/blueprints/**` change. (2) Vercel daily cron as backup. Needs `REBUILD_SECRET` env var added to both GitHub secrets and Vercel env vars.
+- [ ] **Update `config.js` to production URL** — Change `chrome-extension/config.js` `DASHBOARD_URL` from `http://localhost:3000` to `https://solutions-central.vercel.app` before distributing.
+- [ ] **Commit and push extension + dashboard changes** — Nothing from session 2026-06-26 has been committed yet. Commit: extension shell, dashboard auth changes, github.ts large-file fix.
+- [ ] **Distribute extension** — Package `chrome-extension/` as a zip and upload to Chrome Web Store (unlisted) for one-click install by the sales team.
 
 ---
 
@@ -146,6 +174,17 @@ CONFLUENCE_API_TOKEN=   # from id.atlassian.com or Jira profile → Account Sett
 CONFLUENCE_DOMAIN=vantagecirclejira.atlassian.net
 CONFLUENCE_PAGE_ID=567050244
 CONFLUENCE_SPACE_KEY=PMT
+
+# Chrome Extension — JWT signing (signs tokens issued at /extension-auth)
+EXTENSION_JWT_SECRET=   # openssl rand -base64 32 — defaults to NEXTAUTH_SECRET if not set
+
+# Microsoft Azure AD OAuth (for sales team extension access — not yet implemented)
+AZURE_AD_CLIENT_ID=     # from Azure portal → App registrations → Solutions Central Assistant
+AZURE_AD_CLIENT_SECRET= # from App registrations → Certificates & secrets
+AZURE_AD_TENANT_ID=     # from Azure portal → Azure Active Directory → Overview
+
+# Automated knowledge index rebuild (for GitHub Actions + Vercel cron — not yet implemented)
+REBUILD_SECRET=         # openssl rand -base64 32
 ```
 
 ## Dashboard — Go Live Steps

@@ -16,7 +16,14 @@ const REPO = process.env.GITHUB_REPO_NAME!;
 export async function getFile(path: string): Promise<string | null> {
   try {
     const { data } = await octokit.repos.getContent({ owner: OWNER, repo: REPO, path });
-    if ("content" in data) return Buffer.from(data.content, "base64").toString("utf-8");
+    if ("content" in data && data.content) {
+      return Buffer.from(data.content, "base64").toString("utf-8");
+    }
+    // File > 1 MB: GitHub omits inline content — fall back to the raw download URL
+    if ("download_url" in data && data.download_url) {
+      const res = await fetch(data.download_url);
+      if (res.ok) return res.text();
+    }
     return null;
   } catch (err: unknown) {
     if (err && typeof err === "object" && "status" in err && err.status === 404) return null;
