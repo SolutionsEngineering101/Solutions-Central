@@ -131,8 +131,46 @@ The repo serves as: intake hub, documentation library, team workspace, playbook,
 
 ### Chrome Extension — Next Steps (paused, pending Azure AD setup)
 
-- [ ] **Register Azure AD app** — portal.azure.com → Azure Active Directory → App registrations → New registration. Single tenant (Vantage Circle org only). Redirect URIs: `https://solutions-central.vercel.app/api/auth/callback/azure-ad` and `http://localhost:3000/api/auth/callback/azure-ad`. Collect: `AZURE_AD_CLIENT_ID`, `AZURE_AD_CLIENT_SECRET`, `AZURE_AD_TENANT_ID`.
-- [ ] **Add Microsoft OAuth + role system** — Once Azure AD app is registered: add `AzureADProvider` to NextAuth alongside existing GitHub provider. Add `role` field to JWT/session (`team` = GitHub login, `sales` = Microsoft login). Add Next.js middleware to block `sales` role from all dashboard routes except `/extension-auth` and `/api/knowledge/chat`. Add `/extension-only` page for sales users who try to access the dashboard directly.
+- [ ] **OTP Email Auth for sales team** — PLANNED, ready to build next session. Azure AD dropped in favour of email OTP (no IT involvement, no OAuth app registration). Full plan documented below.
+
+  #### OTP Auth Plan (approved, build next session)
+
+  **What:** Sales team enters @vantagecircle.com email in the extension → gets 6-digit code via email (Resend) → types code → gets JWT with `role: sales`. SE team keeps GitHub OAuth unchanged. Both paths coexist on the same auth screen.
+
+  **New files to create:**
+  - `dashboard/lib/otp-store.ts` — in-memory Map, stores OTP + expiry + attempts + used flag + send rate limit
+  - `dashboard/lib/resend.ts` — plain fetch wrapper to Resend REST API, exports `sendOTPEmail(to, otp)`
+  - `dashboard/app/api/extension/otp/send/route.ts` — validates domain, rate-limits, generates OTP, sends email
+  - `dashboard/app/api/extension/otp/verify/route.ts` — validates OTP, returns JWT on success
+
+  **Files to modify:**
+  - `dashboard/lib/extension-token.ts` — add `role: 'team' | 'sales'` to TokenPayload
+  - `dashboard/app/extension-auth/page.tsx` — pass `role: 'team'` for GitHub users
+  - `chrome-extension/sidepanel/index.html` — add email + OTP inputs to auth screen
+  - `chrome-extension/sidepanel/chat.js` — OTP send/verify state machine
+  - `chrome-extension/sidepanel/style.css` — email input, OTP input, divider, error states
+  - `dashboard/.env.local.example` — add RESEND_API_KEY and OTP_FROM_EMAIL
+
+  **Security model:**
+  - Domain: @vantagecircle.com only (server-enforced on both endpoints)
+  - OTP TTL: 10 minutes
+  - Max wrong attempts: 3 (OTP invalidated after 3rd)
+  - Send rate limit: 3 per email per 15 min (prevents email bombing)
+  - Single-use: marked used on first valid verify
+  - Always returns ok:true on send (prevents email enumeration)
+
+  **New env vars needed:**
+  - `RESEND_API_KEY` — from resend.com → API Keys
+  - `OTP_FROM_EMAIL` — `onboarding@resend.dev` (free, immediate) or `noreply@vantagecircle.com` (needs DNS)
+
+  **Open decisions to answer at start of next session:**
+  1. From address: resend.dev subdomain (zero setup) or vantagecircle.com domain (needs DNS records)?
+  2. Auth screen: GitHub + email both visible with divider, or GitHub default + "Sales team?" link?
+  3. Name for OTP users: derive from email prefix (bhargav.nath → "Bhargav"), ask during setup, or use email?
+  4. Dashboard blocking for sales role: add Next.js middleware now or next session?
+  5. Resend account: already created? If not, do it before the session starts.
+
+  **Before next session:** Create a Resend account at resend.com (free tier, 3,000 emails/month). Get the API key. Decide on the from address.
 - [ ] **Automated knowledge index rebuild** — Two-layer: (1) GitHub Actions workflow triggers `POST /api/knowledge/rebuild` on push to `main` when `intake/solutions-forms/**`, `playbook/entries/**`, or `pre-built-solutions/blueprints/**` change. (2) Vercel daily cron as backup. Needs `REBUILD_SECRET` env var added to both GitHub secrets and Vercel env vars.
 - [ ] **Update `config.js` to production URL** — Change `chrome-extension/config.js` `DASHBOARD_URL` from `http://localhost:3000` to `https://solutions-central.vercel.app` before distributing.
 - [ ] **Commit and push extension + dashboard changes** — Nothing from session 2026-06-26 has been committed yet. Commit: extension shell, dashboard auth changes, github.ts large-file fix.
