@@ -1,11 +1,11 @@
 // ── Iframe — post content up to the parent frame ─────────────────────────────
 if (window !== window.top) {
   const postToParent = () => {
-    const text = document.body?.innerText?.trim() ?? "";
+    const text = (document.body && document.body.innerText && document.body.innerText.trim()) || "";
     if (text.length > 50) {
       try {
         window.parent.postMessage({ type: "SC_FRAME_CONTENT", text: text.slice(0, 3000) }, "*");
-      } catch {}
+      } catch (e) {}
     }
   };
   if (document.readyState === "loading") {
@@ -17,8 +17,8 @@ if (window !== window.top) {
   // ── Main frame ──────────────────────────────────────────────────────────────
 
   let iframeContent = "";
-  window.addEventListener("message", (e) => {
-    if (e.data?.type === "SC_FRAME_CONTENT" && e.data.text) {
+  window.addEventListener("message", function(e) {
+    if (e.data && e.data.type === "SC_FRAME_CONTENT" && e.data.text) {
       iframeContent = e.data.text;
     }
   });
@@ -27,46 +27,51 @@ if (window !== window.top) {
     const host = window.location.hostname;
 
     if (host === "mail.google.com") {
-      const subject = document.querySelector("h2.hP")?.innerText?.trim() ?? "";
-      const sender  = document.querySelector(".gD")?.getAttribute("email")
-                   ?? document.querySelector(".go")?.innerText?.trim() ?? "";
-      const body    = document.querySelector(".a3s.aiL, .a3s, .ii.gt .a3s")?.innerText?.trim()
-                   ?? document.querySelector(".ii.gt")?.innerText?.trim() ?? "";
+      const subjectEl = document.querySelector("h2.hP");
+      const senderEl  = document.querySelector(".gD");
+      const senderAlt = document.querySelector(".go");
+      const bodyEl    = document.querySelector(".a3s.aiL") || document.querySelector(".a3s") || document.querySelector(".ii.gt");
+      const subject   = (subjectEl && subjectEl.innerText && subjectEl.innerText.trim()) || "";
+      const sender    = (senderEl && senderEl.getAttribute("email")) || (senderAlt && senderAlt.innerText && senderAlt.innerText.trim()) || "";
+      const body      = (bodyEl && bodyEl.innerText && bodyEl.innerText.trim()) || "";
       if (body) {
-        return `Email${subject ? ` — Subject: ${subject}` : ""}${sender ? ` — From: ${sender}` : ""}\n\n${body}`.slice(0, 2500);
+        return ("Email" + (subject ? " — Subject: " + subject : "") + (sender ? " — From: " + sender : "") + "\n\n" + body).slice(0, 2500);
       }
     }
 
     if (host.includes("outlook.") || host.includes("office.com")) {
-      const subject = document.querySelector('[aria-label*="Subject"]')?.innerText?.trim()
-                   ?? document.querySelector('[role="heading"][class*="subject"]')?.innerText?.trim() ?? "";
-      const body = iframeContent
-                || document.querySelector('[aria-label="Message body"], [role="document"]')?.innerText?.trim() ?? "";
+      const subjectEl  = document.querySelector('[aria-label*="Subject"]') || document.querySelector('[role="heading"][class*="subject"]');
+      const bodyEl     = document.querySelector('[aria-label="Message body"]') || document.querySelector('[role="document"]');
+      const subject    = (subjectEl && subjectEl.innerText && subjectEl.innerText.trim()) || "";
+      const body       = iframeContent || (bodyEl && bodyEl.innerText && bodyEl.innerText.trim()) || "";
       if (body) {
-        return `Email${subject ? ` — Subject: ${subject}` : ""}\n\n${body}`.slice(0, 2500);
+        return ("Email" + (subject ? " — Subject: " + subject : "") + "\n\n" + body).slice(0, 2500);
       }
     }
 
     if (host.includes("atlassian.net") || host.includes("jira.")) {
-      const title  = document.querySelector('[data-testid="issue.views.issue-base.foundation.summary.heading"]')?.innerText?.trim()
-                  ?? document.querySelector("#summary-val")?.innerText?.trim() ?? "";
-      const desc   = document.querySelector('[data-testid="issue.views.field.rich-text.description"], #description-val')?.innerText?.trim() ?? "";
-      const status = document.querySelector('[data-testid="issue.fields.status.status-field-wrapper"] span, #status-val')?.innerText?.trim() ?? "";
+      const titleEl  = document.querySelector('[data-testid="issue.views.issue-base.foundation.summary.heading"]') || document.querySelector("#summary-val");
+      const descEl   = document.querySelector('[data-testid="issue.views.field.rich-text.description"]') || document.querySelector("#description-val");
+      const statusEl = document.querySelector('[data-testid="issue.fields.status.status-field-wrapper"] span') || document.querySelector("#status-val");
+      const title    = (titleEl && titleEl.innerText && titleEl.innerText.trim()) || "";
+      const desc     = (descEl && descEl.innerText && descEl.innerText.trim()) || "";
+      const status   = (statusEl && statusEl.innerText && statusEl.innerText.trim()) || "";
       if (title || desc) {
-        return `Jira Issue${title ? `: ${title}` : ""}${status ? ` [${status}]` : ""}${desc ? `\n\n${desc}` : ""}`.slice(0, 2500);
+        return ("Jira Issue" + (title ? ": " + title : "") + (status ? " [" + status + "]" : "") + (desc ? "\n\n" + desc : "")).slice(0, 2500);
       }
     }
 
-    const mainEl = document.querySelector("main, article, [role='main'], .main-content") ?? document.body;
-    return (mainEl.innerText ?? "").replace(/\s+/g, " ").trim().slice(0, 2500);
+    const mainEl = document.querySelector("main") || document.querySelector("article") || document.querySelector("[role='main']") || document.body;
+    return ((mainEl && mainEl.innerText) || "").replace(/\s+/g, " ").trim().slice(0, 2500);
   };
 
-  chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  chrome.runtime.onMessage.addListener(function(message, _sender, sendResponse) {
     if (message.type === "GET_PAGE_CONTEXT") {
+      const sel = window.getSelection();
       sendResponse({
         title:    document.title,
         url:      window.location.href,
-        selected: (window.getSelection()?.toString() ?? "").trim(),
+        selected: (sel && sel.toString() && sel.toString().trim()) || "",
         text:     extractPageText(),
       });
       return true;
@@ -78,8 +83,8 @@ if (window !== window.top) {
     if (!el) return;
     const token = el.dataset.token;
     if (!token) return;
-    chrome.runtime.sendMessage({ type: "AUTH_TOKEN_RECEIVED", token }, (res) => {
-      if (res?.ok) setTimeout(() => window.close(), 600);
+    chrome.runtime.sendMessage({ type: "AUTH_TOKEN_RECEIVED", token }, function(res) {
+      if (res && res.ok) setTimeout(function() { window.close(); }, 600);
     });
   };
 
