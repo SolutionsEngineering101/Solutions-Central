@@ -101,10 +101,29 @@ async function showChat() {
 async function refreshPageContext() {
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (!tab?.id) throw new Error("no tab");
-    pageContext = await chrome.tabs.sendMessage(tab.id, { type: "GET_PAGE_CONTEXT" });
+    if (!tab || !tab.id) throw new Error("no tab");
+
+    // Try messaging the existing content script first
+    let ctx = null;
+    try {
+      ctx = await chrome.tabs.sendMessage(tab.id, { type: "GET_PAGE_CONTEXT" });
+    } catch {
+      // Content script not injected yet (e.g. Outlook soft navigation) — inject it
+      try {
+        await chrome.scripting.executeScript({
+          target: { tabId: tab.id, allFrames: true },
+          files: ["content.js"],
+        });
+        await new Promise(function(r) { setTimeout(r, 400); });
+        ctx = await chrome.tabs.sendMessage(tab.id, { type: "GET_PAGE_CONTEXT" });
+      } catch {
+        throw new Error("injection failed");
+      }
+    }
+
+    pageContext = ctx;
     const domain = new URL(pageContext.url).hostname.replace(/^www\./, "");
-    contextLabel.textContent = `${pageContext.title || domain}`;
+    contextLabel.textContent = pageContext.title || domain;
     contextBar.classList.remove("no-context");
   } catch {
     pageContext = null;
