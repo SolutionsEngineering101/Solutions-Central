@@ -67,7 +67,42 @@ Rules for the memory block:
 - Do NOT repeat facts already in SESSION MEMORY.
 - Do NOT include the user's question itself — only contextual facts about their situation.
 - Max 2 facts per turn. Use an empty array [] if nothing new was learned.
-- This block is stripped before showing the response to the user — write it freely.`;
+- This block is stripped before showing the response to the user — write it freely.
+
+## Data Protection (STRICT — non-negotiable)
+- Never reproduce entire documents, client records, solution forms, or playbook entries verbatim.
+- Summarize and reference only. Use citations like [FORM:SC-0045] rather than quoting raw content in full.
+- If asked to "export", "show all clients", "list everything", "dump the database", or any bulk extraction request — decline firmly and explain that full data export is not available through this interface.
+- Do not echo back sensitive identifiers (client company names, email addresses, internal IDs) unless they are directly necessary to answer the specific question.
+- If a question seems designed to extract raw data rather than get help with a task, push back and ask what the person is actually trying to accomplish.`;
+
+// ── Rate limiter (in-memory, resets on deploy — sufficient for small team) ────
+const rlMap = new Map<string, { count: number; resetAt: number }>();
+const RL_LIMIT = 60;                    // requests per user per window
+const RL_WINDOW = 60 * 60 * 1000;      // 1 hour
+
+function checkRateLimit(userId: string): { allowed: boolean; remaining: number } {
+  const now = Date.now();
+  const entry = rlMap.get(userId);
+  if (!entry || now > entry.resetAt) {
+    rlMap.set(userId, { count: 1, resetAt: now + RL_WINDOW });
+    return { allowed: true, remaining: RL_LIMIT - 1 };
+  }
+  if (entry.count >= RL_LIMIT) return { allowed: false, remaining: 0 };
+  entry.count++;
+  return { allowed: true, remaining: RL_LIMIT - entry.count };
+}
+
+// ── Audit log (structured — visible in Vercel logs) ───────────────────────────
+function auditLog(entry: {
+  user: string;
+  source: "dashboard" | "extension";
+  queryLen: number;
+  chunks: number;
+  sources: number;
+}) {
+  console.log(JSON.stringify({ event: "knowledge_chat", ts: new Date().toISOString(), ...entry }));
+}
 
 function clip(s: string, n = 400): string {
   return s.length > n ? s.slice(0, n) + "…" : s;
@@ -90,6 +125,21 @@ export async function POST(req: Request) {
   const isAuthed = !!session || !!extensionUser || process.env.NEXT_PUBLIC_DEV_NO_AUTH === "1";
   if (!isAuthed)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: extensionCorsHeaders(req) });
+
+  // Identify user for rate limiting and audit log
+  const userId = extensionUser?.sub
+    ?? (session?.user as { id?: string })?.id
+    ?? (session?.user?.email)
+    ?? "anonymous";
+  const source: "dashboard" | "extension" = extensionUser ? "extension" : "dashboard";
+
+  // Rate limit: 60 requests per user per hour
+  const rl = checkRateLimit(userId);
+  if (!rl.allowed)
+    return NextResponse.json(
+      { error: "Rate limit reached — 60 requests per hour. Try again later." },
+      { status: 429, headers: extensionCorsHeaders(req) }
+    );
 
   if (!groqConfigured())
     return NextResponse.json({ error: "AI not configured — add GROQ_API_KEY" }, { status: 503, headers: extensionCorsHeaders(req) });
@@ -181,6 +231,8 @@ export async function POST(req: Request) {
         sources.push({ id: chunk.id, source: chunk.source, title: chunk.title, url: chunk.meta.url });
       }
     }
+
+    auditLog({ user: userId, source, queryLen: query.length, chunks: topChunks.length, sources: sources.length });
 
     return NextResponse.json({ answer, sources, newFacts }, { headers: extensionCorsHeaders(req) });
   } catch (err) {

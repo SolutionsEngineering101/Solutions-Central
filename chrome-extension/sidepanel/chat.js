@@ -30,9 +30,17 @@ async function init() {
   token = stored.scToken ?? null;
   userName = stored.scUser ?? "";
 
-  const local = await chrome.storage.local.get(["scHistory", "scMemory"]);
-  history = local.scHistory ?? [];
-  memory = local.scMemory ?? [];
+  const local = await chrome.storage.local.get(["scHistory", "scMemory", "scHistoryTs"]);
+  const ONE_DAY = 24 * 60 * 60 * 1000;
+  const historyAge = local.scHistoryTs ? Date.now() - local.scHistoryTs : Infinity;
+  if (historyAge > ONE_DAY) {
+    history = [];
+    memory = [];
+    await chrome.storage.local.remove(["scHistory", "scMemory", "scHistoryTs"]);
+  } else {
+    history = local.scHistory || [];
+    memory = local.scMemory || [];
+  }
 
   if (token) {
     showChat();
@@ -235,7 +243,7 @@ async function send() {
       memory = [...memory, ...data.newFacts].slice(-20);
     }
 
-    await chrome.storage.local.set({ scHistory: history, scMemory: memory });
+    await chrome.storage.local.set({ scHistory: history, scMemory: memory, scHistoryTs: Date.now() });
 
   } catch (err) {
     loadingEl.remove();
