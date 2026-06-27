@@ -94,7 +94,20 @@ The repo serves as: intake hub, documentation library, team workspace, playbook,
     - `dashboard/lib/extension-token.ts` — HMAC token create/verify (no external deps)
     - `dashboard/app/extension-auth/page.tsx` — auth callback page, token in hidden DOM element
   - **Modified**: `dashboard/app/api/knowledge/chat/route.ts` (Bearer auth + CORS + page context), `dashboard/lib/github.ts` (large file fallback), `dashboard/.env.local.example` (EXTENSION_JWT_SECRET)
-  - **Status**: Working locally at `localhost:3000`. Not yet committed or pushed.
+  - **Status**: Committed and pushed to production. Deployed on Vercel. Extension points to `https://solutions-central.vercel.app`.
+
+  ### Post-launch fixes (2026-06-27)
+  - **Strict mode error**: content script used function declarations inside `if/else` blocks — illegal in strict mode (Chrome extensions). Fixed by converting to `const` arrow functions.
+  - **`??` operator in sandboxed iframes**: Outlook Web renders email body in a sandboxed iframe with a restricted JS context that rejects the nullish coalescing operator. Replaced all `??` with `||` and explicit `&&` null checks throughout `content.js`.
+  - **Iframe content extraction**: Added `"all_frames": true` to manifest content_scripts. Iframe context posts email body text to parent via `postMessage`. Parent frame caches it in `iframeContent` variable and includes it when side panel requests page context.
+  - **Auto-inject fallback**: When `chrome.tabs.sendMessage` fails (content script not injected due to Outlook's soft navigation model), side panel now uses `chrome.scripting.executeScript` to inject `content.js` programmatically, waits 400ms, then retries the message.
+
+  ### Security guardrails added (2026-06-28)
+  - **Groq ZDR**: Inference APIs Zero Data Retention enabled on Groq console — inputs/outputs no longer stored by Groq.
+  - **System prompt guardrail**: AI instructed to never reproduce raw records verbatim, refuse bulk export requests ("show all clients", "dump the database"), and push back on queries designed to extract data rather than get help.
+  - **Rate limiting**: 60 requests per user per hour enforced in `/api/knowledge/chat`. In-memory Map keyed by user sub/email. Returns 429 with clear message when limit hit.
+  - **Audit logging**: Every successful chat request logs `{ event, ts, user, source, queryLen, chunks, sources }` as structured JSON via `console.log` — visible in Vercel → Logs, searchable and exportable.
+  - **24h history wipe**: Extension checks `scHistoryTs` on init. If history is older than 24 hours, wipes `scHistory`, `scMemory`, and `scHistoryTs` from `chrome.storage.local` before loading.
 
 - [x] **19. Central Knowledge Hub + AI chatbot (2026-06-19)**
   - New `/knowledge` route ("Knowledge Hub" in sidebar, BrainCircuit icon) consolidating all 4 data sources.
