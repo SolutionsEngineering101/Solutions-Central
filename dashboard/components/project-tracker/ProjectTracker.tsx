@@ -49,7 +49,8 @@ function isoToDmy(iso: string): string {
   return `${p[3]}/${p[2]}/${p[1]}`;
 }
 
-function isOverdue(dateVal: string, row: string[], headers: string[]): boolean {
+function isOverdue(dateVal: string, row: string[], headers: string[], colHeader?: string): boolean {
+  if (colHeader && /start/i.test(colHeader)) return false;
   const d = parseDate(dateVal);
   if (!d || d >= new Date()) return false;
   for (let i = 0; i < headers.length; i++) {
@@ -255,7 +256,7 @@ export function ProjectTracker() {
     ).length;
     const overdue = validRows.filter(r =>
       headers.some((h, i) =>
-        colType(h) === "date" && isOverdue(r[i] ?? "", r, headers)
+        colType(h) === "date" && isOverdue(r[i] ?? "", r, headers, h)
       )
     ).length;
     return { total, done, inProgress, overdue };
@@ -349,7 +350,7 @@ export function ProjectTracker() {
       return (
         <span className="text-gray-400 text-sm whitespace-nowrap">
           {cell}
-          {isOverdue(cell, row, data.table.headers) && <OverdueBadge />}
+          {isOverdue(cell, row, data.table.headers, header) && <OverdueBadge />}
         </span>
       );
     }

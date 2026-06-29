@@ -43,7 +43,7 @@ function isOverdue(row: string[], headers: string[]): boolean {
     if (colType(headers[i]) === "status" && isStatusDone(row[i] ?? "")) return false;
   }
   for (let i = 0; i < headers.length; i++) {
-    if (colType(headers[i]) === "date") {
+    if (colType(headers[i]) === "date" && !/start/i.test(headers[i])) {
       const d = parseDate(row[i] ?? "");
       if (d && d < new Date()) return true;
     }
