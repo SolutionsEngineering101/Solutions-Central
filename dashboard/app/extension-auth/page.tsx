@@ -17,6 +17,7 @@ export default async function ExtensionAuthPage() {
     sub: user.id || user.email || "unknown",
     name: user.name || "Team Member",
     email: user.email ?? undefined,
+    role: "team",
   });
 
   return (

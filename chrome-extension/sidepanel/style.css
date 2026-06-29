@@ -89,6 +89,111 @@ html, body {
   color: #3A5070 !important;
 }
 
+.auth-section-label {
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  letter-spacing: .08em !important;
+  text-transform: uppercase !important;
+  color: var(--muted) !important;
+  margin-bottom: 10px !important;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 16px 0;
+  color: #243850;
+  font-size: 11px;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.auth-divider span { color: #3A5070; }
+
+.auth-input {
+  width: 100%;
+  padding: 9px 11px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color .15s;
+  margin-bottom: 8px;
+}
+
+.auth-input::placeholder { color: var(--muted); }
+.auth-input:focus { border-color: var(--accent); }
+
+.otp-input {
+  text-align: center;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: .2em;
+  font-family: ui-monospace, monospace;
+  color: #E8F2FF;
+}
+
+.btn-secondary {
+  width: 100%;
+  padding: 10px 0;
+  background: transparent;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s;
+  margin-bottom: 4px;
+}
+
+.btn-secondary:hover { background: var(--accent-lo); }
+.btn-secondary:disabled { opacity: .5; cursor: not-allowed; }
+
+.btn-link {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 11px;
+  cursor: pointer;
+  padding: 6px 0 0;
+  width: 100%;
+  text-align: center;
+  transition: color .15s;
+}
+
+.btn-link:hover { color: var(--text); }
+
+.otp-sent-label {
+  font-size: 12px !important;
+  color: var(--muted) !important;
+  margin-bottom: 12px !important;
+  line-height: 1.5 !important;
+}
+
+.auth-error {
+  font-size: 11px;
+  color: var(--error);
+  margin-top: 6px;
+  text-align: center;
+  line-height: 1.4;
+}
+
+#otp-email-step,
+#otp-code-step {
+  width: 100%;
+}
+
 /* ── Header ── */
 .header {
   display: flex;

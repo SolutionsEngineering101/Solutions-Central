@@ -7,6 +7,7 @@ interface TokenPayload {
   sub: string;
   name: string;
   email?: string;
+  role?: "team" | "sales";
   exp: number;
 }
 

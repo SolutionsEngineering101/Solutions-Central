@@ -13,9 +13,48 @@
     <div class="auth-inner">
       <div class="logo-mark">SC</div>
       <h1>Solutions Central</h1>
-      <p>Sign in with your team GitHub account to access the assistant.</p>
+
+      <!-- SE team: GitHub -->
+      <p class="auth-section-label">SE Team</p>
       <button id="auth-btn" class="btn-primary">Sign in with GitHub</button>
       <p class="auth-note">Opens the dashboard login in a new tab.</p>
+
+      <!-- Divider -->
+      <div class="auth-divider"><span>or</span></div>
+
+      <!-- Sales team: Email OTP -->
+      <p class="auth-section-label">Sales Team</p>
+
+      <!-- Step 1: email entry -->
+      <div id="otp-email-step">
+        <input
+          id="otp-email"
+          type="email"
+          placeholder="you@vantagecircle.com"
+          class="auth-input"
+          autocomplete="email"
+        />
+        <button id="otp-send-btn" class="btn-secondary">Send Code</button>
+        <p id="otp-error" class="auth-error hidden"></p>
+      </div>
+
+      <!-- Step 2: code entry -->
+      <div id="otp-code-step" class="hidden">
+        <p id="otp-sent-label" class="otp-sent-label"></p>
+        <input
+          id="otp-code"
+          type="text"
+          inputmode="numeric"
+          maxlength="6"
+          placeholder="_ _ _ _ _ _"
+          class="auth-input otp-input"
+          autocomplete="one-time-code"
+        />
+        <button id="otp-verify-btn" class="btn-primary">Verify</button>
+        <button id="otp-back-btn" class="btn-link">← Use a different email</button>
+        <p id="otp-verify-error" class="auth-error hidden"></p>
+      </div>
+
     </div>
   </div>
 
