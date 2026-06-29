@@ -432,7 +432,7 @@ CONFLUENCE_PAGE_ID=567050244`}</pre>
       {/* Page header */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-white text-2xl font-semibold">Project Tracker</h1>
+          <h1 className="text-white text-2xl font-semibold">Confluence Project Dev Tracker</h1>
           <p className="text-gray-500 text-sm mt-1">
             {loading
               ? "Loading from Confluence…"
