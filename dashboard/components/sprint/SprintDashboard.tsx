@@ -386,7 +386,7 @@ export function SprintDashboard() {
         {/* Confluence card */}
         <div
           onClick={() => router.push("/sprint/tracker")}
-          className="bg-gray-900 border border-gray-800 rounded-xl p-5 flex flex-col cursor-pointer group"
+          className="bg-gray-900 border border-gray-800 rounded-xl p-5 flex flex-col cursor-pointer"
         >
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
@@ -395,7 +395,7 @@ export function SprintDashboard() {
               </div>
               <h2 className="text-white font-medium text-sm">Confluence</h2>
             </div>
-            <ArrowRight size={16} className="text-gray-600 group-hover:text-indigo-400 transition-colors" />
+            <ArrowRight size={16} className="text-gray-600" />
           </div>
 
           {loading ? (
