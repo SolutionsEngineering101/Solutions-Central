@@ -52,7 +52,8 @@ function isoToDmy(iso: string): string {
 function isOverdue(dateVal: string, row: string[], headers: string[], colHeader?: string): boolean {
   if (colHeader && /start/i.test(colHeader)) return false;
   const d = parseDate(dateVal);
-  if (!d || d >= new Date()) return false;
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  if (!d || d >= today) return false;
   for (let i = 0; i < headers.length; i++) {
     if (colType(headers[i]) === "status" && isStatusDone(row[i] ?? "")) return false;
   }

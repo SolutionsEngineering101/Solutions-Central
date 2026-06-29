@@ -45,7 +45,8 @@ function isOverdue(row: string[], headers: string[]): boolean {
   for (let i = 0; i < headers.length; i++) {
     if (colType(headers[i]) === "date" && !/start/i.test(headers[i])) {
       const d = parseDate(row[i] ?? "");
-      if (d && d < new Date()) return true;
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+      if (d && d < today) return true;
     }
   }
   return false;
