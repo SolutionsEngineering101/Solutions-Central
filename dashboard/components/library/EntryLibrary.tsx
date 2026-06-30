@@ -8,6 +8,39 @@ import {
 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 
+// ─── Excel → markdown (runs in the browser, no server round-trip) ─────────────
+
+async function excelToMarkdown(file: File): Promise<string> {
+  const XLSX = await import("xlsx");
+  const buffer = await file.arrayBuffer();
+  const workbook = XLSX.read(buffer, { type: "array" });
+  const sections: string[] = [];
+
+  for (const sheetName of workbook.SheetNames) {
+    const sheet = workbook.Sheets[sheetName];
+    const rows = XLSX.utils.sheet_to_json<unknown[]>(sheet, { header: 1, defval: "" }) as unknown[][];
+    const filled = rows.filter(r => (r as unknown[]).some(c => String(c).trim() !== ""));
+    if (!filled.length) continue;
+
+    sections.push(`### ${sheetName}\n`);
+    const maxCols = Math.max(...filled.map(r => (r as unknown[]).length));
+    const header = Array.from({ length: maxCols }, (_, i) =>
+      String((filled[0] as unknown[])[i] ?? "").replace(/\|/g, "\\|").trim() || " "
+    );
+    sections.push(`| ${header.join(" | ")} |`);
+    sections.push(`| ${header.map(() => "---").join(" | ")} |`);
+    for (let i = 1; i < filled.length; i++) {
+      const cells = Array.from({ length: maxCols }, (_, ci) =>
+        String((filled[i] as unknown[])[ci] ?? "").replace(/\|/g, "\\|").replace(/\n/g, " ").trim()
+      );
+      sections.push(`| ${cells.join(" | ")} |`);
+    }
+    sections.push("");
+  }
+
+  return sections.join("\n") || "_No content extracted._";
+}
+
 // ─── Types ──────────────────────────────────────────────────────────────────
 
 export type EntryKind = "playbook" | "blueprint" | "rfp";
@@ -113,8 +146,10 @@ export function EntryLibrary({ kind, entries }: Props) {
     if (!file) return;
     if (kind === "rfp") {
       setFileName(file.name);
-      setFileObj(file);
-      setFileText("__binary__");
+      setStep("pick");
+      excelToMarkdown(file).then(text => {
+        setFileText(text);
+      }).catch(() => setError("Could not parse the Excel file — check it's a valid .xlsx or .xls."));
       return;
     }
     const reader = new FileReader();
@@ -130,19 +165,11 @@ export function EntryLibrary({ kind, entries }: Props) {
     setStep("uploading");
     setError(null);
     try {
-      let res: Response;
-      if (kind === "rfp" && fileObj) {
-        const fd = new FormData();
-        fd.append("file", fileObj);
-        fd.append("client", fileName.replace(/\.[^.]+$/, ""));
-        res = await fetch("/api/rfp/upload", { method: "POST", body: fd });
-      } else {
-        res = await fetch("/api/github/upload", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ kind, filename: fileName, content: fileText }),
-        });
-      }
+      const res = await fetch("/api/github/upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ kind, filename: fileName, content: fileText }),
+      });
       const json = (await res.json()) as { ok?: boolean; error?: string };
       if (!res.ok || !json.ok) throw new Error(json.error ?? "Upload failed");
       setStep("done");

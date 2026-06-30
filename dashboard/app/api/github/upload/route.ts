@@ -8,6 +8,7 @@ import { slugify } from "@/lib/utils";
 const DIRS: Record<string, string> = {
   playbook: "playbook/entries",
   blueprint: "pre-built-solutions/blueprints",
+  rfp: "rfps/entries",
 };
 
 // Cap upload size so a stray binary/huge paste can't be committed by accident.
@@ -40,7 +41,7 @@ export async function POST(req: Request) {
   const { kind, filename, content } = body;
 
   const dir = kind ? DIRS[kind] : undefined;
-  if (!dir) return NextResponse.json({ error: "Invalid kind — expected 'playbook' or 'blueprint'" }, { status: 400 });
+  if (!dir) return NextResponse.json({ error: "Invalid kind" }, { status: 400 });
 
   if (typeof content !== "string" || content.trim().length === 0)
     return NextResponse.json({ error: "Document is empty" }, { status: 400 });
