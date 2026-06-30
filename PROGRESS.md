@@ -123,58 +123,71 @@ The repo serves as: intake hub, documentation library, team workspace, playbook,
 
 ## To Do
 
-- [ ] **5. Fill in team roles** — `intake/team-and-roles.md` has all members listed but Role, Focus Areas, and Contact are blank for everyone.
-- [ ] **Deploy to Vercel** — ✅ Already live at `solutions-central.vercel.app`. Auto-deploys on push to `main`.
-- [ ] **Knowledge Hub — first index build** — Go to `/knowledge` and click **Rebuild Index** to populate `dashboard-data/knowledge-index.json` for the first time.
-- [ ] **Azure credentials for edit write-back** — Add `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_CLIENT_SECRET` to `dashboard/.env.local` and Vercel env vars to enable Excel write-back from the consultant edit panel.
-- [ ] **⚠️ REMINDER — Portfolio Health formula review** — Current formula in `SprintDashboard.tsx` is a simplified weighted-count approach that can go negative. Agreed to improve it with: (1) clamp output to 0–100, (2) add timeline pressure using Actual Release Date for In Progress / To Do items past their release date. Pankaj's full 3-factor formula (status × 0.4 + timeline × 0.35 + blockers × 0.25) is NOT suitable for the Confluence tracker because it only has a single Overall Status column and no blocker relationships. Fix is small — ask Bhargav to revisit this when ready.
+- [ ] **Fill in team roles** — `intake/team-and-roles.md` has all members listed but Role, Focus Areas, and Contact are blank for everyone.
+- [ ] **⚠️ Portfolio Health formula review** — Current formula can go negative. Agreed fix: clamp 0–100 + add timeline pressure. Revisit when ready.
+- [ ] **Automated knowledge index rebuild** — GitHub Actions trigger on push to `rfps/entries/**`, `playbook/entries/**`, `pre-built-solutions/blueprints/**`. Needs `REBUILD_SECRET` in GitHub secrets + Vercel env vars.
+- [ ] **Chrome Web Store** — Publish extension as unlisted for one-click sales team install (one-time $5 fee).
 
-### Chrome Extension — Next Steps (paused, pending Azure AD setup)
+---
 
-- [ ] **OTP Email Auth for sales team** — PLANNED, ready to build next session. Azure AD dropped in favour of email OTP (no IT involvement, no OAuth app registration). Full plan documented below.
+## Session 2026-06-29 / 2026-06-30 — Completed
 
-  #### OTP Auth Plan (approved, build next session)
+### Confluence Project Tracker
+- Renamed header from "Project Tracker" → **"Confluence Project Dev Tracker"** (`ProjectTracker.tsx`)
+- Fixed Confluence card hover transparency on sprint dashboard (`SprintDashboard.tsx`)
+- Removed all hover effects from Confluence card (solid, no colour change)
+- Fixed overdue calculation: start date columns no longer trigger overdue badge
+- Fixed overdue calculation: today's date no longer counts as overdue (compare midnight, not current time)
 
-  **What:** Sales team enters @vantagecircle.com email in the extension → gets 6-digit code via email (Resend) → types code → gets JWT with `role: sales`. SE team keeps GitHub OAuth unchanged. Both paths coexist on the same auth screen.
+### Chrome Extension — Sales Team Auth (✅ LIVE)
+Built and shipped full sales team auth for the Chrome extension. Architecture:
 
-  **New files to create:**
-  - `dashboard/lib/otp-store.ts` — in-memory Map, stores OTP + expiry + attempts + used flag + send rate limit
-  - `dashboard/lib/resend.ts` — plain fetch wrapper to Resend REST API, exports `sendOTPEmail(to, otp)`
-  - `dashboard/app/api/extension/otp/send/route.ts` — validates domain, rate-limits, generates OTP, sends email
-  - `dashboard/app/api/extension/otp/verify/route.ts` — validates OTP, returns JWT on success
+**Final auth: Invite code** (OTP was built first but Resend domain issues led to switching)
+- `dashboard/app/api/extension/invite/verify/route.ts` — checks `SALES_INVITE_CODE` env var, returns JWT `role: sales`
+- Extension auth screen: GitHub login (SE team) + OR divider + name + invite code (sales team)
+- **Current invite code:** `VC-SALES-2026` (set in Vercel env as `SALES_INVITE_CODE`)
+- To change the code: update `SALES_INVITE_CODE` in Vercel env vars + redeploy
+- Extension zip: `/Users/marsh/Developer/Solutions-Central/sc-extension.zip` — share this with sales reps
 
-  **Files to modify:**
-  - `dashboard/lib/extension-token.ts` — add `role: 'team' | 'sales'` to TokenPayload
-  - `dashboard/app/extension-auth/page.tsx` — pass `role: 'team'` for GitHub users
-  - `chrome-extension/sidepanel/index.html` — add email + OTP inputs to auth screen
-  - `chrome-extension/sidepanel/chat.js` — OTP send/verify state machine
-  - `chrome-extension/sidepanel/style.css` — email input, OTP input, divider, error states
-  - `dashboard/.env.local.example` — add RESEND_API_KEY and OTP_FROM_EMAIL
+**OTP infrastructure (built but superseded — kept in codebase):**
+- `dashboard/lib/otp-store.ts`, `dashboard/lib/resend.ts`
+- `dashboard/app/api/extension/otp/send/route.ts`, `dashboard/app/api/extension/otp/verify/route.ts`
+- Resend API key in Vercel: `RESEND_API_KEY`. Domain issue: `vantagecircle.com` claimed by another Resend team. Subdomain `solutions.vantagecircle.com` was considered but user chose invite code instead.
 
-  **Security model:**
-  - Domain: @vantagecircle.com only (server-enforced on both endpoints)
-  - OTP TTL: 10 minutes
-  - Max wrong attempts: 3 (OTP invalidated after 3rd)
-  - Send rate limit: 3 per email per 15 min (prevents email bombing)
-  - Single-use: marked used on first valid verify
-  - Always returns ok:true on send (prevents email enumeration)
+**Middleware:** `dashboard/middleware.ts` — blocks `role: sales` JWT from all routes except `/api/knowledge/chat`, `/api/extension/*`, `/extension-auth`
 
-  **New env vars needed:**
-  - `RESEND_API_KEY` — from resend.com → API Keys
-  - `OTP_FROM_EMAIL` — `onboarding@resend.dev` (free, immediate) or `noreply@vantagecircle.com` (needs DNS)
+**Token:** `dashboard/lib/extension-token.ts` — `role: 'team' | 'sales'` field added. GitHub auth issues `role: team`, invite code issues `role: sales`.
 
-  **Open decisions to answer at start of next session:**
-  1. From address: resend.dev subdomain (zero setup) or vantagecircle.com domain (needs DNS records)?
-  2. Auth screen: GitHub + email both visible with divider, or GitHub default + "Sales team?" link?
-  3. Name for OTP users: derive from email prefix (bhargav.nath → "Bhargav"), ask during setup, or use email?
-  4. Dashboard blocking for sales role: add Next.js middleware now or next session?
-  5. Resend account: already created? If not, do it before the session starts.
+### RFP Section (✅ LIVE)
+New `/rfp` page — same look as Playbook and Blueprints.
 
-  **Before next session:** Create a Resend account at resend.com (free tier, 3,000 emails/month). Get the API key. Decide on the from address.
-- [ ] **Automated knowledge index rebuild** — Two-layer: (1) GitHub Actions workflow triggers `POST /api/knowledge/rebuild` on push to `main` when `intake/solutions-forms/**`, `playbook/entries/**`, or `pre-built-solutions/blueprints/**` change. (2) Vercel daily cron as backup. Needs `REBUILD_SECRET` env var added to both GitHub secrets and Vercel env vars.
-- [ ] **Update `config.js` to production URL** — Change `chrome-extension/config.js` `DASHBOARD_URL` from `http://localhost:3000` to `https://solutions-central.vercel.app` before distributing.
-- [ ] **Commit and push extension + dashboard changes** — Nothing from session 2026-06-26 has been committed yet. Commit: extension shell, dashboard auth changes, github.ts large-file fix.
-- [ ] **Distribute extension** — Package `chrome-extension/` as a zip and upload to Chrome Web Store (unlisted) for one-click install by the sales team.
+**Storage:** Excel files parsed client-side (SheetJS, dynamic import), converted to full lossless markdown, committed to `rfps/entries/` in GitHub via `/api/github/upload`.
+
+**Lossless extraction rules:**
+- Skip entirely empty rows ✅ (no data lost)
+- Skip entirely empty columns ✅ (no data lost)
+- No cell truncation — full content preserved
+- No row cap — all rows included
+- Server limit for rfp kind: 4MB (vs 512KB for playbook/blueprint)
+
+**Knowledge base:** `rfps/entries/` is indexed in `rebuild/route.ts`. Stats line in Knowledge Hub now shows RFP count. After uploading RFPs → click **Rebuild Index** in Knowledge Hub.
+
+**Files:**
+- `dashboard/app/rfp/page.tsx` — uses `EntryLibrary kind="rfp"`
+- `dashboard/app/api/rfp/upload/route.ts` — fallback server-side upload (unused now)
+- `dashboard/components/rfp/RFPLibrary.tsx` — old custom component (unused, kept)
+- `dashboard/lib/knowledge.ts` — `"rfp"` added to source type union
+- `dashboard/app/api/knowledge/rebuild/route.ts` — rfp chunks added
+- Sidebar: `FileSpreadsheet` icon, `/rfp` route
+
+### Delete on Library Cards (✅ LIVE)
+- `dashboard/app/api/github/delete/route.ts` — DELETE endpoint, path whitelist enforced
+- `EntryLibrary.tsx` — trash icon on hover, inline confirmation overlay, works for playbook/blueprint/rfp
+
+### Other fixes
+- Overview: "Win Rate" renamed to "Completion Rate" (`page.tsx` + `QuarterlyBreakdown.tsx`)
+- Knowledge Hub stats line now shows RFP count
+- `KnowledgeStats` type updated with `rfp` field
 
 ### Chrome Extension — Distribution Methods
 
@@ -205,11 +218,12 @@ The repo serves as: intake hub, documentation library, team workspace, playbook,
 | `/sprint` | Project Tracker | Live — KPIs, health, status chart, Confluence card, completed/in-progress/overdue rows |
 | `/sprint/tracker` | Full Tracker Table | Live — search, filter, sort, inline edit, add row |
 | `/confluence` | Tech Docs | Live — PMT space pages, slide-in panel, edit/create, local hide via localStorage |
-| `/playbook` | Playbook | Live |
-| `/blueprints` | Blueprints | Live |
-| `/knowledge` | Knowledge Hub | Live — BM25 index over 4 sources, Groq RAG chat, session memory, source pills |
+| `/playbook` | Playbook | Live — upload + delete cards |
+| `/blueprints` | Blueprints | Live — upload + delete cards |
+| `/rfp` | RFPs | Live — Excel upload (SheetJS, lossless), delete cards, knowledge base indexed |
+| `/knowledge` | Knowledge Hub | Live — BM25 index over 5 sources (forms/playbook/blueprint/rfp/confluence), Groq RAG |
 | `/team` | Team & Skills | Live — member profiles mostly blank |
-| `/worklogs` | Worklogs | Live — 404 noise fixed |
+| `/worklogs` | Worklogs | Live |
 
 ---
 
@@ -244,13 +258,15 @@ CONFLUENCE_DOMAIN=vantagecirclejira.atlassian.net
 CONFLUENCE_PAGE_ID=567050244
 CONFLUENCE_SPACE_KEY=PMT
 
-# Chrome Extension — JWT signing (signs tokens issued at /extension-auth)
+# Chrome Extension — JWT signing
 EXTENSION_JWT_SECRET=   # openssl rand -base64 32 — defaults to NEXTAUTH_SECRET if not set
 
-# Microsoft Azure AD OAuth (for sales team extension access — not yet implemented)
-AZURE_AD_CLIENT_ID=     # from Azure portal → App registrations → Solutions Central Assistant
-AZURE_AD_CLIENT_SECRET= # from App registrations → Certificates & secrets
-AZURE_AD_TENANT_ID=     # from Azure portal → Azure Active Directory → Overview
+# Chrome Extension — Sales team invite code
+SALES_INVITE_CODE=VC-SALES-2026   # change anytime; update Vercel env + redeploy
+
+# Resend (OTP email — built but superseded by invite code; kept for future use)
+RESEND_API_KEY=re_RY2b2gJc_DTh4DUkdbdk4Rd2AoZU2pSTh
+OTP_FROM_EMAIL=onboarding@resend.dev
 
 # Automated knowledge index rebuild (for GitHub Actions + Vercel cron — not yet implemented)
 REBUILD_SECRET=         # openssl rand -base64 32
