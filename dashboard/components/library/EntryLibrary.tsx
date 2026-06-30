@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   BookOpen, Layers, Upload, X, FileText, Loader2,
-  AlertTriangle, CheckCircle2, UploadCloud, FileSpreadsheet,
+  AlertTriangle, CheckCircle2, UploadCloud, FileSpreadsheet, Trash2,
 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 
@@ -137,6 +137,30 @@ export function EntryLibrary({ kind, entries }: Props) {
   // Viewing a document
   const [viewing, setViewing] = useState<Entry | null>(null);
 
+  // Delete state
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null); // path
+  const [deleting, setDeleting]           = useState(false);
+
+  const doDelete = async (path: string) => {
+    setDeleting(true);
+    try {
+      const res = await fetch("/api/github/delete", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ path }),
+      });
+      const json = await res.json() as { ok?: boolean; error?: string };
+      if (!res.ok || !json.ok) throw new Error(json.error ?? "Delete failed");
+      setConfirmDelete(null);
+      if (viewing?.path === path) setViewing(null);
+      router.refresh();
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Delete failed");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   // Upload modal state machine: closed → pick → confirm → uploading → done
   const [step, setStep] = useState<"closed" | "pick" | "confirm" | "uploading" | "done">("closed");
   const [fileName, setFileName] = useState("");
@@ -216,30 +240,73 @@ export function EntryLibrary({ kind, entries }: Props) {
           const fm = entry.frontmatter as Record<string, string | string[]>;
           const title = str(fm.title) || entry.path.split("/").pop()!;
           const tags = Array.isArray(fm.tags) ? (fm.tags as string[]) : [];
+          const isConfirming = confirmDelete === entry.path;
+
           return (
-            <button
+            <div
               key={entry.path}
-              onClick={() => setViewing(entry)}
-              className="text-left bg-gray-900 border border-gray-800 rounded-xl p-5 hover:border-gray-600 transition-colors"
+              className="relative group bg-gray-900 border border-gray-800 rounded-xl p-5 hover:border-gray-600 transition-colors"
             >
-              <div className="flex items-start gap-3">
-                <div className={`w-8 h-8 ${cfg.iconBg} rounded-lg flex items-center justify-center shrink-0 mt-0.5`}>
-                  <cfg.Icon size={14} className={cfg.iconColor} />
+              {/* Delete button — top right, visible on hover */}
+              {!isConfirming && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); setConfirmDelete(entry.path); }}
+                  className="absolute top-3 right-3 p-1.5 rounded-md text-gray-700 hover:text-red-400 hover:bg-gray-800 opacity-0 group-hover:opacity-100 transition-all"
+                  title="Delete"
+                >
+                  <Trash2 size={13} />
+                </button>
+              )}
+
+              {/* Inline delete confirmation */}
+              {isConfirming && (
+                <div className="absolute inset-0 bg-gray-900/95 rounded-xl flex flex-col items-center justify-center gap-3 z-10 p-4">
+                  <p className="text-white text-sm font-medium text-center">Delete this {cfg.noun}?</p>
+                  <p className="text-gray-500 text-xs text-center">This removes it from GitHub permanently.</p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setConfirmDelete(null)}
+                      disabled={deleting}
+                      className="px-3 py-1.5 text-xs text-gray-400 hover:text-white rounded-lg hover:bg-gray-800 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => doDelete(entry.path)}
+                      disabled={deleting}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-red-700 hover:bg-red-600 rounded-lg transition-colors disabled:opacity-50"
+                    >
+                      {deleting ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
+                      {deleting ? "Deleting…" : "Delete"}
+                    </button>
+                  </div>
                 </div>
-                <div className="min-w-0">
-                  <p className="text-white text-sm font-medium">{title}</p>
-                  <p className="text-gray-500 text-xs mt-0.5">{metaLine(kind, entry.frontmatter)}</p>
-                  {tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-2">
-                      {tags.map((t) => (
-                        <span key={t} className="px-2 py-0.5 bg-gray-800 text-gray-400 text-xs rounded-full">{t}</span>
-                      ))}
-                    </div>
-                  )}
-                  <p className="text-gray-600 text-xs mt-2 line-clamp-2">{entry.content.slice(0, 120)}…</p>
+              )}
+
+              {/* Card content */}
+              <button
+                onClick={() => setViewing(entry)}
+                className="text-left w-full"
+              >
+                <div className="flex items-start gap-3">
+                  <div className={`w-8 h-8 ${cfg.iconBg} rounded-lg flex items-center justify-center shrink-0 mt-0.5`}>
+                    <cfg.Icon size={14} className={cfg.iconColor} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-white text-sm font-medium">{title}</p>
+                    <p className="text-gray-500 text-xs mt-0.5">{metaLine(kind, entry.frontmatter)}</p>
+                    {tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {tags.map((t) => (
+                          <span key={t} className="px-2 py-0.5 bg-gray-800 text-gray-400 text-xs rounded-full">{t}</span>
+                        ))}
+                      </div>
+                    )}
+                    <p className="text-gray-600 text-xs mt-2 line-clamp-2">{entry.content.slice(0, 120)}…</p>
+                  </div>
                 </div>
-              </div>
-            </button>
+              </button>
+            </div>
           );
         })}
 
