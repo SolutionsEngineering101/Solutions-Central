@@ -108,7 +108,7 @@ export default async function OverviewPage() {
         <div className="grid grid-cols-3 gap-3">
           {[
             { label: "Total Delivered", value: delivered, sub: `of ${total} requests`,    color: "#34d399", iconBg: "rgba(52,211,153,0.12)",  Icon: CheckCircle2 },
-            { label: "Win Rate",        value: `${winRate}%`, sub: "delivery rate",        color: "#818cf8", iconBg: "rgba(129,140,248,0.12)", Icon: TrendingUp   },
+            { label: "Completion Rate",        value: `${winRate}%`, sub: "delivery rate",        color: "#818cf8", iconBg: "rgba(129,140,248,0.12)", Icon: TrendingUp   },
             { label: "Open Now",        value: open,      sub: "awaiting action",           color: "#fbbf24", iconBg: "rgba(251,191,36,0.12)",  Icon: Clock        },
           ].map(({ label, value, sub, color, iconBg, Icon }) => (
             <div key={label} className="bg-gray-900 border border-gray-800 rounded-xl px-5 py-4 flex items-center gap-4">

@@ -97,7 +97,7 @@ export function QuarterlyBreakdown({ requests }: { requests: RequestRow[] }) {
               { label: "Total",     value: total,         color: "#e5e7eb" },
               { label: "Delivered", value: delivered,     color: "#34d399" },
               { label: "Open",      value: open,          color: "#fbbf24" },
-              { label: "Win Rate",  value: `${winRate}%`, color: "#818cf8" },
+              { label: "Completion Rate",  value: `${winRate}%`, color: "#818cf8" },
             ].map(({ label, value, color }) => (
               <div key={label} className="bg-gray-800/50 rounded-lg px-3 py-2">
                 <p className="text-[10px] text-gray-500 uppercase tracking-wide mb-0.5">{label}</p>
