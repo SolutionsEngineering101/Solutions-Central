@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { BrainCircuit, FileText, BookOpen, Layers, Globe, Send, RefreshCw, AlertCircle, Database, X, Zap } from "lucide-react";
+import { BrainCircuit, FileText, BookOpen, Layers, Globe, Send, RefreshCw, AlertCircle, Database, X, Zap, FileSpreadsheet } from "lucide-react";
 import type { KnowledgeStats } from "@/app/knowledge/page";
 import type { SourceRef } from "@/lib/knowledge";
 
@@ -25,6 +25,7 @@ function SourceIcon({ source }: { source: SourceRef["source"] }) {
   if (source === "form") return <FileText size={11} className={cls} />;
   if (source === "playbook") return <BookOpen size={11} className={cls} />;
   if (source === "blueprint") return <Layers size={11} className={cls} />;
+  if (source === "rfp") return <FileSpreadsheet size={11} className={cls} />;
   return <Globe size={11} className={cls} />;
 }
 
@@ -125,7 +126,7 @@ export function KnowledgeHub({ initialStats }: Props) {
             <h1 className="text-white font-semibold text-lg leading-none">Knowledge Hub</h1>
             {stats ? (
               <p className="text-gray-500 text-xs mt-1">
-                {stats.bySource.form} forms · {stats.bySource.playbook} playbook · {stats.bySource.blueprint} blueprints · {stats.bySource.confluence} Confluence
+                {stats.bySource.form} forms · {stats.bySource.playbook} playbook · {stats.bySource.blueprint} blueprints · {stats.bySource.rfp ?? 0} RFPs · {stats.bySource.confluence} Confluence
                 {builtDate && <span className="ml-2 text-gray-600">— indexed {builtDate}</span>}
               </p>
             ) : (
@@ -197,7 +198,7 @@ export function KnowledgeHub({ initialStats }: Props) {
             <div>
               <Database size={36} className="text-gray-700 mx-auto mb-3" />
               <p className="text-gray-400 text-sm font-medium">Ask anything about the team's knowledge</p>
-              <p className="text-gray-600 text-xs mt-1">Solution requests, playbook entries, blueprints, and Confluence docs</p>
+              <p className="text-gray-600 text-xs mt-1">Solution requests, playbook entries, blueprints, RFPs, and Confluence docs</p>
             </div>
             <div className="flex flex-col gap-2 w-full max-w-md">
               {SUGGESTIONS.map((s) => (
