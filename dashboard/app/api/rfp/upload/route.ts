@@ -69,8 +69,8 @@ export async function POST(req: Request) {
   const estimatedValue= String(formData.get("estimated_value") ?? "").trim();
   const tagsRaw       = String(formData.get("tags")            ?? "").trim();
 
-  if (!file)   return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
-  if (!client) return NextResponse.json({ error: "Client name is required" }, { status: 400 });
+  if (!file) return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
+  const resolvedClient = client || file.name.replace(/\.[^.]+$/, "");
   if (file.size > MAX_BYTES) return NextResponse.json({ error: "File too large (max 5 MB)" }, { status: 413 });
 
   const buffer = Buffer.from(await file.arrayBuffer());
@@ -79,7 +79,7 @@ export async function POST(req: Request) {
   try { extracted = excelToMarkdown(buffer); }
   catch { return NextResponse.json({ error: "Could not parse Excel file — check the format" }, { status: 400 }); }
 
-  const rfpTitle = title || `RFP — ${client}`;
+  const rfpTitle = title || `RFP — ${resolvedClient}`;
   const tags = tagsRaw ? tagsRaw.split(",").map(t => t.trim()).filter(Boolean) : [];
   if (!tags.includes("rfp")) tags.unshift("rfp");
 
@@ -88,7 +88,7 @@ export async function POST(req: Request) {
   const frontmatter = [
     `---`,
     `title: "${q(rfpTitle)}"`,
-    `client: "${q(client)}"`,
+    `client: "${q(resolvedClient)}"`,
     `date_received: "${dateReceived}"`,
     `deadline: "${deadline}"`,
     `status: "${status}"`,
@@ -103,7 +103,7 @@ export async function POST(req: Request) {
     `# ${rfpTitle}`,
     "",
     `## Details`,
-    `- **Client:** ${client}`,
+    `- **Client:** ${resolvedClient}`,
     `- **Date Received:** ${dateReceived}`,
     deadline      ? `- **Deadline:** ${deadline}`               : null,
     `- **Status:** ${status}`,
@@ -116,7 +116,7 @@ export async function POST(req: Request) {
   ].filter(l => l !== null).join("\n");
 
   const content = `${frontmatter}\n\n${body}\n`;
-  const slug    = slugify(client) || "rfp";
+  const slug    = slugify(resolvedClient) || "rfp";
   const path    = await uniquePath(dateReceived, slug);
   const author  = (session.user?.name as string | undefined) ?? "dashboard";
 

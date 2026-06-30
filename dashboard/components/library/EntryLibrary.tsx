@@ -4,13 +4,13 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   BookOpen, Layers, Upload, X, FileText, Loader2,
-  AlertTriangle, CheckCircle2, UploadCloud,
+  AlertTriangle, CheckCircle2, UploadCloud, FileSpreadsheet,
 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
-export type EntryKind = "playbook" | "blueprint";
+export type EntryKind = "playbook" | "blueprint" | "rfp";
 
 interface Entry {
   path: string;
@@ -46,9 +46,20 @@ const CONFIG = {
     iconColor: "text-emerald-400",
     emptyHint: "Upload a document, or record a solution as a blueprint from the Pipeline page.",
   },
+  rfp: {
+    title: "RFPs",
+    noun: "RFP",
+    nounPlural: "RFPs",
+    subtitle: "requests for proposal",
+    Icon: FileSpreadsheet,
+    iconBg: "bg-blue-950",
+    iconColor: "text-blue-400",
+    emptyHint: "Upload an Excel file (.xlsx / .xls) to add an RFP.",
+  },
 } as const;
 
 const ACCEPT = ".md,.markdown,.txt,text/markdown,text/plain";
+const ACCEPT_RFP = ".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -57,10 +68,15 @@ function str(v: unknown): string {
 }
 
 function metaLine(kind: EntryKind, fm: Record<string, unknown>): string {
-  const date = str(fm.date);
   if (kind === "playbook") {
+    const date = str(fm.date);
     return [str(fm.author), date ? formatDate(date) : ""].filter(Boolean).join(" · ");
   }
+  if (kind === "rfp") {
+    const date = str(fm.date_received);
+    return [str(fm.client), str(fm.status), date ? formatDate(date) : ""].filter(Boolean).join(" · ");
+  }
+  const date = str(fm.date);
   return [str(fm.domain), str(fm.client_type), date ? formatDate(date) : ""].filter(Boolean).join(" · ");
 }
 
@@ -81,18 +97,26 @@ export function EntryLibrary({ kind, entries }: Props) {
   const [step, setStep] = useState<"closed" | "pick" | "confirm" | "uploading" | "done">("closed");
   const [fileName, setFileName] = useState("");
   const [fileText, setFileText] = useState("");
+  const [fileObj, setFileObj] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const resetUpload = () => {
     setStep("closed");
     setFileName("");
     setFileText("");
+    setFileObj(null);
     setError(null);
   };
 
   const onFile = (file: File | undefined) => {
     setError(null);
     if (!file) return;
+    if (kind === "rfp") {
+      setFileName(file.name);
+      setFileObj(file);
+      setFileText("__binary__");
+      return;
+    }
     const reader = new FileReader();
     reader.onload = () => {
       setFileName(file.name);
@@ -106,15 +130,22 @@ export function EntryLibrary({ kind, entries }: Props) {
     setStep("uploading");
     setError(null);
     try {
-      const res = await fetch("/api/github/upload", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ kind, filename: fileName, content: fileText }),
-      });
+      let res: Response;
+      if (kind === "rfp" && fileObj) {
+        const fd = new FormData();
+        fd.append("file", fileObj);
+        fd.append("client", fileName.replace(/\.[^.]+$/, ""));
+        res = await fetch("/api/rfp/upload", { method: "POST", body: fd });
+      } else {
+        res = await fetch("/api/github/upload", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ kind, filename: fileName, content: fileText }),
+        });
+      }
       const json = (await res.json()) as { ok?: boolean; error?: string };
       if (!res.ok || !json.ok) throw new Error(json.error ?? "Upload failed");
       setStep("done");
-      // Re-fetch the server component so the new document shows up in the list.
       router.refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -231,15 +262,19 @@ export function EntryLibrary({ kind, entries }: Props) {
                 <label className="block border-2 border-dashed border-gray-700 hover:border-indigo-500 rounded-xl px-4 py-8 text-center cursor-pointer transition-colors">
                   <input
                     type="file"
-                    accept={ACCEPT}
+                    accept={kind === "rfp" ? ACCEPT_RFP : ACCEPT}
                     className="hidden"
                     onChange={(e) => onFile(e.target.files?.[0])}
                   />
-                  <FileText size={22} className="text-gray-500 mx-auto mb-2" />
+                  {kind === "rfp"
+                    ? <FileSpreadsheet size={22} className="text-gray-500 mx-auto mb-2" />
+                    : <FileText size={22} className="text-gray-500 mx-auto mb-2" />}
                   {fileName ? (
                     <p className="text-gray-200 text-sm">{fileName}</p>
                   ) : (
-                    <p className="text-gray-500 text-sm">Click to choose a file (.md, .markdown, .txt)</p>
+                    <p className="text-gray-500 text-sm">
+                      {kind === "rfp" ? "Click to choose a file (.xlsx, .xls)" : "Click to choose a file (.md, .markdown, .txt)"}
+                    </p>
                   )}
                 </label>
 
