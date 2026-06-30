@@ -11,8 +11,12 @@ const DIRS: Record<string, string> = {
   rfp: "rfps/entries",
 };
 
-// Cap upload size so a stray binary/huge paste can't be committed by accident.
-const MAX_BYTES = 512 * 1024; // 512 KB
+// Per-kind size limits
+const MAX_BYTES: Record<string, number> = {
+  playbook:  512 * 1024,       // 512 KB
+  blueprint: 512 * 1024,       // 512 KB
+  rfp:       4 * 1024 * 1024,  // 4 MB — Excel → markdown can be large
+};
 
 // Find a path that does not already exist, so we never overwrite an entry
 // (global rule: always create new dated files). Appends -2, -3, … on collision.
@@ -46,8 +50,9 @@ export async function POST(req: Request) {
   if (typeof content !== "string" || content.trim().length === 0)
     return NextResponse.json({ error: "Document is empty" }, { status: 400 });
 
-  if (Buffer.byteLength(content, "utf-8") > MAX_BYTES)
-    return NextResponse.json({ error: "Document is too large (max 512 KB)" }, { status: 413 });
+  const limit = MAX_BYTES[kind!] ?? 512 * 1024;
+  if (Buffer.byteLength(content, "utf-8") > limit)
+    return NextResponse.json({ error: `Document is too large (max ${Math.round(limit / 1024)}KB)` }, { status: 413 });
 
   // Derive a clean slug from the uploaded file name (minus its extension).
   const rawName = String(filename ?? "").replace(/\.[^.]+$/, "");
@@ -56,7 +61,7 @@ export async function POST(req: Request) {
 
   try {
     const path = await uniquePath(dir, date, slug);
-    const label = kind === "playbook" ? "playbook" : "blueprint";
+    const label = kind ?? "upload";
     const author = (session?.user?.name as string | undefined) ?? "dashboard";
     await writeFile(path, content, `${label}: upload "${rawName || slug}" via dashboard (${author})`);
     return NextResponse.json({ ok: true, path });
