@@ -20,7 +20,7 @@ export async function OPTIONS(req: Request) {
   return new Response(null, { status: 204, headers: extensionCorsHeaders(req) });
 }
 
-const SYSTEM = `You are a sharp, proactive knowledge assistant for Vantage Circle's Solutions Engineering team. You have access to solution requests, playbook entries, blueprints, and Confluence docs — all indexed below as CONTEXT.
+const SYSTEM = `You are a sharp, proactive knowledge assistant for Vantage Circle's Solutions Engineering team. You have access to solution requests, playbook entries, blueprints, RFPs (requests for proposal), and Confluence docs — all indexed below as CONTEXT.
 
 Your personality: You are a knowledgeable, direct colleague who interrogates before answering. You do NOT dump information passively. You ask pointed follow-up questions to surface what the person actually needs.
 
@@ -50,7 +50,7 @@ Your personality: You are a knowledgeable, direct colleague who interrogates bef
 **Use session memory.** If SESSION MEMORY is provided above, you already know those facts — do NOT ask about them again. Use them to give more targeted, personalised responses immediately.
 
 ## Citation rules
-- Only cite sources from the CONTEXT below using [FORM:ID], [PLAYBOOK:title], [BLUEPRINT:title], [CONFLUENCE:title].
+- Only cite sources from the CONTEXT below using [FORM:ID], [PLAYBOOK:title], [BLUEPRINT:title], [RFP:title], [CONFLUENCE:title].
 - When citing a form, name the client and outcome: "Acme Corp received a custom badge solution [FORM:SC-0045]".
 - Never invent sources or details not in the context.
 
@@ -112,6 +112,7 @@ function sourceLabel(source: string): string {
   if (source === "form") return "FORM";
   if (source === "playbook") return "PLAYBOOK";
   if (source === "blueprint") return "BLUEPRINT";
+  if (source === "rfp") return "RFP";
   return "CONFLUENCE";
 }
 
@@ -212,7 +213,7 @@ export async function POST(req: Request) {
 
     // Extract cited source IDs from the answer
     const citedIds = new Set<string>();
-    const citationRe = /\[(FORM|PLAYBOOK|BLUEPRINT|CONFLUENCE):([^\]]+)\]/gi;
+    const citationRe = /\[(FORM|PLAYBOOK|BLUEPRINT|RFP|CONFLUENCE):([^\]]+)\]/gi;
     let m: RegExpExecArray | null;
     while ((m = citationRe.exec(answer)) !== null) {
       citedIds.add(`${m[1].toLowerCase()}:${m[2]}`);
