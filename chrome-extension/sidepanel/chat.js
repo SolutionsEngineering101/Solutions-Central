@@ -22,19 +22,12 @@ const contextLabel   = document.getElementById("context-label");
 const contextBar     = document.getElementById("context-bar");
 const welcomeName    = document.getElementById("welcome-name");
 
-// OTP refs
-const otpEmailStep   = document.getElementById("otp-email-step");
-const otpCodeStep    = document.getElementById("otp-code-step");
-const otpEmailInput  = document.getElementById("otp-email");
-const otpSendBtn     = document.getElementById("otp-send-btn");
-const otpCodeInput   = document.getElementById("otp-code");
-const otpVerifyBtn   = document.getElementById("otp-verify-btn");
-const otpBackBtn     = document.getElementById("otp-back-btn");
-const otpError       = document.getElementById("otp-error");
-const otpVerifyError = document.getElementById("otp-verify-error");
-const otpSentLabel   = document.getElementById("otp-sent-label");
-
-let otpEmail = "";
+// Invite refs
+const inviteStep      = document.getElementById("invite-step");
+const inviteNameInput = document.getElementById("invite-name");
+const inviteCodeInput = document.getElementById("invite-code");
+const inviteVerifyBtn = document.getElementById("invite-verify-btn");
+const inviteError     = document.getElementById("invite-error");
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 
@@ -89,95 +82,51 @@ signoutBtn.addEventListener("click", async () => {
   showAuth();
 });
 
-// ── OTP flow ──────────────────────────────────────────────────────────────────
+// ── Invite code flow ──────────────────────────────────────────────────────────
 
-otpSendBtn.addEventListener("click", sendOTP);
-otpEmailInput.addEventListener("keydown", (e) => { if (e.key === "Enter") sendOTP(); });
+inviteVerifyBtn.addEventListener("click", verifyInvite);
+inviteCodeInput.addEventListener("keydown", (e) => { if (e.key === "Enter") verifyInvite(); });
 
-async function sendOTP() {
-  const email = otpEmailInput.value.trim().toLowerCase();
-  if (!email.endsWith("@vantagecircle.com")) {
-    showOtpError(otpError, "Must be a @vantagecircle.com email");
-    return;
-  }
-  hideOtpError(otpError);
-  otpSendBtn.disabled = true;
-  otpSendBtn.textContent = "Sending…";
+async function verifyInvite() {
+  const name = inviteNameInput.value.trim();
+  const code = inviteCodeInput.value.trim();
+  if (!code) return;
+  inviteVerifyBtn.disabled = true;
+  inviteVerifyBtn.textContent = "Verifying…";
+  inviteError.classList.add("hidden");
 
   try {
-    const res = await fetch(`${DASHBOARD_URL}/api/extension/otp/send`, {
+    const res = await fetch(`${DASHBOARD_URL}/api/extension/invite/verify`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email }),
+      body: JSON.stringify({ name, code }),
     });
     const json = await res.json();
-    if (!json.ok) { showOtpError(otpError, json.error || "Failed to send code"); return; }
-    otpEmail = email;
-    otpEmailStep.classList.add("hidden");
-    otpCodeStep.classList.remove("hidden");
-    otpSentLabel.textContent = `Code sent to ${email}. Check your inbox.`;
-    otpCodeInput.focus();
-  } catch {
-    showOtpError(otpError, "Network error — try again");
-  } finally {
-    otpSendBtn.disabled = false;
-    otpSendBtn.textContent = "Send Code";
-  }
-}
-
-otpVerifyBtn.addEventListener("click", verifyOTP);
-otpCodeInput.addEventListener("keydown", (e) => { if (e.key === "Enter") verifyOTP(); });
-
-async function verifyOTP() {
-  const code = otpCodeInput.value.trim();
-  if (code.length !== 6) return;
-  hideOtpError(otpVerifyError);
-  otpVerifyBtn.disabled = true;
-  otpVerifyBtn.textContent = "Verifying…";
-
-  try {
-    const res = await fetch(`${DASHBOARD_URL}/api/extension/otp/verify`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: otpEmail, otp: code }),
-    });
-    const json = await res.json();
-    if (!json.ok) { showOtpError(otpVerifyError, json.error || "Invalid code"); return; }
-    await chrome.storage.sync.set({ scToken: json.token, scUser: "" });
+    if (!json.ok) {
+      inviteError.textContent = json.error || "Invalid invite code";
+      inviteError.classList.remove("hidden");
+      return;
+    }
+    await chrome.storage.sync.set({ scToken: json.token, scUser: name || "Sales" });
     token = json.token;
     showChat();
   } catch {
-    showOtpError(otpVerifyError, "Network error — try again");
+    inviteError.textContent = "Network error — try again";
+    inviteError.classList.remove("hidden");
   } finally {
-    otpVerifyBtn.disabled = false;
-    otpVerifyBtn.textContent = "Verify";
+    inviteVerifyBtn.disabled = false;
+    inviteVerifyBtn.textContent = "Verify";
   }
 }
-
-otpBackBtn.addEventListener("click", () => {
-  otpCodeStep.classList.add("hidden");
-  otpEmailStep.classList.remove("hidden");
-  otpCodeInput.value = "";
-  otpEmail = "";
-  hideOtpError(otpVerifyError);
-});
-
-function showOtpError(el, msg) { el.textContent = msg; el.classList.remove("hidden"); }
-function hideOtpError(el)      { el.textContent = "";  el.classList.add("hidden"); }
 
 // ── Show screens ──────────────────────────────────────────────────────────────
 
 function showAuth() {
   authScreen.classList.remove("hidden");
   chatScreen.classList.add("hidden");
-  // Reset OTP form to email step
-  otpEmailStep.classList.remove("hidden");
-  otpCodeStep.classList.add("hidden");
-  otpEmailInput.value = "";
-  otpCodeInput.value  = "";
-  otpEmail = "";
-  hideOtpError(otpError);
-  hideOtpError(otpVerifyError);
+  inviteCodeInput.value = "";
+  inviteNameInput.value = "";
+  inviteError.classList.add("hidden");
 }
 
 async function showChat() {

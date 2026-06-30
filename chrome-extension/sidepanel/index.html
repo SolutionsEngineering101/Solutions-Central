@@ -22,37 +22,24 @@
       <!-- Divider -->
       <div class="auth-divider"><span>or</span></div>
 
-      <!-- Sales team: Email OTP -->
+      <!-- Sales team: Invite code -->
       <p class="auth-section-label">Sales Team</p>
-
-      <!-- Step 1: email entry -->
-      <div id="otp-email-step">
+      <div id="invite-step">
         <input
-          id="otp-email"
-          type="email"
-          placeholder="you@vantagecircle.com"
-          class="auth-input"
-          autocomplete="email"
-        />
-        <button id="otp-send-btn" class="btn-secondary">Send Code</button>
-        <p id="otp-error" class="auth-error hidden"></p>
-      </div>
-
-      <!-- Step 2: code entry -->
-      <div id="otp-code-step" class="hidden">
-        <p id="otp-sent-label" class="otp-sent-label"></p>
-        <input
-          id="otp-code"
+          id="invite-name"
           type="text"
-          inputmode="numeric"
-          maxlength="6"
-          placeholder="_ _ _ _ _ _"
-          class="auth-input otp-input"
-          autocomplete="one-time-code"
+          placeholder="Your name"
+          class="auth-input"
+          autocomplete="name"
         />
-        <button id="otp-verify-btn" class="btn-primary">Verify</button>
-        <button id="otp-back-btn" class="btn-link">← Use a different email</button>
-        <p id="otp-verify-error" class="auth-error hidden"></p>
+        <input
+          id="invite-code"
+          type="text"
+          placeholder="Invite code"
+          class="auth-input"
+        />
+        <button id="invite-verify-btn" class="btn-secondary">Verify</button>
+        <p id="invite-error" class="auth-error hidden"></p>
       </div>
 
     </div>
