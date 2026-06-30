@@ -10,12 +10,9 @@ import { formatDate } from "@/lib/utils";
 
 // ─── Excel → markdown (runs in the browser, no server round-trip) ─────────────
 
-const MAX_ROWS_PER_SHEET = 1000;
-const MAX_CELL_CHARS     = 300;
-
 function cleanCell(v: unknown): string {
-  const s = String(v ?? "").replace(/\r?\n/g, " ").replace(/\|/g, "\\|").trim();
-  return s.length > MAX_CELL_CHARS ? s.slice(0, MAX_CELL_CHARS) + "…" : s;
+  // Only normalise whitespace and escape pipe chars — no truncation
+  return String(v ?? "").replace(/\r?\n/g, " ").replace(/\|/g, "\\|").trim();
 }
 
 async function excelToMarkdown(file: File): Promise<string> {
@@ -28,34 +25,25 @@ async function excelToMarkdown(file: File): Promise<string> {
     const sheet = workbook.Sheets[sheetName];
     const allRows = XLSX.utils.sheet_to_json<unknown[]>(sheet, { header: 1, defval: "" }) as unknown[][];
 
-    // Drop entirely empty rows
+    // Drop entirely empty rows (lossless)
     const rows = allRows.filter(r => r.some(c => String(c).trim() !== ""));
     if (!rows.length) continue;
 
-    // Find which columns have at least one non-empty value
+    // Drop entirely empty columns (lossless)
     const maxCols = Math.max(...rows.map(r => r.length));
-    const usedCols = Array.from({ length: maxCols }, (_, ci) =>
-      rows.some(r => String(r[ci] ?? "").trim() !== "")
-    );
-    const colIndices = usedCols.map((used, i) => used ? i : -1).filter(i => i >= 0);
+    const colIndices = Array.from({ length: maxCols }, (_, ci) => ci)
+      .filter(ci => rows.some(r => String(r[ci] ?? "").trim() !== ""));
     if (!colIndices.length) continue;
-
-    const truncated = rows.length > MAX_ROWS_PER_SHEET + 1;
-    const dataRows  = truncated ? rows.slice(0, MAX_ROWS_PER_SHEET + 1) : rows;
 
     sections.push(`### ${sheetName}\n`);
 
-    const header = colIndices.map(ci => cleanCell(dataRows[0][ci]) || " ");
+    const header = colIndices.map(ci => cleanCell(rows[0][ci]) || " ");
     sections.push(`| ${header.join(" | ")} |`);
     sections.push(`| ${header.map(() => "---").join(" | ")} |`);
 
-    for (let i = 1; i < dataRows.length; i++) {
-      const cells = colIndices.map(ci => cleanCell(dataRows[i][ci]));
+    for (let i = 1; i < rows.length; i++) {
+      const cells = colIndices.map(ci => cleanCell(rows[i][ci]));
       sections.push(`| ${cells.join(" | ")} |`);
-    }
-
-    if (truncated) {
-      sections.push(`\n_Note: ${rows.length - MAX_ROWS_PER_SHEET - 1} additional rows omitted for size._`);
     }
 
     sections.push("");
