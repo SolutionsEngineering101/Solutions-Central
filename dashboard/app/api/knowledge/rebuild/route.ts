@@ -44,10 +44,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
-    const [forms, playbook, blueprints, confluencePages] = await Promise.all([
+    const [forms, playbook, blueprints, rfps, confluencePages] = await Promise.all([
       getMarkdownFiles("intake/solutions-forms"),
       getMarkdownFiles("playbook/entries"),
       getMarkdownFiles("pre-built-solutions/blueprints"),
+      getMarkdownFiles("rfps/entries"),
       listSpacePages(process.env.CONFLUENCE_SPACE_KEY ?? "PMT", CONFLUENCE_PAGE_ID ? [CONFLUENCE_PAGE_ID] : []).catch(() => []),
     ]);
 
@@ -104,6 +105,24 @@ export async function POST(req: Request) {
       }));
     }
 
+    // ── RFPs ────────────────────────────────────────────────────────────────────
+    for (const r of rfps) {
+      if (r.path.endsWith(".gitkeep")) continue;
+      const fm = r.frontmatter;
+      const title = fmStr(fm, "title") || r.path.split("/").pop()!.replace(/\.md$/, "");
+      const client = fmStr(fm, "client");
+      const status = fmStr(fm, "status");
+      const assignedTo = fmStr(fm, "assigned_to");
+      const deadline = fmStr(fm, "deadline");
+      const estimatedValue = fmStr(fm, "estimated_value");
+      const tags = Array.isArray(fm.tags) ? (fm.tags as string[]).join(" ") : "";
+      const text = [title, client, status, assignedTo, deadline, estimatedValue, tags, clip(r.content, 1200)].filter(Boolean).join(" ");
+      chunks.push(makeChunk(`rfp:${title}`, "rfp", title, text, {
+        client, status, tags: Array.isArray(fm.tags) ? (fm.tags as string[]) : [],
+        date: fmStr(fm, "date_received"), url: ghUrl(r.path),
+      }));
+    }
+
     // ── Confluence pages ────────────────────────────────────────────────────────
     for (const page of confluencePages) {
       const text = [page.title, page.excerpt ?? ""].filter(Boolean).join(" ");
@@ -129,6 +148,7 @@ export async function POST(req: Request) {
       form: chunks.filter((c) => c.source === "form").length,
       playbook: chunks.filter((c) => c.source === "playbook").length,
       blueprint: chunks.filter((c) => c.source === "blueprint").length,
+      rfp: chunks.filter((c) => c.source === "rfp").length,
       confluence: chunks.filter((c) => c.source === "confluence").length,
     };
 

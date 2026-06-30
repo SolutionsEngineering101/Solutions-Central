@@ -18,6 +18,7 @@ import {
   BrainCircuit,
   Sun,
   Moon,
+  FileSpreadsheet,
 } from "lucide-react";
 import { useTheme } from "@/lib/theme";
 
@@ -29,6 +30,7 @@ const nav = [
   { href: "/confluence", label: "Tech Docs", icon: BookOpen },
   { href: "/playbook", label: "Playbook", icon: BookOpen },
   { href: "/blueprints", label: "Blueprints", icon: Layers },
+  { href: "/rfp", label: "RFPs", icon: FileSpreadsheet },
   { href: "/knowledge", label: "Knowledge Hub", icon: BrainCircuit },
   { href: "/team", label: "Team & Skills", icon: Users },
   { href: "/worklogs", label: "Worklogs", icon: ClipboardList },
