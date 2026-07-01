@@ -545,12 +545,12 @@ CONFLUENCE_PAGE_ID=567050244`}</pre>
         ) : kpis ? (
           <>
             <KPICard label="Total"       value={kpis.total}      color="#e5e7eb" />
-            <KPICard label="In Progress" value={kpis.inProgress} color="#818cf8" />
-            <KPICard label="Done"        value={kpis.done}       color="#34d399" />
-            <KPICard label="To Do"       value={kpis.todo}       color="#60a5fa" />
             <KPICard label="Not Started" value={kpis.notStarted} color="#6b7280" />
+            <KPICard label="To Do"       value={kpis.todo}       color="#60a5fa" />
+            <KPICard label="In Progress" value={kpis.inProgress} color="#818cf8" />
             <KPICard label="Blocked"     value={kpis.blocked}    color={kpis.blocked > 0 ? "#f87171" : "#6b7280"} />
             <KPICard label="Overdue"     value={kpis.overdue}    color={kpis.overdue > 0 ? "#fb923c" : "#6b7280"} />
+            <KPICard label="Done"        value={kpis.done}       color="#34d399" />
           </>
         ) : null}
       </div>
