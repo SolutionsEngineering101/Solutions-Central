@@ -144,15 +144,19 @@ def parse_date(val) -> str:
     return s[:10] if len(s) >= 10 else s
 
 
-def to_markdown(row: dict) -> str:
+def to_markdown(row: dict, num=None) -> str:
     eid   = clean(row["id"])
     date  = parse_date(row["completion"] or row["response_date"])
     cli   = clean(row["client"]) or "Unknown Client"
     stat  = clean(row["status"]) or "Unknown"
     comp  = clean(row["complexity"]) or "Not Set"
+    try:
+        form_id = f"SF-{int(float(eid)):03d}" if eid else (f"SF-R{num:03d}" if num else "SF-???")
+    except (ValueError, TypeError):
+        form_id = f"SF-R{num:03d}" if num else f"SF-{eid}"
     lines = [
         "---",
-        f'form_id: "SF-{int(float(eid)):03d}"',
+        f'form_id: "{form_id}"',
         f'submitted_at: "{date}"', f'submitted_by: "{clean(row["name"])}"',
         f'email: "{clean(row["email"])}"', f'client: "{cli}"',
         f'feature_name: "{clean(row["feature"])}"',
@@ -213,16 +217,22 @@ def pull(update: bool = False):
     print(f"Rows  : {len(rows)}")
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     new_n = 0
-    for raw in rows:
+    for row_idx, raw in enumerate(rows, start=1):
         if not any(raw): continue
         row = {k: (raw[col.get(cn) or col.get(cn.strip())] if col.get(cn) is not None and col.get(cn) < len(raw) else "")
                for k, cn in COLUMNS.items()}
         eid = clean(row["id"])
-        if not eid: continue
         date = parse_date(row["completion"] or row["response_date"]) or "0000-00-00"
-        try: num = int(float(eid))
-        except (ValueError, TypeError): continue
-        f = OUTPUT_DIR / f"SF-{date}-{num:03d}.md"
+        # Fall back to row index when SL No is blank or non-numeric
+        try:
+            num = int(float(eid)) if eid else None
+        except (ValueError, TypeError):
+            num = None
+        if num is None:
+            # Use row index with an "R" prefix to avoid collisions with real SL NOs
+            f = OUTPUT_DIR / f"SF-{date}-R{row_idx:03d}.md"
+        else:
+            f = OUTPUT_DIR / f"SF-{date}-{num:03d}.md"
         if f.exists():
             if not update: continue
             # For consultant-owned fields: if Excel is blank but the file has a
@@ -232,15 +242,16 @@ def pull(update: bool = False):
                     existing = _read_frontmatter_value(f, key)
                     if existing:
                         row[key] = existing
-            new_content = to_markdown(row)
+            new_content = to_markdown(row, num=num or row_idx)
             if f.read_text(encoding="utf-8") == new_content: continue  # no change
             action = "updated"
         else:
             action = "new"
-            new_content = to_markdown(row)
+            new_content = to_markdown(row, num=num or row_idx)
         f.write_text(new_content, encoding="utf-8")
         client_name = clean(row['client'])
-        print(f"  #{num:>3} | {date} | {client_name[:45]} [{action}]")
+        display_id = num if num is not None else f"R{row_idx}"
+        print(f"  #{display_id!s:>4} | {date} | {client_name[:45]} [{action}]")
         new_n += 1
     print(f"Done - {new_n} file(s) written." if new_n else "No new responses.")
     update_impact_json()
