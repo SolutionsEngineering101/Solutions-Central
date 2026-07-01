@@ -184,14 +184,13 @@ function OverdueBadge() {
   );
 }
 
-function KPICard({ label, value, color, sub }: {
-  label: string; value: number | string; color: string; sub?: string;
+function KPICard({ label, value, color }: {
+  label: string; value: number | string; color: string;
 }) {
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-xl px-5 py-4 flex flex-col gap-1">
-      <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-500">{label}</p>
-      <p className="text-[34px] font-bold leading-none mt-1" style={{ color }}>{value}</p>
-      {sub && <p className="text-xs text-gray-600 mt-1">{sub}</p>}
+    <div className="bg-gray-900 border border-gray-800 rounded-lg px-3 py-3 flex flex-col gap-0.5">
+      <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-500 truncate">{label}</p>
+      <p className="text-[22px] font-bold leading-none mt-0.5" style={{ color }}>{value}</p>
     </div>
   );
 }
@@ -310,6 +309,8 @@ export function ProjectTracker() {
       total:      validRows.length,
       done:       statuses.filter(s => isStatusDone(s)).length,
       inProgress: statuses.filter(s => /in.?progress/i.test(s)).length,
+      blocked:    statuses.filter(s => /block/i.test(s)).length,
+      notStarted: statuses.filter(s => /not.?start/i.test(s)).length,
       // Overdue: any status field on the row says "overdue" — irrespective of computed status
       overdue:    validRows.filter(r =>
         headers.some((h, i) => colType(h) === "status" && /overdue/i.test(r[i] ?? ""))
@@ -535,20 +536,19 @@ CONFLUENCE_PAGE_ID=567050244`}</pre>
       </div>
 
       {/* KPI strip */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-6 gap-3">
         {loading ? (
-          Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="bg-gray-900 border border-gray-800 rounded-xl px-5 py-4 h-24 animate-pulse" />
+          Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="bg-gray-900 border border-gray-800 rounded-lg px-3 py-3 h-16 animate-pulse" />
           ))
         ) : kpis ? (
           <>
-            <KPICard label="Total Items"  value={kpis.total}      color="#e5e7eb" />
-            <KPICard label="In Progress"  value={kpis.inProgress} color="#818cf8"
-              sub={`${Math.round((kpis.inProgress / (kpis.total || 1)) * 100)}% of total`} />
-            <KPICard label="Done"         value={kpis.done}       color="#34d399"
-              sub={`${Math.round((kpis.done / (kpis.total || 1)) * 100)}% completion`} />
-            <KPICard label="Overdue"      value={kpis.overdue}    color={kpis.overdue > 0 ? "#f87171" : "#6b7280"}
-              sub={kpis.overdue > 0 ? "Needs attention" : "All on track"} />
+            <KPICard label="Total"       value={kpis.total}      color="#e5e7eb" />
+            <KPICard label="In Progress" value={kpis.inProgress} color="#818cf8" />
+            <KPICard label="Done"        value={kpis.done}       color="#34d399" />
+            <KPICard label="Not Started" value={kpis.notStarted} color="#6b7280" />
+            <KPICard label="Blocked"     value={kpis.blocked}    color={kpis.blocked > 0 ? "#f87171" : "#6b7280"} />
+            <KPICard label="Overdue"     value={kpis.overdue}    color={kpis.overdue > 0 ? "#fb923c" : "#6b7280"} />
           </>
         ) : null}
       </div>
