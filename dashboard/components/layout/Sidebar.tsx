@@ -22,15 +22,24 @@ import {
 } from "lucide-react";
 import { useTheme } from "@/lib/theme";
 
-const nav = [
+type NavItem = { href: string; label: string; icon: React.ElementType };
+type NavGroup = { group: string; items: NavItem[] };
+type NavEntry = NavItem | NavGroup;
+
+const nav: NavEntry[] = [
   { href: "/", label: "Overview", icon: LayoutDashboard },
   { href: "/solution-requests", label: "Solution Requests", icon: FileText },
   { href: "/sprint", label: "Project Tracker", icon: BarChart2 },
   { href: "/releases", label: "Releases", icon: Rocket },
-  { href: "/confluence", label: "Tech Docs", icon: BookOpen },
-  { href: "/playbook", label: "Playbook", icon: BookOpen },
-  { href: "/blueprints", label: "Blueprints", icon: Layers },
-  { href: "/rfp", label: "RFPs", icon: FileSpreadsheet },
+  {
+    group: "Documents",
+    items: [
+      { href: "/confluence", label: "Tech Docs", icon: BookOpen },
+      { href: "/playbook", label: "Playbook", icon: BookOpen },
+      { href: "/blueprints", label: "Blueprints", icon: Layers },
+      { href: "/rfp", label: "RFPs", icon: FileSpreadsheet },
+    ],
+  },
   { href: "/knowledge", label: "Knowledge Hub", icon: BrainCircuit },
   { href: "/team", label: "Team & Skills", icon: Users },
   { href: "/worklogs", label: "Worklogs", icon: ClipboardList },
@@ -49,22 +58,51 @@ export function Sidebar() {
         <p className="text-gray-500 text-xs mt-0.5">SE Team Dashboard</p>
       </div>
 
-      <nav className="flex-1 px-3 py-4 space-y-0.5">
-        {nav.map(({ href, label, icon: Icon }) => (
-          <Link
-            key={href}
-            href={href}
-            className={cn(
-              "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
-              pathname === href
-                ? "bg-indigo-600 text-white"
-                : "text-gray-400 hover:text-white hover:bg-gray-800"
-            )}
-          >
-            <Icon size={15} />
-            {label}
-          </Link>
-        ))}
+      <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
+        {nav.map((entry) => {
+          if ("group" in entry) {
+            return (
+              <div key={entry.group} className="pt-3">
+                <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-widest text-gray-600">
+                  {entry.group}
+                </p>
+                <div className="space-y-0.5">
+                  {entry.items.map(({ href, label, icon: Icon }) => (
+                    <Link
+                      key={href}
+                      href={href}
+                      className={cn(
+                        "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
+                        pathname === href
+                          ? "bg-indigo-600 text-white"
+                          : "text-gray-400 hover:text-white hover:bg-gray-800"
+                      )}
+                    >
+                      <Icon size={15} />
+                      {label}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            );
+          }
+          const { href, label, icon: Icon } = entry;
+          return (
+            <Link
+              key={href}
+              href={href}
+              className={cn(
+                "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
+                pathname === href
+                  ? "bg-indigo-600 text-white"
+                  : "text-gray-400 hover:text-white hover:bg-gray-800"
+              )}
+            >
+              <Icon size={15} />
+              {label}
+            </Link>
+          );
+        })}
       </nav>
 
       {session?.user && (
