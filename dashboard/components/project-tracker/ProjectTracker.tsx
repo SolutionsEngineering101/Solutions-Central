@@ -80,6 +80,14 @@ function computeRowStatus(row: string[], headers: string[]): string {
   // 3. Blocker has content → Blocked
   if (get(/^blocker$/i)) return "Blocked";
 
+  // 4. Any phase status explicitly says Overdue → Overdue
+  const phaseStatuses = [
+    get(/backend.?status/i),
+    get(/frontend.?status/i),
+    get(/qa.?status/i),
+  ];
+  if (phaseStatuses.some(s => /overdue/i.test(s))) return "Overdue";
+
   const today = new Date(); today.setHours(0, 0, 0, 0);
 
   // 4. Planned Release Date passed → Overdue
