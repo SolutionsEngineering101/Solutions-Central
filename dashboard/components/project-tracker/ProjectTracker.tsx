@@ -136,7 +136,7 @@ function statusStyle(text: string) {
     return { bg: "rgba(248,113,113,0.12)", fg: "#f87171", dot: "#f87171" };
   if (/review|pending|approval/i.test(v))
     return { bg: "rgba(251,191,36,0.12)", fg: "#fbbf24", dot: "#fbbf24" };
-  if (/not.?start|todo|open|new/i.test(v))
+  if (/not.?start|to.?do|open|new/i.test(v))
     return { bg: "rgba(107,114,128,0.12)", fg: "#9ca3af", dot: "#6b7280" };
   return { bg: "rgba(107,114,128,0.10)", fg: "#9ca3af", dot: "#6b7280" };
 }
@@ -309,6 +309,7 @@ export function ProjectTracker() {
       total:      validRows.length,
       done:       statuses.filter(s => isStatusDone(s)).length,
       inProgress: statuses.filter(s => /in.?progress/i.test(s)).length,
+      todo:       statuses.filter(s => /^to.?do$/i.test(s)).length,
       blocked:    statuses.filter(s => /block/i.test(s)).length,
       notStarted: statuses.filter(s => /not.?start/i.test(s)).length,
       // Overdue: any status field on the row says "overdue" — irrespective of computed status
@@ -536,9 +537,9 @@ CONFLUENCE_PAGE_ID=567050244`}</pre>
       </div>
 
       {/* KPI strip */}
-      <div className="grid grid-cols-6 gap-3">
+      <div className="grid grid-cols-7 gap-2">
         {loading ? (
-          Array.from({ length: 6 }).map((_, i) => (
+          Array.from({ length: 7 }).map((_, i) => (
             <div key={i} className="bg-gray-900 border border-gray-800 rounded-lg px-3 py-3 h-16 animate-pulse" />
           ))
         ) : kpis ? (
@@ -546,6 +547,7 @@ CONFLUENCE_PAGE_ID=567050244`}</pre>
             <KPICard label="Total"       value={kpis.total}      color="#e5e7eb" />
             <KPICard label="In Progress" value={kpis.inProgress} color="#818cf8" />
             <KPICard label="Done"        value={kpis.done}       color="#34d399" />
+            <KPICard label="To Do"       value={kpis.todo}       color="#60a5fa" />
             <KPICard label="Not Started" value={kpis.notStarted} color="#6b7280" />
             <KPICard label="Blocked"     value={kpis.blocked}    color={kpis.blocked > 0 ? "#f87171" : "#6b7280"} />
             <KPICard label="Overdue"     value={kpis.overdue}    color={kpis.overdue > 0 ? "#fb923c" : "#6b7280"} />
