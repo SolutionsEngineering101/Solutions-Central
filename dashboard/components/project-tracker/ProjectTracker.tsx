@@ -424,8 +424,24 @@ export function ProjectTracker() {
     if (/^https?:\/\//i.test(cell)) {
       let label = cell;
       try {
-        const parts = new URL(cell).pathname.split("/").filter(Boolean);
-        label = parts[parts.length - 1] ?? cell;
+        const url = new URL(cell);
+        const parts = url.pathname.split("/").filter(Boolean);
+        const last = parts[parts.length - 1] ?? "";
+
+        if (/^VC-\d+$/i.test(last)) {
+          // Jira ticket key — ideal label
+          label = last.toUpperCase();
+        } else if (last.endsWith(".action") || last.endsWith(".html")) {
+          // Confluence action URLs (resumedraft.action etc.) — use page/draft ID from query
+          const id = url.searchParams.get("draftId") || url.searchParams.get("pageId") || url.searchParams.get("spaceKey");
+          label = id ? `Confluence Doc` : "Confluence";
+        } else if (/^\d+$/.test(last)) {
+          // Bare numeric ID — show as "Doc #NNN" rather than a meaningless number
+          label = `Doc #${last}`;
+        } else {
+          // Decode URL encoding (e.g. page titles with + or %20)
+          label = decodeURIComponent(last.replace(/\+/g, " ")) || last;
+        }
       } catch { /* keep full URL as label */ }
       return (
         <a
