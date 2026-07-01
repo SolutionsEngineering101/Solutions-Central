@@ -310,7 +310,10 @@ export function ProjectTracker() {
       total:      validRows.length,
       done:       statuses.filter(s => isStatusDone(s)).length,
       inProgress: statuses.filter(s => /in.?progress/i.test(s)).length,
-      overdue:    statuses.filter(s => /overdue/i.test(s)).length,
+      // Overdue: any status field on the row says "overdue" — irrespective of computed status
+      overdue:    validRows.filter(r =>
+        headers.some((h, i) => colType(h) === "status" && /overdue/i.test(r[i] ?? ""))
+      ).length,
     };
   }, [data]);
 
