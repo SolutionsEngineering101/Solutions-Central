@@ -60,6 +60,62 @@ function isOverdue(dateVal: string, row: string[], headers: string[], colHeader?
   return true;
 }
 
+// ─── Computed row status ──────────────────────────────────────────────────────
+// Priority: Overall Status (manual override) → Actual Release Date → Blocker →
+// Planned Release Date overdue → Phase completion overdue → In Progress → Not Started
+
+function computeRowStatus(row: string[], headers: string[]): string {
+  const get = (re: RegExp): string => {
+    const idx = headers.findIndex(h => re.test(h));
+    return idx >= 0 ? (row[idx] ?? "").trim() : "";
+  };
+
+  // 1. Manual override — Overall Status
+  const overall = get(/^overall.?status$/i);
+  if (overall) return overall;
+
+  // 2. Actual Release Date filled → Done
+  if (get(/actual.?release.?date/i)) return "Done";
+
+  // 3. Blocker has content → Blocked
+  if (get(/^blocker$/i)) return "Blocked";
+
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+
+  // 4. Planned Release Date passed → Overdue
+  const plannedRelease = get(/planned.?release.?date/i);
+  if (plannedRelease) {
+    const d = parseDate(plannedRelease);
+    if (d && d < today) return "Overdue";
+  }
+
+  // 5. Any phase past its planned completion date (and that phase isn't done) → Overdue
+  const phases: [RegExp, RegExp][] = [
+    [/backend.?planned.?completion/i,  /backend.?status/i],
+    [/frontend.?planned.?completion/i, /frontend.?status/i],
+    [/qa.?planned.?completion/i,       /qa.?status/i],
+  ];
+  for (const [completionRe, phaseStatusRe] of phases) {
+    const completionVal = get(completionRe);
+    const phaseStatus   = get(phaseStatusRe);
+    if (completionVal && !isStatusDone(phaseStatus)) {
+      const d = parseDate(completionVal);
+      if (d && d < today) return "Overdue";
+    }
+  }
+
+  // 6. Any start date filled → In Progress
+  const started = [
+    get(/backend.?start.?date/i),
+    get(/frontend.?start.?date/i),
+    get(/qa.?start.?date/i),
+  ].some(v => v !== "");
+  if (started) return "In Progress";
+
+  // 7. Nothing started
+  return "Not Started";
+}
+
 // ─── Style helpers ────────────────────────────────────────────────────────────
 
 function statusStyle(text: string) {
@@ -224,23 +280,16 @@ export function ProjectTracker() {
 
   useEffect(() => { fetchPage(); }, [fetchPage]);
 
-  // Prefer "Overall Status" explicitly; fall back to first status-like column
-  const statusColIdx = useMemo(() => {
-    if (!data) return -1;
-    const overall = data.table.headers.findIndex(h => /overall.?status|status.?overall/i.test(h));
-    if (overall >= 0) return overall;
-    return data.table.headers.findIndex(h => colType(h) === "status");
+  // Unique computed status values for the filter dropdown
+  const statusValues = useMemo(() => {
+    if (!data) return [];
+    const { headers, rows } = data.table;
+    const slNoColIdx = headers.findIndex(h => /^sl\.?\s*no/i.test(h));
+    const validRows = rows.filter(r => r.some((c, i) => i !== slNoColIdx && (c ?? "").trim() !== ""));
+    return Array.from(new Set(validRows.map(r => computeRowStatus(r, headers)))).sort();
   }, [data]);
 
-  // Unique status values for the filter dropdown
-  const statusValues = useMemo(() => {
-    if (!data || statusColIdx < 0) return [];
-    return Array.from(
-      new Set(data.table.rows.map(r => r[statusColIdx] ?? "").filter(Boolean))
-    ).sort();
-  }, [data, statusColIdx]);
-
-  // KPI counts — mirror the validRows filter used in SprintDashboard so totals match
+  // KPI counts — all driven by computeRowStatus
   const kpis = useMemo(() => {
     if (!data) return null;
     const { headers, rows } = data.table;
@@ -248,20 +297,14 @@ export function ProjectTracker() {
     const validRows = rows.filter(r =>
       r.some((c, i) => i !== slNoColIdx && (c ?? "").trim() !== "")
     );
-    const total = validRows.length;
-    const done = validRows.filter(r =>
-      statusColIdx >= 0 && isStatusDone(r[statusColIdx] ?? "")
-    ).length;
-    const inProgress = validRows.filter(r =>
-      statusColIdx >= 0 && /in.?progress|active|ongoing|wip/i.test(r[statusColIdx] ?? "")
-    ).length;
-    const overdue = validRows.filter(r =>
-      headers.some((h, i) =>
-        colType(h) === "date" && isOverdue(r[i] ?? "", r, headers, h)
-      )
-    ).length;
-    return { total, done, inProgress, overdue };
-  }, [data, statusColIdx]);
+    const statuses = validRows.map(r => computeRowStatus(r, headers));
+    return {
+      total:      validRows.length,
+      done:       statuses.filter(s => isStatusDone(s)).length,
+      inProgress: statuses.filter(s => /in.?progress/i.test(s)).length,
+      overdue:    statuses.filter(s => /overdue/i.test(s)).length,
+    };
+  }, [data]);
 
   // Filtered + sorted rows, keeping original indices for write-back
   const displayRows = useMemo(() => {
@@ -275,8 +318,10 @@ export function ProjectTracker() {
       const q = search.toLowerCase();
       rows = rows.filter(({ row }) => row.some(c => c.toLowerCase().includes(q)));
     }
-    if (statusFilter !== "all" && statusColIdx >= 0) {
-      rows = rows.filter(({ row }) => row[statusColIdx] === statusFilter);
+    if (statusFilter !== "all") {
+      rows = rows.filter(({ row }) =>
+        computeRowStatus(row, data.table.headers).toLowerCase() === statusFilter.toLowerCase()
+      );
     }
     if (sort.col >= 0 && sort.dir) {
       rows = [...rows].sort((a, b) => {
@@ -288,7 +333,7 @@ export function ProjectTracker() {
       });
     }
     return rows;
-  }, [data, search, statusFilter, sort, statusColIdx]);
+  }, [data, search, statusFilter, sort]);
 
   const cycleSort = (col: number) => {
     setSort(prev => {
@@ -344,6 +389,13 @@ export function ProjectTracker() {
     if (!data) return <span className="text-gray-300">{cell}</span>;
     const header = data.table.headers[colIdx] ?? "";
     const type = colType(header);
+
+    // Overall Status: show computed status when cell is empty (manual value takes priority)
+    if (/^overall.?status$/i.test(header)) {
+      const display = cell.trim() || computeRowStatus(row, data.table.headers);
+      return <StatusPill text={display} />;
+    }
+
     if (!cell) return <span className="text-gray-700">—</span>;
     if (type === "status") return <StatusPill text={cell} />;
     if (type === "priority") return <PriorityPill text={cell} />;
