@@ -209,18 +209,62 @@ New `/rfp` page — same look as Playbook and Blueprints.
 
 ---
 
+## Session 2026-07-01 — Completed
+
+### Confluence Project Dev Tracker — Status Logic Overhaul
+Complete rewrite of status computation in `ProjectTracker.tsx`. Now uses actual Confluence column names:
+
+**`computeRowStatus(row, headers)` — priority order:**
+1. `Overall Status` has value → **manual override always wins**
+2. `Actual Release Date` filled → **Done**
+3. `Blocker` column has content → **Blocked**
+4. Any of Backend/Frontend/QA Status explicitly says "Overdue" → **Overdue**
+5. Today > `Planned Release Date` → **Overdue**
+6. Today > any phase `Planned Completion Date` (where that phase isn't done) → **Overdue**
+7. Any `Backend/Frontend/QA Start Date` filled → **In Progress**
+8. Nothing → **Not Started**
+
+**KPI strip:** Now shows 7 cards — Total / Not Started / To Do / In Progress / Blocked / Overdue / Done
+- Overdue KPI counts ANY status field saying "Overdue" (not just computed status)
+- To Do added as separate status; `to.?do` regex fixed to match "To Do" (with space)
+
+**URL label fix in tracker:** `resumedraft.action` → "Confluence Doc", bare numeric IDs → "Doc #NNN", Jira keys stay as-is
+
+### Solutions Forms — No More Skipped Rows
+- `scripts/pull_forms.py`: rows with blank/invalid SL No now get `SF-{date}-R{idx:03d}.md` filename instead of being dropped
+- Went from 274 → 275 files (1 row with blank SL No recovered); 3 truly empty rows correctly skipped
+- Total: 275 files = 278 Excel rows − 3 blank rows ✓
+
+### Documents Hub Page (✅ LIVE)
+- New `/documents` page — hub with 4 cards: Tech Docs, Playbook, Blueprints, RFPs
+- Sidebar now has single **Documents** link (`/documents`) instead of 4 separate items
+- Documents link stays highlighted when inside any sub-section
+- Each sub-page (`/confluence`, `/playbook`, `/blueprints`, `/rfp`) has a **← Documents** back link
+- `dashboard/app/documents/page.tsx` — new hub page
+
+### Knowledge Hub — RFP Wiring Fixed
+- `chat/route.ts`: `sourceLabel()` now returns `"RFP"` (was falling through to `"CONFLUENCE"`)
+- System prompt updated to mention RFPs as a source
+- Citation regex updated to include `[RFP:title]` pattern
+
+### Other
+- Forms pull script: `pull_forms.py` no longer skips rows with missing/invalid SL No
+
+---
+
 ## Dashboard Pages
 
 | Route | Label | Status |
 |---|---|---|
-| `/` | Overview | Live — KPIs, quarterly breakdown, leaderboard, complexity donut, recent requests |
+| `/` | Overview | Live — KPIs, quarterly breakdown, leaderboard, completion rate |
 | `/solution-requests` | Solution Requests | Live — searchable grid + side panel |
-| `/sprint` | Project Tracker | Live — KPIs, health, status chart, Confluence card, completed/in-progress/overdue rows |
-| `/sprint/tracker` | Full Tracker Table | Live — search, filter, sort, inline edit, add row |
-| `/confluence` | Tech Docs | Live — PMT space pages, slide-in panel, edit/create, local hide via localStorage |
-| `/playbook` | Playbook | Live — upload + delete cards |
-| `/blueprints` | Blueprints | Live — upload + delete cards |
-| `/rfp` | RFPs | Live — Excel upload (SheetJS, lossless), delete cards, knowledge base indexed |
+| `/sprint` | Project Tracker | Live — KPIs, health, status chart, Confluence card |
+| `/sprint/tracker` | Full Tracker Table | Live — 7-status KPIs, computed status, search, filter, sort, inline edit |
+| `/documents` | Documents Hub | Live — hub page with cards for Tech Docs, Playbook, Blueprints, RFPs |
+| `/confluence` | Tech Docs | Live — PMT space pages, slide-in panel, ← Documents back link |
+| `/playbook` | Playbook | Live — upload + delete cards, ← Documents back link |
+| `/blueprints` | Blueprints | Live — upload + delete cards, ← Documents back link |
+| `/rfp` | RFPs | Live — Excel upload (SheetJS, lossless), delete cards, ← Documents back link |
 | `/knowledge` | Knowledge Hub | Live — BM25 index over 5 sources (forms/playbook/blueprint/rfp/confluence), Groq RAG |
 | `/team` | Team & Skills | Live — member profiles mostly blank |
 | `/worklogs` | Worklogs | Live |
