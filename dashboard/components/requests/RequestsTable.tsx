@@ -285,7 +285,7 @@ export function RequestsTable({ requests }: { requests: Request[] }) {
         {/* -top-5/-mt-5/pt-5 cancel out <main>'s own top padding so this sticks flush to the
             viewport edge — otherwise the sticky offset sits 20px below it and scrolled rows
             peek through that gap. */}
-        <div className="sticky -top-5 z-20 bg-gray-950 -mt-5 pt-5 pb-3">
+        <div className="sticky -top-5 z-20 bg-gray-950 -mt-5 pt-5">
           <div className="mb-5">
             <h1 className="text-white text-2xl font-semibold">Solution Requests</h1>
             <p className="text-gray-400 text-sm mt-1">{requests.length} requests from clients</p>
@@ -386,8 +386,11 @@ export function RequestsTable({ requests }: { requests: Request[] }) {
             </div>
           </div>
 
-          {/* Table column headers — sticks with the rest of the header block */}
-          <div className="bg-gray-900 border border-gray-800 rounded-t-xl grid grid-cols-[180px_1fr_160px_1fr_120px_44px] gap-0 px-5 py-3">
+          {/* Table column headers — sticks with the rest of the header block.
+              Only a bottom border (matches original design); the card's left/right/bottom
+              border lives solely on the body box below so there's never two adjacent
+              elements independently drawing the same border line. */}
+          <div className="bg-gray-900 border-b border-gray-800 grid grid-cols-[180px_1fr_160px_1fr_120px_44px] gap-0 px-5 py-3">
             <span className="text-gray-500 text-xs font-semibold uppercase tracking-wider">Solution ID</span>
             <span className="text-gray-500 text-xs font-semibold uppercase tracking-wider">Client</span>
             <span className="text-gray-500 text-xs font-semibold uppercase tracking-wider">Department</span>
