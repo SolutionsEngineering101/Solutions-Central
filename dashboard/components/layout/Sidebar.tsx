@@ -16,11 +16,8 @@ import {
   LogOut,
   Rocket,
   BrainCircuit,
-  Sun,
-  Moon,
   FileSpreadsheet,
 } from "lucide-react";
-import { useTheme } from "@/lib/theme";
 
 const nav = [
   { href: "/", label: "Overview", icon: LayoutDashboard },
@@ -37,7 +34,6 @@ const nav = [
 export function Sidebar() {
   const pathname = usePathname();
   const { data: session } = useSession();
-  const { theme, toggle } = useTheme();
 
   return (
     <aside className="fixed left-0 top-0 h-screen w-56 bg-gray-900 border-r border-gray-700 flex flex-col">
@@ -74,22 +70,13 @@ export function Sidebar() {
               <p className="text-white text-xs font-medium truncate">{session.user.name}</p>
             </div>
           </div>
-          <div className="flex items-center justify-between">
-            <button
-              onClick={() => signOut()}
-              className="flex items-center gap-2 text-gray-500 hover:text-white text-xs transition-colors"
-            >
-              <LogOut size={13} />
-              Sign out
-            </button>
-            <button
-              onClick={toggle}
-              title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-              className="p-1.5 rounded-md text-gray-500 hover:text-white hover:bg-gray-800 transition-colors"
-            >
-              {theme === "dark" ? <Sun size={13} /> : <Moon size={13} />}
-            </button>
-          </div>
+          <button
+            onClick={() => signOut()}
+            className="flex items-center gap-2 text-gray-500 hover:text-white text-xs transition-colors"
+          >
+            <LogOut size={13} />
+            Sign out
+          </button>
         </div>
       )}
     </aside>

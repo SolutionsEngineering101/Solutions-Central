@@ -9,42 +9,6 @@ body {
   font-family: system-ui, -apple-system, sans-serif;
 }
 
-/* ─── Light mode ─────────────────────────────────────────────────────────────
-   Scope: <main> only. Sidebar and overlays stay fully dark.
-   Strategy:
-     1. Give <main> a light page background.
-     2. Remap text tokens inside <main> so page-level text (headings,
-        subtitles) reads dark on the light background.
-     3. Inside any dark surface (bg-gray-900/800/950) within <main>,
-        restore light text via CSS variable cascade — so card/panel text
-        stays readable against dark card backgrounds.
-─────────────────────────────────────────────────────────────────────────── */
-
-html:not(.dark) main {
-  background-color: #eef2f7;
-  color-scheme: light;
-
-  /* Page-level text (sits directly on the light bg) → dark */
-  --color-white:    #0f172a;
-  --color-gray-300: #1e293b;
-  --color-gray-400: #334155;
-  --color-gray-500: #475569;
-  --color-gray-600: #64748b;
-  --color-gray-700: #94a3b8;
-}
-
-/* Inside any dark surface card/panel/input → restore light text */
-html:not(.dark) main .bg-gray-900,
-html:not(.dark) main .bg-gray-800,
-html:not(.dark) main .bg-gray-950 {
-  --color-white:    #f8fafc;
-  --color-gray-300: #cbd5e1;
-  --color-gray-400: #94a3b8;
-  --color-gray-500: #64748b;
-  --color-gray-600: #475569;
-  --color-gray-700: #3d4f63;
-}
-
 /* ─── Scrollbar utility ─────────────────────────────────────────────────── */
 .hide-scrollbar {
   scrollbar-width: none;
