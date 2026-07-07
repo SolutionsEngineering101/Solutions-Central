@@ -278,7 +278,9 @@ export function RequestsTable({ requests }: { requests: Request[] }) {
   }, [filtered, sort]);
 
   return (
-    <div className="flex gap-0 relative">
+    // -mx-5 cancels <main>'s own left/right padding so the table fills the full width
+    // instead of leaving a blank gutter between it and the sidebar/window edge.
+    <div className="flex gap-0 relative -mx-5">
       {/* Main table */}
       <div className={`flex-1 min-w-0 transition-all duration-200 ${selected ? "pr-0" : ""}`}>
         {/* Sticky header block: title, filter bar, search/sort/refresh row, table column headers */}
