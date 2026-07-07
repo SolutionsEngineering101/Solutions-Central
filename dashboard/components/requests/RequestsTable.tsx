@@ -281,104 +281,113 @@ export function RequestsTable({ requests }: { requests: Request[] }) {
     <div className="flex gap-0 relative">
       {/* Main table */}
       <div className={`flex-1 min-w-0 transition-all duration-200 ${selected ? "pr-0" : ""}`}>
-        {/* Status bar */}
-        <div className="flex items-center gap-2 flex-wrap mb-3">
-          <button
-            onClick={() => setStatusFilter(null)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
-              statusFilter === null
-                ? "bg-indigo-600 border-indigo-500 text-white"
-                : "bg-gray-900 border-gray-800 text-gray-400 hover:text-white hover:border-gray-700"
-            }`}
-          >
-            All <span className="tabular-nums opacity-80">{requests.length}</span>
-          </button>
-          {STATUS_BAR.map((s) => {
-            const active = statusFilter === s.key;
-            return (
+        {/* Sticky header block: title, filter bar, search/sort/refresh row, table column headers */}
+        {/* -top-5/-mt-5/pt-5 cancel out <main>'s own top padding so this sticks flush to the
+            viewport edge — otherwise the sticky offset sits 20px below it and scrolled rows
+            peek through that gap. */}
+        <div className="sticky -top-5 z-20 bg-gray-950 -mt-5 pt-5 pb-3">
+          <div className="mb-5">
+            <h1 className="text-white text-2xl font-semibold">Solution Requests</h1>
+            <p className="text-gray-400 text-sm mt-1">{requests.length} requests from clients</p>
+          </div>
+
+          {/* Status bar */}
+          <div className="flex items-center gap-2 flex-wrap mb-3">
+            <button
+              onClick={() => setStatusFilter(null)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                statusFilter === null
+                  ? "bg-indigo-600 border-indigo-500 text-white"
+                  : "bg-gray-900 border-gray-800 text-gray-400 hover:text-white hover:border-gray-700"
+              }`}
+            >
+              All <span className="tabular-nums opacity-80">{requests.length}</span>
+            </button>
+            {STATUS_BAR.map((s) => {
+              const active = statusFilter === s.key;
+              return (
+                <button
+                  key={s.key}
+                  onClick={() => setStatusFilter(active ? null : s.key)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                    active ? "" : "bg-gray-900 border-gray-800 text-gray-400 hover:text-white hover:border-gray-700"
+                  }`}
+                  style={active ? { backgroundColor: s.bg, borderColor: s.color, color: s.color } : undefined}
+                >
+                  <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: s.color }} />
+                  {s.label}
+                  <span className="tabular-nums opacity-80">{counts[s.key] ?? 0}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Search + sort + refresh */}
+          <div className="flex items-center gap-2 mb-3">
+            <div className="relative flex-1 min-w-0">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+              <input
+                type="text"
+                placeholder="Search by client, ID, status, feature…"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                className="w-full bg-gray-900 border border-gray-800 rounded-lg pl-9 pr-4 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-indigo-600 transition-colors"
+              />
+            </div>
+            <div className="flex items-center gap-1 shrink-0">
               <button
-                key={s.key}
-                onClick={() => setStatusFilter(active ? null : s.key)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
-                  active ? "" : "bg-gray-900 border-gray-800 text-gray-400 hover:text-white hover:border-gray-700"
+                onClick={() => setSort(sort === "id-asc" ? "id-desc" : "id-asc")}
+                title="Sort by Solution ID"
+                className={`flex items-center gap-1.5 px-3 py-2.5 rounded-lg text-xs font-medium border transition-colors ${
+                  sort === "id-asc" || sort === "id-desc"
+                    ? "bg-indigo-600 border-indigo-500 text-white"
+                    : "bg-gray-900 border-gray-800 text-gray-400 hover:text-white hover:border-gray-700"
                 }`}
-                style={active ? { backgroundColor: s.bg, borderColor: s.color, color: s.color } : undefined}
               >
-                <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: s.color }} />
-                {s.label}
-                <span className="tabular-nums opacity-80">{counts[s.key] ?? 0}</span>
+                {sort === "id-desc" ? <ArrowUpNarrowWide size={14} /> : <ArrowDownWideNarrow size={14} />}
+                ID
               </button>
-            );
-          })}
-        </div>
-
-        {/* Search + sort + refresh */}
-        <div className="flex items-center gap-2 mb-4">
-          <div className="relative flex-1 min-w-0">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-            <input
-              type="text"
-              placeholder="Search by client, ID, status, feature…"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              className="w-full bg-gray-900 border border-gray-800 rounded-lg pl-9 pr-4 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-indigo-600 transition-colors"
-            />
+              <button
+                onClick={() => setSort(sort === "date-desc" ? "date-asc" : "date-desc")}
+                title="Sort by submitted date"
+                className={`flex items-center gap-1.5 px-3 py-2.5 rounded-lg text-xs font-medium border transition-colors ${
+                  sort === "date-desc" || sort === "date-asc"
+                    ? "bg-indigo-600 border-indigo-500 text-white"
+                    : "bg-gray-900 border-gray-800 text-gray-400 hover:text-white hover:border-gray-700"
+                }`}
+              >
+                {sort === "date-asc" ? <ArrowUpNarrowWide size={14} /> : <ArrowDownWideNarrow size={14} />}
+                Date
+              </button>
+              <button
+                onClick={handleRefresh}
+                disabled={isPending}
+                title="Refresh page data"
+                className="flex items-center gap-1.5 px-3 py-2.5 rounded-lg text-xs font-medium border transition-colors bg-gray-900 border-gray-800 text-gray-400 hover:text-white hover:border-gray-700 disabled:opacity-50"
+              >
+                <RefreshCw size={14} className={isPending ? "animate-spin" : ""} />
+                Refresh
+              </button>
+              <button
+                onClick={handlePull}
+                disabled={pullState === "pulling" || isPending}
+                title="Pull new responses from MS Forms"
+                className={`flex items-center gap-1.5 px-3 py-2.5 rounded-lg text-xs font-medium border transition-colors disabled:opacity-50 ${
+                  pullState === "done"
+                    ? "bg-emerald-950 border-emerald-700 text-emerald-400"
+                    : pullState === "error"
+                    ? "bg-red-950 border-red-700 text-red-400"
+                    : "bg-gray-900 border-gray-800 text-gray-400 hover:text-white hover:border-gray-700"
+                }`}
+              >
+                <CloudDownload size={14} className={pullState === "pulling" ? "animate-pulse" : ""} />
+                {pullState === "pulling" ? "Pulling…" : pullState === "done" ? "Queued!" : pullState === "error" ? "Failed" : "Pull"}
+              </button>
+            </div>
           </div>
-          <div className="flex items-center gap-1 shrink-0">
-            <button
-              onClick={() => setSort(sort === "id-asc" ? "id-desc" : "id-asc")}
-              title="Sort by Solution ID"
-              className={`flex items-center gap-1.5 px-3 py-2.5 rounded-lg text-xs font-medium border transition-colors ${
-                sort === "id-asc" || sort === "id-desc"
-                  ? "bg-indigo-600 border-indigo-500 text-white"
-                  : "bg-gray-900 border-gray-800 text-gray-400 hover:text-white hover:border-gray-700"
-              }`}
-            >
-              {sort === "id-desc" ? <ArrowUpNarrowWide size={14} /> : <ArrowDownWideNarrow size={14} />}
-              ID
-            </button>
-            <button
-              onClick={() => setSort(sort === "date-desc" ? "date-asc" : "date-desc")}
-              title="Sort by submitted date"
-              className={`flex items-center gap-1.5 px-3 py-2.5 rounded-lg text-xs font-medium border transition-colors ${
-                sort === "date-desc" || sort === "date-asc"
-                  ? "bg-indigo-600 border-indigo-500 text-white"
-                  : "bg-gray-900 border-gray-800 text-gray-400 hover:text-white hover:border-gray-700"
-              }`}
-            >
-              {sort === "date-asc" ? <ArrowUpNarrowWide size={14} /> : <ArrowDownWideNarrow size={14} />}
-              Date
-            </button>
-            <button
-              onClick={handleRefresh}
-              disabled={isPending}
-              title="Refresh page data"
-              className="flex items-center gap-1.5 px-3 py-2.5 rounded-lg text-xs font-medium border transition-colors bg-gray-900 border-gray-800 text-gray-400 hover:text-white hover:border-gray-700 disabled:opacity-50"
-            >
-              <RefreshCw size={14} className={isPending ? "animate-spin" : ""} />
-              Refresh
-            </button>
-            <button
-              onClick={handlePull}
-              disabled={pullState === "pulling" || isPending}
-              title="Pull new responses from MS Forms"
-              className={`flex items-center gap-1.5 px-3 py-2.5 rounded-lg text-xs font-medium border transition-colors disabled:opacity-50 ${
-                pullState === "done"
-                  ? "bg-emerald-950 border-emerald-700 text-emerald-400"
-                  : pullState === "error"
-                  ? "bg-red-950 border-red-700 text-red-400"
-                  : "bg-gray-900 border-gray-800 text-gray-400 hover:text-white hover:border-gray-700"
-              }`}
-            >
-              <CloudDownload size={14} className={pullState === "pulling" ? "animate-pulse" : ""} />
-              {pullState === "pulling" ? "Pulling…" : pullState === "done" ? "Queued!" : pullState === "error" ? "Failed" : "Pull"}
-            </button>
-          </div>
-        </div>
 
-        {/* Table */}
-        <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
-          <div className="grid grid-cols-[180px_1fr_160px_1fr_120px_44px] gap-0 border-b border-gray-800 px-5 py-3">
+          {/* Table column headers — sticks with the rest of the header block */}
+          <div className="bg-gray-900 border border-gray-800 rounded-t-xl grid grid-cols-[180px_1fr_160px_1fr_120px_44px] gap-0 px-5 py-3">
             <span className="text-gray-500 text-xs font-semibold uppercase tracking-wider">Solution ID</span>
             <span className="text-gray-500 text-xs font-semibold uppercase tracking-wider">Client</span>
             <span className="text-gray-500 text-xs font-semibold uppercase tracking-wider">Department</span>
@@ -386,7 +395,10 @@ export function RequestsTable({ requests }: { requests: Request[] }) {
             <span className="text-gray-500 text-xs font-semibold uppercase tracking-wider">Status</span>
             <span className="sr-only">AI</span>
           </div>
+        </div>
 
+        {/* Table body — scrolls under the sticky header block */}
+        <div className="bg-gray-900 border border-t-0 border-gray-800 rounded-b-xl overflow-hidden">
           <div className="divide-y divide-gray-800/60">
             {sorted.map((req, i) => {
               const fm = req.frontmatter;

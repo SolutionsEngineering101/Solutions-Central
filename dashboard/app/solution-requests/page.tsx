@@ -16,13 +16,7 @@ export default async function SolutionRequestsPage() {
 
   return (
     <AppShell>
-      <div className="space-y-5">
-        <div>
-          <h1 className="text-white text-2xl font-semibold">Solution Requests</h1>
-          <p className="text-gray-400 text-sm mt-1">{requests.length} requests from clients</p>
-        </div>
-        <RequestsTable requests={requests} />
-      </div>
+      <RequestsTable requests={requests} />
     </AppShell>
   );
 }
