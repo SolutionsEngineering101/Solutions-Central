@@ -22,6 +22,9 @@ function colType(header: string): "status" | "date" | "priority" | "text" {
   return "text";
 }
 
+// Options for status-column dropdowns — mirrors the KPI strip categories
+const STATUS_OPTIONS = ["Not Started", "To Do", "In Progress", "Blocked", "Overdue", "Done"];
+
 function isStatusDone(val: string) {
   return /done|complete|closed|delivered/i.test(val);
 }
@@ -637,21 +640,41 @@ CONFLUENCE_PAGE_ID=567050244`}</pre>
           </div>
           <div className="grid grid-cols-2 gap-3 mb-4">
             {headers.map((h, i) => {
-              const isDate = colType(h) === "date";
+              const type = colType(h);
+              const isDate = type === "date";
+              const isStatus = type === "status";
               return (
                 <div key={i}>
                   <label className="block text-xs text-gray-500 mb-1">{h}</label>
-                  <input
-                    type={isDate ? "date" : "text"}
-                    value={isDate ? dmyToIso(newCells[i] ?? "") : (newCells[i] ?? "")}
-                    onChange={e => setNewCells(prev => {
-                      const n = [...prev];
-                      n[i] = isDate ? isoToDmy(e.target.value) : e.target.value;
-                      return n;
-                    })}
-                    placeholder={isDate ? "" : h}
-                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
+                  {isStatus ? (
+                    <select
+                      value={newCells[i] ?? ""}
+                      onChange={e => setNewCells(prev => {
+                        const n = [...prev];
+                        n[i] = e.target.value;
+                        return n;
+                      })}
+                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    >
+                      <option value="">—</option>
+                      {STATUS_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                      {newCells[i] && !STATUS_OPTIONS.includes(newCells[i]) && (
+                        <option value={newCells[i]}>{newCells[i]}</option>
+                      )}
+                    </select>
+                  ) : (
+                    <input
+                      type={isDate ? "date" : "text"}
+                      value={isDate ? dmyToIso(newCells[i] ?? "") : (newCells[i] ?? "")}
+                      onChange={e => setNewCells(prev => {
+                        const n = [...prev];
+                        n[i] = isDate ? isoToDmy(e.target.value) : e.target.value;
+                        return n;
+                      })}
+                      placeholder={isDate ? "" : h}
+                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                  )}
                 </div>
               );
             })}
@@ -752,19 +775,39 @@ CONFLUENCE_PAGE_ID=567050244`}</pre>
                       <tr key={origIdx} className="border-b border-gray-800 bg-indigo-950/20">
                         {visibleIdx.map((ci) => {
                           const cell = editCells[ci] ?? "";
-                          const isDate = colType(data?.table.headers[ci] ?? "") === "date";
+                          const type = colType(data?.table.headers[ci] ?? "");
+                          const isDate = type === "date";
+                          const isStatus = type === "status";
                           return (
                             <td key={ci} className={`px-3 ${density === "compact" ? "py-2" : "py-2.5"}`}>
-                              <input
-                                type={isDate ? "date" : "text"}
-                                value={isDate ? dmyToIso(cell) : cell}
-                                onChange={e => setEditCells(prev => {
-                                  const n = [...prev];
-                                  n[ci] = isDate ? isoToDmy(e.target.value) : e.target.value;
-                                  return n;
-                                })}
-                                className="w-full min-w-[72px] px-2 py-1.5 bg-gray-800 border border-gray-700 rounded-md text-sm text-gray-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                              />
+                              {isStatus ? (
+                                <select
+                                  value={cell}
+                                  onChange={e => setEditCells(prev => {
+                                    const n = [...prev];
+                                    n[ci] = e.target.value;
+                                    return n;
+                                  })}
+                                  className="w-full min-w-[72px] px-2 py-1.5 bg-gray-800 border border-gray-700 rounded-md text-sm text-gray-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                >
+                                  <option value="">—</option>
+                                  {STATUS_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                                  {cell && !STATUS_OPTIONS.includes(cell) && (
+                                    <option value={cell}>{cell}</option>
+                                  )}
+                                </select>
+                              ) : (
+                                <input
+                                  type={isDate ? "date" : "text"}
+                                  value={isDate ? dmyToIso(cell) : cell}
+                                  onChange={e => setEditCells(prev => {
+                                    const n = [...prev];
+                                    n[ci] = isDate ? isoToDmy(e.target.value) : e.target.value;
+                                    return n;
+                                  })}
+                                  className="w-full min-w-[72px] px-2 py-1.5 bg-gray-800 border border-gray-700 rounded-md text-sm text-gray-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                />
+                              )}
                             </td>
                           );
                         })}
