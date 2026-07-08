@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { X, Search, ArrowDownWideNarrow, ArrowUpNarrowWide, Sparkles, RefreshCw, CloudDownload, Check, Loader2, Wand2 } from "lucide-react";
+import { X, Search, ArrowDownWideNarrow, ArrowUpNarrowWide, Sparkles, RefreshCw, CloudDownload, Check, Loader2, Wand2, Info } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { useAssistant, type AssistantRequest } from "@/components/ai/AssistantProvider";
 
@@ -444,9 +444,10 @@ export function RequestsTable({ requests }: { requests: Request[] }) {
                     </button>
                   </div>
                   {gist && (
-                    <p className="text-gray-500 text-xs truncate mt-1 pl-[180px] pr-11">
-                      {gist}
-                    </p>
+                    <div className="flex items-center gap-1.5 mt-1 pl-[180px] pr-11" title={gist}>
+                      <Info size={12} className="text-gray-600 shrink-0" />
+                      <p className="text-gray-500 text-xs truncate">{gist}</p>
+                    </div>
                   )}
                 </div>
               );
