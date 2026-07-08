@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { X, Search, ArrowDownWideNarrow, ArrowUpNarrowWide, Sparkles, RefreshCw, CloudDownload, Check, Loader2, Wand2, Info } from "lucide-react";
+import { X, Search, ArrowDownWideNarrow, ArrowUpNarrowWide, Sparkles, RefreshCw, CloudDownload, Check, Loader2, Wand2 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { useAssistant, type AssistantRequest } from "@/components/ai/AssistantProvider";
 
@@ -427,14 +427,12 @@ export function RequestsTable({ requests }: { requests: Request[] }) {
                     <span className="text-indigo-400 text-sm font-mono font-medium truncate pr-4">{id}</span>
                     <span className="text-white text-sm truncate pr-4">{client}</span>
                     <span className="text-gray-400 text-sm truncate pr-4">{department}</span>
-                    {gist ? (
-                      <div className="flex items-center gap-1.5 pr-4 min-w-0" title={gist}>
-                        <Info size={12} className="text-gray-600 hover:text-indigo-400 shrink-0 cursor-help transition-colors" />
-                        <span className="text-gray-400 text-sm truncate">{gist}</span>
-                      </div>
-                    ) : (
-                      <span className="text-gray-700 text-sm pr-4">—</span>
-                    )}
+                    <span
+                      className={`text-gray-400 text-sm truncate pr-4 ${gist ? "cursor-help" : ""}`}
+                      title={gist || undefined}
+                    >
+                      {gist || "—"}
+                    </span>
                     <span>
                       <span className={`inline-block px-2 py-0.5 rounded-full text-xs border ${statusStyle(status)}`}>
                         {status}
