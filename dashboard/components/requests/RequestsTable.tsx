@@ -445,7 +445,7 @@ export function RequestsTable({ requests }: { requests: Request[] }) {
                   </div>
                   {gist && (
                     <div className="flex items-center gap-1.5 mt-1 pl-[180px] pr-11" title={gist}>
-                      <Info size={12} className="text-gray-600 shrink-0" />
+                      <Info size={12} className="text-gray-600 hover:text-indigo-400 shrink-0 cursor-help transition-colors" />
                       <p className="text-gray-500 text-xs truncate">{gist}</p>
                     </div>
                   )}
