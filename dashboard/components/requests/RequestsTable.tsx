@@ -390,11 +390,12 @@ export function RequestsTable({ requests }: { requests: Request[] }) {
               Only a bottom border (matches original design); the card's left/right/bottom
               border lives solely on the body box below so there's never two adjacent
               elements independently drawing the same border line. */}
-          <div className="bg-gray-900 border-b border-gray-800 grid grid-cols-[180px_1fr_160px_1fr_120px_44px] gap-0 px-5 py-3">
+          <div className="bg-gray-900 border-b border-gray-800 grid grid-cols-[140px_1fr_130px_100px_1.3fr_120px_44px] gap-0 px-5 py-3">
             <span className="text-gray-500 text-xs font-semibold uppercase tracking-wider">Solution ID</span>
             <span className="text-gray-500 text-xs font-semibold uppercase tracking-wider">Client</span>
             <span className="text-gray-500 text-xs font-semibold uppercase tracking-wider">Department</span>
             <span className="text-gray-500 text-xs font-semibold uppercase tracking-wider">Feature</span>
+            <span className="text-gray-500 text-xs font-semibold uppercase tracking-wider">Description</span>
             <span className="text-gray-500 text-xs font-semibold uppercase tracking-wider">Status</span>
             <span className="sr-only">AI</span>
           </div>
@@ -424,11 +425,19 @@ export function RequestsTable({ requests }: { requests: Request[] }) {
                   className={`group w-full px-5 py-3 text-left transition-colors cursor-pointer border-l-2
                     ${isActive ? "bg-indigo-950/40 border-l-indigo-500" : "hover:bg-gray-800/50 border-l-transparent"}`}
                 >
-                  <div className="grid grid-cols-[180px_1fr_160px_1fr_120px_44px] gap-0 items-center">
+                  <div className="grid grid-cols-[140px_1fr_130px_100px_1.3fr_120px_44px] gap-0 items-center">
                     <span className="text-indigo-400 text-sm font-mono font-medium truncate pr-4">{id}</span>
                     <span className="text-white text-sm truncate pr-4">{client}</span>
                     <span className="text-gray-400 text-sm truncate pr-4">{department}</span>
                     <span className="text-gray-400 text-sm truncate pr-4">{feature}</span>
+                    {gist ? (
+                      <div className="flex items-center gap-1.5 pr-4 min-w-0" title={gist}>
+                        <Info size={12} className="text-gray-600 hover:text-indigo-400 shrink-0 cursor-help transition-colors" />
+                        <span className="text-gray-400 text-sm truncate">{gist}</span>
+                      </div>
+                    ) : (
+                      <span className="text-gray-700 text-sm pr-4">—</span>
+                    )}
                     <span>
                       <span className={`inline-block px-2 py-0.5 rounded-full text-xs border ${statusStyle(status)}`}>
                         {status}
@@ -443,12 +452,6 @@ export function RequestsTable({ requests }: { requests: Request[] }) {
                       <Sparkles size={16} />
                     </button>
                   </div>
-                  {gist && (
-                    <div className="flex items-center gap-1.5 mt-1 pl-[180px] pr-11" title={gist}>
-                      <Info size={12} className="text-gray-600 hover:text-indigo-400 shrink-0 cursor-help transition-colors" />
-                      <p className="text-gray-500 text-xs truncate">{gist}</p>
-                    </div>
-                  )}
                 </div>
               );
             })}
