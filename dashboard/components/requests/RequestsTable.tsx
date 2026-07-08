@@ -427,10 +427,7 @@ export function RequestsTable({ requests }: { requests: Request[] }) {
                     <span className="text-indigo-400 text-sm font-mono font-medium truncate pr-4">{id}</span>
                     <span className="text-white text-sm truncate pr-4">{client}</span>
                     <span className="text-gray-400 text-sm truncate pr-4">{department}</span>
-                    <span
-                      className={`text-gray-400 text-sm truncate pr-4 ${gist ? "cursor-help" : ""}`}
-                      title={gist || undefined}
-                    >
+                    <span className="text-gray-400 text-sm truncate pr-4" title={gist || undefined}>
                       {gist || "—"}
                     </span>
                     <span>
