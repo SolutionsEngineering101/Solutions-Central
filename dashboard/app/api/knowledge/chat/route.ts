@@ -20,7 +20,7 @@ export async function OPTIONS(req: Request) {
   return new Response(null, { status: 204, headers: extensionCorsHeaders(req) });
 }
 
-const SYSTEM = `You are a sharp, proactive knowledge assistant for Vantage Circle's Solutions Engineering team. You have access to solution requests, playbook entries, blueprints, RFPs (requests for proposal), and Confluence docs — all indexed below as CONTEXT.
+const SYSTEM = `You are a sharp, proactive knowledge assistant for Vantage Circle's Solutions Engineering team. You have access to solution requests, playbook entries, blueprints, RFPs (requests for proposal), product specs (reference docs like points⇄currency conversion rates and API specs), and Confluence docs — all indexed below as CONTEXT.
 
 Your personality: You are a knowledgeable, direct colleague who interrogates before answering. You do NOT dump information passively. You ask pointed follow-up questions to surface what the person actually needs.
 
@@ -50,7 +50,7 @@ Your personality: You are a knowledgeable, direct colleague who interrogates bef
 **Use session memory.** If SESSION MEMORY is provided above, you already know those facts — do NOT ask about them again. Use them to give more targeted, personalised responses immediately.
 
 ## Citation rules
-- Only cite sources from the CONTEXT below using [FORM:ID], [PLAYBOOK:title], [BLUEPRINT:title], [RFP:title], [CONFLUENCE:title].
+- Only cite sources from the CONTEXT below using [FORM:ID], [PLAYBOOK:title], [BLUEPRINT:title], [RFP:title], [SPEC:title], [CONFLUENCE:title].
 - When citing a form, name the client and outcome: "Acme Corp received a custom badge solution [FORM:SC-0045]".
 - Never invent sources or details not in the context.
 
@@ -113,6 +113,7 @@ function sourceLabel(source: string): string {
   if (source === "playbook") return "PLAYBOOK";
   if (source === "blueprint") return "BLUEPRINT";
   if (source === "rfp") return "RFP";
+  if (source === "spec") return "SPEC";
   return "CONFLUENCE";
 }
 
@@ -170,7 +171,9 @@ export async function POST(req: Request) {
       const label = `${sourceLabel(chunk.source)}:${chunk.id.split(":").slice(1).join(":")}`;
       const meta = [chunk.meta.client, chunk.meta.status, chunk.meta.department]
         .filter(Boolean).join(" | ");
-      contextLines.push(`[${label}] ${chunk.title}${meta ? ` — ${meta}` : ""}\n${clip(chunk.text)}`);
+      // Spec chunks are dense reference tables (e.g. per-client rate rows) — a
+      // 400-char clip would cut the table mid-row, so give them more room.
+      contextLines.push(`[${label}] ${chunk.title}${meta ? ` — ${meta}` : ""}\n${clip(chunk.text, chunk.source === "spec" ? 4000 : 400)}`);
     }
     const contextBlock = contextLines.length
       ? contextLines.join("\n\n")
@@ -213,7 +216,7 @@ export async function POST(req: Request) {
 
     // Extract cited source IDs from the answer
     const citedIds = new Set<string>();
-    const citationRe = /\[(FORM|PLAYBOOK|BLUEPRINT|RFP|CONFLUENCE):([^\]]+)\]/gi;
+    const citationRe = /\[(FORM|PLAYBOOK|BLUEPRINT|RFP|SPEC|CONFLUENCE):([^\]]+)\]/gi;
     let m: RegExpExecArray | null;
     while ((m = citationRe.exec(answer)) !== null) {
       citedIds.add(`${m[1].toLowerCase()}:${m[2]}`);

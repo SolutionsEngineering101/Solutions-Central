@@ -4,7 +4,7 @@
 
 export interface KnowledgeChunk {
   id: string;
-  source: "form" | "playbook" | "blueprint" | "confluence" | "rfp";
+  source: "form" | "playbook" | "blueprint" | "confluence" | "rfp" | "spec";
   title: string;
   text: string;
   meta: {
