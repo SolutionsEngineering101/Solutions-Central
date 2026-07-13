@@ -1,8 +1,19 @@
 import { AppShell } from "@/components/layout/AppShell";
 import Link from "next/link";
-import { BookOpen, Layers, FileSpreadsheet, FileText } from "lucide-react";
+import { BookOpen, Layers, FileSpreadsheet, FileText, Coins, type LucideIcon } from "lucide-react";
 
-const sections = [
+interface Section {
+  href: string;
+  label: string;
+  description: string;
+  Icon: LucideIcon;
+  iconBg: string;
+  iconColor: string;
+  border: string;
+  external?: boolean;
+}
+
+const sections: Section[] = [
   {
     href: "/confluence",
     label: "Tech Docs",
@@ -39,6 +50,16 @@ const sections = [
     iconColor: "text-blue-400",
     border: "hover:border-blue-700",
   },
+  {
+    href: "/rate-explorer",
+    label: "Rate Explorer",
+    description: "Points ⇄ currency conversion rates for every client and country — interactive lookup and converter.",
+    Icon: Coins,
+    iconBg: "bg-purple-950",
+    iconColor: "text-purple-400",
+    border: "hover:border-purple-700",
+    external: true,
+  },
 ];
 
 export default function DocumentsPage() {
@@ -51,21 +72,31 @@ export default function DocumentsPage() {
         </div>
 
         <div className="grid grid-cols-2 gap-5">
-          {sections.map(({ href, label, description, Icon, iconBg, iconColor, border }) => (
-            <Link
-              key={href}
-              href={href}
-              className={`group bg-gray-900 border border-gray-800 ${border} rounded-xl p-6 flex flex-col gap-4 transition-colors`}
-            >
-              <div className={`w-10 h-10 ${iconBg} rounded-xl flex items-center justify-center`}>
-                <Icon size={20} className={iconColor} />
-              </div>
-              <div>
-                <p className="text-white font-semibold text-base">{label}</p>
-                <p className="text-gray-500 text-sm mt-1 leading-relaxed">{description}</p>
-              </div>
-            </Link>
-          ))}
+          {sections.map(({ href, label, description, Icon, iconBg, iconColor, border, external }) => {
+            const cardClass = `group bg-gray-900 border border-gray-800 ${border} rounded-xl p-6 flex flex-col gap-4 transition-colors`;
+            const inner = (
+              <>
+                <div className={`w-10 h-10 ${iconBg} rounded-xl flex items-center justify-center`}>
+                  <Icon size={20} className={iconColor} />
+                </div>
+                <div>
+                  <p className="text-white font-semibold text-base">{label}</p>
+                  <p className="text-gray-500 text-sm mt-1 leading-relaxed">{description}</p>
+                </div>
+              </>
+            );
+            // Route handlers (raw HTML apps) can't be client-navigated — use a
+            // plain anchor in a new tab instead of a Next.js Link.
+            return external ? (
+              <a key={href} href={href} target="_blank" rel="noopener" className={cardClass}>
+                {inner}
+              </a>
+            ) : (
+              <Link key={href} href={href} className={cardClass}>
+                {inner}
+              </Link>
+            );
+          })}
         </div>
       </div>
     </AppShell>
