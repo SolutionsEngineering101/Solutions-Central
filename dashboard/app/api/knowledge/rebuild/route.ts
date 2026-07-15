@@ -67,7 +67,7 @@ export async function POST(req: Request) {
       const spoc = fmStr(fm, "solution_spoc", "vc_spoc");
       const text = [
         fmStr(fm, "form_id"), client, feature, dept, status, complexity, spoc,
-        clip(f.content, 1200),
+        clip(f.content, 1800),
       ].filter(Boolean).join(" ");
       chunks.push(makeChunk(id, "form", client || id, text, {
         client, status, complexity, department: dept,
@@ -82,7 +82,7 @@ export async function POST(req: Request) {
       const title = fmStr(fm, "title") || p.path.split("/").pop()!.replace(/\.md$/, "");
       const tags = Array.isArray(fm.tags) ? (fm.tags as string[]).join(" ") : "";
       const author = fmStr(fm, "author");
-      const text = [title, tags, author, clip(p.content, 800)].filter(Boolean).join(" ");
+      const text = [title, tags, author, clip(p.content, 1400)].filter(Boolean).join(" ");
       chunks.push(makeChunk(`playbook:${title}`, "playbook", title, text, {
         tags: Array.isArray(fm.tags) ? (fm.tags as string[]) : [],
         author, date: fmStr(fm, "date"), url: ghUrl(p.path),
@@ -97,7 +97,7 @@ export async function POST(req: Request) {
       const domain = fmStr(fm, "domain");
       const clientType = fmStr(fm, "client_type");
       const tags = Array.isArray(fm.tags) ? (fm.tags as string[]).join(" ") : "";
-      const text = [title, domain, clientType, tags, clip(b.content, 800)].filter(Boolean).join(" ");
+      const text = [title, domain, clientType, tags, clip(b.content, 1400)].filter(Boolean).join(" ");
       chunks.push(makeChunk(`blueprint:${title}`, "blueprint", title, text, {
         tags: Array.isArray(fm.tags) ? (fm.tags as string[]) : [],
         date: fmStr(fm, "date"),
@@ -116,7 +116,7 @@ export async function POST(req: Request) {
       const deadline = fmStr(fm, "deadline");
       const estimatedValue = fmStr(fm, "estimated_value");
       const tags = Array.isArray(fm.tags) ? (fm.tags as string[]).join(" ") : "";
-      const text = [title, client, status, assignedTo, deadline, estimatedValue, tags, clip(r.content, 1200)].filter(Boolean).join(" ");
+      const text = [title, client, status, assignedTo, deadline, estimatedValue, tags, clip(r.content, 1800)].filter(Boolean).join(" ");
       chunks.push(makeChunk(`rfp:${title}`, "rfp", title, text, {
         client, status, tags: Array.isArray(fm.tags) ? (fm.tags as string[]) : [],
         date: fmStr(fm, "date_received"), url: ghUrl(r.path),

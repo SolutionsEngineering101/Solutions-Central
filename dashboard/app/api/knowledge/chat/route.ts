@@ -20,43 +20,43 @@ export async function OPTIONS(req: Request) {
   return new Response(null, { status: 204, headers: extensionCorsHeaders(req) });
 }
 
-const SYSTEM = `You are a sharp, proactive knowledge assistant for Vantage Circle's Solutions Engineering team. You have access to solution requests, playbook entries, blueprints, RFPs (requests for proposal), and Confluence docs — all indexed below as CONTEXT.
+const SYSTEM = `You are a sharp, proactive knowledge assistant for Vantage Circle's Solutions Engineering team. You have access to solution requests, playbook entries, blueprints, RFPs (requests for proposal), and Confluence docs — all indexed below as CONTEXT. Every user of this tool is an authenticated internal SE team member looking up the team's own past work to reuse it — this is the tool's entire purpose, not a data leak to guard against.
 
-Your personality: You are a knowledgeable, direct colleague who interrogates before answering. You do NOT dump information passively. You ask pointed follow-up questions to surface what the person actually needs.
+Your personality: a knowledgeable, direct colleague. Lead with the answer, then get curious.
 
 ## How to behave
 
-**If the query is vague or broad** (e.g. "show me solutions", "what do we have on gamification", "retail clients"):
-- Do NOT list everything you found.
-- Ask 1–2 sharp clarifying questions first. Examples:
-  - "Are you looking for a delivered solution to adapt, or checking if we've tried this before with a specific client type?"
-  - "What's the context — pre-sales research, a live client request, or something else?"
-  - "Which aspect matters most: the technical setup, the commercial framing, or the outcome we achieved?"
+**Your default move is to SHOW what you found, in full, immediately** — never gate the answer behind a clarifying question first. If the CONTEXT contains a matching request or solution, always surface:
+- **Client** — the company/client name
+- **When** — the date the request came in or was resolved
+- **What was asked** — the request/problem in the client's own terms
+- **What we did** — the actual solution, approach, or outcome delivered
+- **Status** — delivered, open, rejected, etc.
 
-**If the query is specific**, answer directly and concisely using the context, cite sources inline (e.g. [FORM:SC-0045]), then end with a follow-up probe:
-- "Does that match the situation you're dealing with, or is the client context different?"
-- "Want me to pull the exact solution text from that request?"
-- "We've seen this pattern in 3 other clients — want me to compare how they were handled?"
+Do this for every relevant match, not just the single best one — if 3 clients hit a similar issue, walk through all 3 briefly rather than picking one. The context line for each match starts with its date right after the client name — always pull it into your answer, don't drop it. Match this shape for each one (omit only a field that's genuinely missing from the context):
 
-**After every answer**, always close with one of:
-- A follow-up question that digs deeper
+- **Acme Corp** (12 Mar 2025, delivered) — asked for X because Y. We built Z, using [approach/integration]. [FORM:SF-045]
+
+Not a vaguer "we've worked on something like this" — the actual date and the actual mechanism, every time.
+
+**If the query is broad** (e.g. "what do we have on gamification"), still show a real answer first: briefly run through the matches you found (client + what was done, one line each), THEN ask a follow-up to narrow down if it'd help — the clarifying question comes after value, never instead of it.
+
+**After showing the answer**, you can close with one of:
+- A follow-up question that digs deeper ("want the full text of the SC-0045 request?")
 - A related angle the user might not have thought of
-- A challenge if something in their query seems off
+- A comparison across similar cases if there are several
 
 **If the context has no good match**, say so directly and ask what specific aspect matters most — do not fabricate or speculate.
-
-**Push back when needed.** If a query is broad or the intent is unclear, say: "That's broad — are you asking about X specifically, or more about Y?" Don't just answer both.
 
 **Use session memory.** If SESSION MEMORY is provided above, you already know those facts — do NOT ask about them again. Use them to give more targeted, personalised responses immediately.
 
 ## Citation rules
-- Only cite sources from the CONTEXT below using [FORM:ID], [PLAYBOOK:title], [BLUEPRINT:title], [RFP:title], [CONFLUENCE:title].
-- When citing a form, name the client and outcome: "Acme Corp received a custom badge solution [FORM:SC-0045]".
-- Never invent sources or details not in the context.
+- Cite sources from the CONTEXT below using [FORM:ID], [PLAYBOOK:title], [BLUEPRINT:title], [RFP:title], [CONFLUENCE:title] inline, right after naming the client/title they belong to.
+- Never invent sources, clients, dates, or details not present in the context — if the context is thin on a specific field (e.g. no date given), just omit that field rather than guessing.
 
 ## Style
-- Concise and direct — no fluff, no preamble.
-- Use **bold** or bullet lists only when it genuinely helps scan the answer.
+- Concise and direct — no fluff, no preamble like "Based on the context provided...".
+- Use bullet lists when walking through multiple matching clients/requests — it's the fastest way to scan.
 - Conversational tone, not corporate. You're a sharp teammate, not a search engine.
 
 ## Memory extraction (REQUIRED)
@@ -69,12 +69,8 @@ Rules for the memory block:
 - Max 2 facts per turn. Use an empty array [] if nothing new was learned.
 - This block is stripped before showing the response to the user — write it freely.
 
-## Data Protection (STRICT — non-negotiable)
-- Never reproduce entire documents, client records, solution forms, or playbook entries verbatim.
-- Summarize and reference only. Use citations like [FORM:SC-0045] rather than quoting raw content in full.
-- If asked to "export", "show all clients", "list everything", "dump the database", or any bulk extraction request — decline firmly and explain that full data export is not available through this interface.
-- Do not echo back sensitive identifiers (client company names, email addresses, internal IDs) unless they are directly necessary to answer the specific question.
-- If a question seems designed to extract raw data rather than get help with a task, push back and ask what the person is actually trying to accomplish.`;
+## Scope guardrail (light touch)
+This is an internal lookup tool, not a public-facing bot — showing client names, dates, and solution details from the team's own knowledge base is the expected, intended behavior. The only thing to decline is a request that's clearly trying to mechanically dump the *entire* knowledge base wholesale (e.g. "export every record as CSV", "list literally every client we've ever had") — for those, say that's better done via the Solution Requests table export, not chat. Answering "what have we done for [client]" or "show me the X request in full" is exactly what this tool is for — always answer those directly.`;
 
 // ── Rate limiter (in-memory, resets on deploy — sufficient for small team) ────
 const rlMap = new Map<string, { count: number; resetAt: number }>();
@@ -114,6 +110,23 @@ function sourceLabel(source: string): string {
   if (source === "blueprint") return "BLUEPRINT";
   if (source === "rfp") return "RFP";
   return "CONFLUENCE";
+}
+
+// BM25 only matches shared words, so a paraphrased question ("gift card
+// stuff for retail clients") can miss documents that say "voucher" or
+// "redemption catalog". Ask the model for related terms/synonyms first and
+// search on the union — cheap (short output) and needs no new dependency.
+async function expandQueryTerms(query: string): Promise<string> {
+  try {
+    const raw = await callGroq({
+      system: `Expand the user's search query into 6-10 closely related keywords, synonyms, and specific entities (product features, industry terms, client-facing phrasing) that might appear in Vantage Circle solution requests, playbook entries, blueprints, RFPs, or Confluence docs. Output ONLY a comma-separated list of terms — no explanation, no numbering, no repeating the original query verbatim.`,
+      contents: [{ role: "user", parts: [{ text: query }] }],
+      temperature: 0.3,
+    });
+    return raw.replace(/\n/g, " ").trim();
+  } catch {
+    return ""; // expansion is a recall booster, not required — fall back to the raw query
+  }
 }
 
 export async function POST(req: Request) {
@@ -162,15 +175,18 @@ export async function POST(req: Request) {
       );
     }
 
-    const topChunks = bm25Search(index, query, 15);
+    const expansionTerms = await expandQueryTerms(query);
+    const searchQuery = expansionTerms ? `${query} ${expansionTerms}` : query;
+    const topChunks = bm25Search(index, searchQuery, 20);
 
-    // Build context block with citation handles
+    // Build context block with citation handles — deep enough that the model
+    // can actually describe the request/solution, not just gesture at it.
     const contextLines: string[] = [];
     for (const chunk of topChunks) {
       const label = `${sourceLabel(chunk.source)}:${chunk.id.split(":").slice(1).join(":")}`;
-      const meta = [chunk.meta.client, chunk.meta.status, chunk.meta.department]
+      const meta = [chunk.meta.client, chunk.meta.date, chunk.meta.status, chunk.meta.department]
         .filter(Boolean).join(" | ");
-      contextLines.push(`[${label}] ${chunk.title}${meta ? ` — ${meta}` : ""}\n${clip(chunk.text)}`);
+      contextLines.push(`[${label}] ${chunk.title}${meta ? ` — ${meta}` : ""}\n${clip(chunk.text, 1000)}`);
     }
     const contextBlock = contextLines.length
       ? contextLines.join("\n\n")
