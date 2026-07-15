@@ -1,19 +1,22 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { Card, CardTitle } from "@/components/ui/card";
+import { Badge, type BadgeProps } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 interface RequestRow {
   submittedAt: string;
   status: string;
 }
 
-const STATUS_META: Record<string, { label: string; color: string; bg: string }> = {
-  "Solution Given Closed": { label: "Delivered",   color: "#34d399", bg: "rgba(52,211,153,0.12)"  },
-  "To Product Closed":     { label: "To Product",  color: "#818cf8", bg: "rgba(129,140,248,0.12)" },
-  "Open":                  { label: "Open",        color: "#fbbf24", bg: "rgba(251,191,36,0.12)"  },
-  "Rejected":              { label: "Rejected",    color: "#f87171", bg: "rgba(248,113,113,0.12)" },
-  "No Response Closed":    { label: "No Response", color: "#6b7280", bg: "rgba(107,114,128,0.12)" },
-  "Unknown":               { label: "Unknown",     color: "#4b5563", bg: "rgba(75,85,99,0.12)"    },
+const STATUS_META: Record<string, { label: string; variant: NonNullable<BadgeProps["variant"]>; color: string }> = {
+  "Solution Given Closed": { label: "Delivered",   variant: "success", color: "var(--success-400)" },
+  "To Product Closed":     { label: "To Product",  variant: "brand",   color: "var(--brand-400)" },
+  "Open":                  { label: "Open",        variant: "warning", color: "var(--warning-400)" },
+  "Rejected":              { label: "Rejected",    variant: "error",   color: "var(--error-400)" },
+  "No Response Closed":    { label: "No Response", variant: "neutral", color: "var(--neutral-500)" },
+  "Unknown":               { label: "Unknown",     variant: "neutral", color: "var(--neutral-600)" },
 };
 
 function getQuarter(dateStr: string): string | null {
@@ -60,28 +63,30 @@ export function QuarterlyBreakdown({ requests }: { requests: RequestRow[] }) {
     .map(([key, meta]) => ({ ...meta, count: counts[key] ?? 0 }));
 
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+    <Card compact>
 
       {/* Header */}
       <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-        <h2 className="text-white font-semibold text-sm">Solution Requests by Quarter</h2>
+        <CardTitle className="text-[length:var(--font-size-dense)]">Solution Requests by Quarter</CardTitle>
         <div className="flex items-center gap-1 flex-wrap">
           <button
             onClick={() => setSelected(ALL)}
-            className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-colors ${
-              selected === ALL ? "bg-indigo-600 text-white" : "text-gray-500 hover:text-white hover:bg-gray-800"
-            }`}
+            className={cn(
+              "px-2.5 py-1 rounded-[8px] text-[length:var(--font-size-xs)] font-semibold transition-colors duration-200 ease-in-out",
+              selected === ALL ? "bg-brand-500 text-white" : "text-fg-secondary hover:text-fg-primary hover:bg-neutral-200"
+            )}
           >
             All
           </button>
-          <div className="w-px h-3.5 bg-gray-700 mx-0.5" />
+          <div className="w-px h-3.5 bg-neutral-300 mx-0.5" />
           {quarters.map(q => (
             <button
               key={q}
               onClick={() => setSelected(q)}
-              className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-colors ${
-                selected === q ? "bg-indigo-600 text-white" : "text-gray-500 hover:text-white hover:bg-gray-800"
-              }`}
+              className={cn(
+                "px-2.5 py-1 rounded-[8px] text-[length:var(--font-size-xs)] font-semibold transition-colors duration-200 ease-in-out",
+                selected === q ? "bg-brand-500 text-white" : "text-fg-secondary hover:text-fg-primary hover:bg-neutral-200"
+              )}
             >
               {q}
             </button>
@@ -94,44 +99,39 @@ export function QuarterlyBreakdown({ requests }: { requests: RequestRow[] }) {
           {/* Mini KPIs */}
           <div className="col-span-1 grid grid-cols-2 gap-2">
             {[
-              { label: "Total",     value: total,         color: "#e5e7eb" },
-              { label: "Delivered", value: delivered,     color: "#34d399" },
-              { label: "Open",      value: open,          color: "#fbbf24" },
-              { label: "Completion Rate",  value: `${winRate}%`, color: "#818cf8" },
-            ].map(({ label, value, color }) => (
-              <div key={label} className="bg-gray-800/50 rounded-lg px-3 py-2">
-                <p className="text-[10px] text-gray-500 uppercase tracking-wide mb-0.5">{label}</p>
-                <p className="text-lg font-bold leading-none" style={{ color }}>{value}</p>
+              { label: "Total",     value: total,         className: "text-fg-primary" },
+              { label: "Delivered", value: delivered,     className: "text-[var(--color-success)]" },
+              { label: "Open",      value: open,          className: "text-[var(--color-warning)]" },
+              { label: "Completion Rate",  value: `${winRate}%`, className: "text-brand-400" },
+            ].map(({ label, value, className }) => (
+              <div key={label} className="bg-neutral-200/50 rounded-lg px-3 py-2">
+                <p className="text-[length:var(--font-size-xs)] text-fg-secondary uppercase tracking-wide mb-0.5">{label}</p>
+                <p className={cn("text-[length:var(--font-size-lg)] font-bold leading-none", className)}>{value}</p>
               </div>
             ))}
           </div>
 
           {/* Status bars */}
           <div className="col-span-3 flex flex-col justify-center gap-2.5">
-            {breakdown.map(({ label, color, bg, count }) => {
+            {breakdown.map(({ label, variant, color, count }) => {
               const pct = total > 0 ? Math.round((count / total) * 100) : 0;
               return (
                 <div key={label} className="flex items-center gap-3">
-                  <span
-                    className="text-[11px] font-medium px-2 py-0.5 rounded-full shrink-0 w-24 text-center"
-                    style={{ color, backgroundColor: bg }}
-                  >
-                    {label}
-                  </span>
-                  <div className="flex-1 h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                  <Badge variant={variant} className="shrink-0 w-24 justify-center">{label}</Badge>
+                  <div className="flex-1 h-1.5 bg-neutral-300 rounded-pill overflow-hidden">
                     <div
-                      className="h-full rounded-full transition-all duration-500"
+                      className="h-full rounded-pill transition-all duration-500 ease-out"
                       style={{ width: `${pct}%`, backgroundColor: color }}
                     />
                   </div>
-                  <span className="text-xs font-bold tabular-nums w-7 text-right" style={{ color }}>{count}</span>
-                  <span className="text-[11px] text-gray-600 tabular-nums w-8 text-right">{pct}%</span>
+                  <span className="text-[length:var(--font-size-xs)] font-bold tabular-nums w-7 text-right" style={{ color }}>{count}</span>
+                  <span className="text-[length:var(--font-size-xs)] text-fg-secondary tabular-nums w-8 text-right">{pct}%</span>
                 </div>
               );
             })}
           </div>
 
         </div>
-    </div>
+    </Card>
   );
 }

@@ -115,22 +115,22 @@ export function KnowledgeHub({ initialStats }: Props) {
     : null;
 
   return (
-    <div className="flex flex-col h-full bg-gray-900 rounded-xl p-5">
+    <div className="flex flex-col h-full bg-surface-card border border-neutral-200 rounded-xl shadow-sm p-5">
       {/* Header */}
-      <div className="flex items-center justify-between pb-4 border-b border-gray-800 shrink-0">
+      <div className="flex items-center justify-between pb-4 border-b border-neutral-200 shrink-0">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-indigo-600/20 rounded-lg">
-            <BrainCircuit size={20} className="text-indigo-400" />
+          <div className="p-2 bg-brand-50 rounded-lg">
+            <BrainCircuit size={20} className="text-brand-600" />
           </div>
           <div>
-            <h1 className="text-white font-semibold text-lg leading-none">Knowledge Hub</h1>
+            <h1 className="text-fg-primary font-semibold text-lg leading-none">Knowledge Hub</h1>
             {stats ? (
-              <p className="text-gray-500 text-xs mt-1">
+              <p className="text-fg-secondary text-xs mt-1">
                 {stats.bySource.form} forms · {stats.bySource.playbook} playbook · {stats.bySource.blueprint} blueprints · {stats.bySource.rfp ?? 0} RFPs · {stats.bySource.confluence} Confluence
-                {builtDate && <span className="ml-2 text-gray-600">— indexed {builtDate}</span>}
+                {builtDate && <span className="ml-2 text-fg-secondary/70">— indexed {builtDate}</span>}
               </p>
             ) : (
-              <p className="text-amber-500 text-xs mt-1 flex items-center gap-1">
+              <p className="text-warning-600 text-xs mt-1 flex items-center gap-1">
                 <AlertCircle size={11} /> Index not built — click Rebuild to get started
               </p>
             )}
@@ -140,8 +140,8 @@ export function KnowledgeHub({ initialStats }: Props) {
         <button
           onClick={handleRebuild}
           disabled={rebuilding}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-md text-xs bg-gray-800 text-gray-300
-                     hover:bg-gray-700 hover:text-white disabled:opacity-50 disabled:cursor-wait transition-colors"
+          className="flex items-center gap-2 px-3 py-1.5 rounded-md text-xs bg-neutral-100 text-fg-secondary
+                     hover:bg-neutral-200 hover:text-fg-primary disabled:opacity-50 disabled:cursor-wait transition-colors duration-200 ease-in-out"
           aria-label="Rebuild knowledge index"
         >
           <RefreshCw size={12} className={rebuilding ? "animate-spin" : ""} />
@@ -152,7 +152,7 @@ export function KnowledgeHub({ initialStats }: Props) {
       {/* Session memory strip */}
       {sessionMemory.length > 0 && (
         <div className="mt-3 flex items-start gap-2 shrink-0">
-          <div className="flex items-center gap-1.5 text-amber-500 shrink-0 mt-0.5">
+          <div className="flex items-center gap-1.5 text-warning-600 shrink-0 mt-0.5">
             <Zap size={12} />
             <span className="text-[11px] font-medium uppercase tracking-wider">Memory</span>
           </div>
@@ -160,13 +160,13 @@ export function KnowledgeHub({ initialStats }: Props) {
             {sessionMemory.map((fact, i) => (
               <span
                 key={i}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px]
-                           bg-amber-950/40 border border-amber-800/50 text-amber-300"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-pill text-[11px]
+                           bg-warning-50 border border-warning-200 text-warning-600"
               >
                 {fact}
                 <button
                   onClick={() => setSessionMemory((m) => m.filter((_, j) => j !== i))}
-                  className="text-amber-500 hover:text-amber-200 transition-colors"
+                  className="text-warning-500 hover:text-warning-600 transition-colors duration-150 ease-in-out"
                   aria-label="Remove memory"
                 >
                   <X size={10} />
@@ -175,7 +175,7 @@ export function KnowledgeHub({ initialStats }: Props) {
             ))}
             <button
               onClick={() => setSessionMemory([])}
-              className="text-[11px] text-gray-600 hover:text-gray-400 transition-colors px-1"
+              className="text-[11px] text-fg-secondary/70 hover:text-fg-secondary transition-colors duration-150 ease-in-out px-1"
             >
               Clear all
             </button>
@@ -185,7 +185,7 @@ export function KnowledgeHub({ initialStats }: Props) {
 
       {/* Error banner */}
       {error && (
-        <div className="mt-3 px-3 py-2 rounded-md bg-red-950/50 border border-red-800 text-red-300 text-xs flex items-start gap-2 shrink-0">
+        <div className="mt-3 px-3 py-2 rounded-md bg-error-25 border border-error-200 text-error-600 text-xs flex items-start gap-2 shrink-0">
           <AlertCircle size={13} className="mt-0.5 shrink-0" />
           <span>{error}</span>
         </div>
@@ -196,17 +196,17 @@ export function KnowledgeHub({ initialStats }: Props) {
         {messages.length === 0 && !loading && (
           <div className="flex flex-col items-center justify-center h-full gap-6 text-center">
             <div>
-              <Database size={36} className="text-gray-700 mx-auto mb-3" />
-              <p className="text-gray-400 text-sm font-medium">Ask anything about the team's knowledge</p>
-              <p className="text-gray-600 text-xs mt-1">Solution requests, playbook entries, blueprints, RFPs, and Confluence docs</p>
+              <Database size={36} className="text-neutral-300 mx-auto mb-3" />
+              <p className="text-fg-secondary text-sm font-medium">Ask anything about the team's knowledge</p>
+              <p className="text-fg-secondary/70 text-xs mt-1">Solution requests, playbook entries, blueprints, RFPs, and Confluence docs</p>
             </div>
             <div className="flex flex-col gap-2 w-full max-w-md">
               {SUGGESTIONS.map((s) => (
                 <button
                   key={s}
                   onClick={() => send(s)}
-                  className="px-4 py-2.5 rounded-lg border border-gray-700 text-gray-400 text-sm
-                             hover:border-indigo-600 hover:text-white transition-colors text-left"
+                  className="px-4 py-2.5 rounded-lg border border-neutral-200 text-fg-secondary text-sm
+                             hover:border-brand-400 hover:text-fg-primary transition-colors duration-200 ease-in-out text-left"
                 >
                   {s}
                 </button>
@@ -221,8 +221,8 @@ export function KnowledgeHub({ initialStats }: Props) {
               <div
                 className={`rounded-xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap ${
                   msg.role === "user"
-                    ? "bg-indigo-600 text-white rounded-br-sm"
-                    : "bg-gray-900 border border-gray-800 text-gray-200 rounded-bl-sm"
+                    ? "bg-brand-500 text-white rounded-br-sm"
+                    : "bg-neutral-100 border border-neutral-200 text-fg-primary rounded-bl-sm"
                 }`}
               >
                 {msg.text}
@@ -238,9 +238,9 @@ export function KnowledgeHub({ initialStats }: Props) {
                         href={s.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px]
-                                   bg-gray-800 border border-gray-700 text-gray-300
-                                   hover:border-indigo-500 hover:text-white transition-colors"
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-pill text-[11px]
+                                   bg-neutral-100 border border-neutral-200 text-fg-secondary
+                                   hover:border-brand-400 hover:text-fg-primary transition-colors duration-200 ease-in-out"
                       >
                         <SourceIcon source={s.source} />
                         <span className="truncate max-w-[160px]">{s.title}</span>
@@ -248,8 +248,8 @@ export function KnowledgeHub({ initialStats }: Props) {
                     ) : (
                       <span
                         key={s.id}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px]
-                                   bg-gray-800 border border-gray-700 text-gray-400"
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-pill text-[11px]
+                                   bg-neutral-100 border border-neutral-200 text-fg-secondary"
                       >
                         <SourceIcon source={s.source} />
                         <span className="truncate max-w-[160px]">{s.title}</span>
@@ -264,11 +264,11 @@ export function KnowledgeHub({ initialStats }: Props) {
 
         {loading && (
           <div className="flex justify-start" role="status" aria-live="polite" aria-label="Loading answer">
-            <div className="bg-gray-900 border border-gray-800 rounded-xl rounded-bl-sm px-4 py-3">
+            <div className="bg-neutral-100 border border-neutral-200 rounded-xl rounded-bl-sm px-4 py-3">
               <div className="flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-bounce [animation-delay:0ms]" />
-                <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-bounce [animation-delay:150ms]" />
-                <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-bounce [animation-delay:300ms]" />
+                <span className="w-1.5 h-1.5 rounded-pill bg-brand-400 animate-bounce [animation-delay:0ms]" />
+                <span className="w-1.5 h-1.5 rounded-pill bg-brand-400 animate-bounce [animation-delay:150ms]" />
+                <span className="w-1.5 h-1.5 rounded-pill bg-brand-400 animate-bounce [animation-delay:300ms]" />
               </div>
             </div>
           </div>
@@ -278,9 +278,9 @@ export function KnowledgeHub({ initialStats }: Props) {
       </div>
 
       {/* Composer */}
-      <div className="pt-3 border-t border-gray-800 shrink-0">
-        <div className="flex items-end gap-2 bg-gray-900 border border-gray-700 rounded-xl px-4 py-3
-                        focus-within:border-indigo-600 transition-colors">
+      <div className="pt-3 border-t border-neutral-200 shrink-0">
+        <div className="flex items-end gap-2 bg-surface-card border border-neutral-300 rounded-xl px-4 py-3
+                        focus-within:border-brand-500 transition-colors duration-200 ease-in-out">
           <textarea
             ref={inputRef}
             value={query}
@@ -289,21 +289,21 @@ export function KnowledgeHub({ initialStats }: Props) {
             placeholder="Ask about solutions, clients, playbook, blueprints…"
             aria-label="Ask the knowledge base"
             rows={1}
-            className="flex-1 bg-transparent text-white text-sm placeholder-gray-500 resize-none outline-none
+            className="flex-1 bg-transparent text-fg-primary text-sm placeholder:text-fg-secondary resize-none outline-none
                        leading-relaxed max-h-32 overflow-y-auto"
             style={{ minHeight: "1.5rem" }}
           />
           <button
             onClick={() => send()}
             disabled={!query.trim() || loading}
-            className="shrink-0 p-1.5 rounded-lg bg-indigo-600 text-white
-                       hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="shrink-0 p-1.5 rounded-lg bg-brand-500 text-white
+                       hover:bg-brand-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors duration-200 ease-in-out"
             aria-label="Send message"
           >
             <Send size={14} />
           </button>
         </div>
-        <p className="text-gray-600 text-[10px] mt-1.5 ml-1">Enter to send · Shift+Enter for new line</p>
+        <p className="text-fg-secondary/70 text-[10px] mt-1.5 ml-1">Enter to send · Shift+Enter for new line</p>
       </div>
     </div>
   );

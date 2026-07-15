@@ -5,15 +5,18 @@ import Link from "next/link";
 import { CheckCircle2, Clock, TrendingUp, ArrowUpRight, Users, BookOpen, Layers } from "lucide-react";
 import { QuarterlyBreakdown } from "@/components/overview/QuarterlyBreakdown";
 import { ComplexityDonut } from "@/components/overview/ComplexityDonut";
+import { Card, CardTitle } from "@/components/ui/card";
+import { StatCard } from "@/components/ui/stat-card";
+import { Badge, type BadgeProps } from "@/components/ui/badge";
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
-const STATUS_META: Record<string, { label: string; color: string; bg: string }> = {
-  "Solution Given Closed": { label: "Delivered",   color: "#34d399", bg: "rgba(52,211,153,0.12)"  },
-  "To Product Closed":     { label: "To Product",  color: "#818cf8", bg: "rgba(129,140,248,0.12)" },
-  "Open":                  { label: "Open",        color: "#fbbf24", bg: "rgba(251,191,36,0.12)"  },
-  "Rejected":              { label: "Rejected",    color: "#f87171", bg: "rgba(248,113,113,0.12)" },
-  "No Response Closed":    { label: "No Response", color: "#6b7280", bg: "rgba(107,114,128,0.12)" },
+const STATUS_META: Record<string, { label: string; variant: NonNullable<BadgeProps["variant"]>; dot: string }> = {
+  "Solution Given Closed": { label: "Delivered",   variant: "success", dot: "var(--success-400)" },
+  "To Product Closed":     { label: "To Product",  variant: "brand",   dot: "var(--brand-400)" },
+  "Open":                  { label: "Open",        variant: "warning", dot: "var(--warning-400)" },
+  "Rejected":              { label: "Rejected",    variant: "error",   dot: "var(--error-400)" },
+  "No Response Closed":    { label: "No Response", variant: "neutral", dot: "var(--neutral-500)" },
 };
 
 const SPOC_KEYS: Record<string, string> = {
@@ -98,30 +101,17 @@ export default async function OverviewPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-white text-xl font-semibold">Overview</h1>
-            <p className="text-gray-500 text-xs mt-0.5">Solutions Engineering · Vantage Circle</p>
+            <h1 className="text-fg-primary text-[length:var(--font-size-xl)] font-semibold">Overview</h1>
+            <p className="text-fg-secondary text-[length:var(--font-size-xs)] mt-0.5">Solutions Engineering · Vantage Circle</p>
           </div>
-          <p className="text-gray-600 text-xs">{total} requests tracked</p>
+          <p className="text-fg-secondary text-[length:var(--font-size-xs)]">{total} requests tracked</p>
         </div>
 
         {/* ── 3 KPI cards ─────────────────────────────────────────────────── */}
         <div className="grid grid-cols-3 gap-3">
-          {[
-            { label: "Total Delivered", value: delivered, sub: `of ${total} requests`,    color: "#34d399", iconBg: "rgba(52,211,153,0.12)",  Icon: CheckCircle2 },
-            { label: "Completion Rate",        value: `${winRate}%`, sub: "delivery rate",        color: "#818cf8", iconBg: "rgba(129,140,248,0.12)", Icon: TrendingUp   },
-            { label: "Open Now",        value: open,      sub: "awaiting action",           color: "#fbbf24", iconBg: "rgba(251,191,36,0.12)",  Icon: Clock        },
-          ].map(({ label, value, sub, color, iconBg, Icon }) => (
-            <div key={label} className="bg-gray-900 border border-gray-800 rounded-xl px-5 py-4 flex items-center gap-4">
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: iconBg }}>
-                <Icon size={16} style={{ color }} />
-              </div>
-              <div className="min-w-0">
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-500">{label}</p>
-                <p className="text-2xl font-bold leading-tight" style={{ color }}>{value}</p>
-                <p className="text-[11px] text-gray-600">{sub}</p>
-              </div>
-            </div>
-          ))}
+          <StatCard label="Total Delivered" value={delivered} subtext={`of ${total} requests`} tone="success" icon={<CheckCircle2 size={16} />} />
+          <StatCard label="Completion Rate" value={`${winRate}%`} subtext="delivery rate" tone="brand" icon={<TrendingUp size={16} />} />
+          <StatCard label="Open Now" value={open} subtext="awaiting action" tone="warning" icon={<Clock size={16} />} />
         </div>
 
         {/* ── Quarterly breakdown ──────────────────────────────────────────── */}
@@ -136,65 +126,65 @@ export default async function OverviewPage() {
         <div className="grid grid-cols-3 gap-3 flex-1 min-h-0">
 
           {/* Team leaderboard */}
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 flex flex-col">
+          <Card compact className="flex flex-col">
             <div className="flex items-center gap-2 mb-3">
-              <Users size={13} className="text-gray-500" />
-              <h2 className="text-white font-semibold text-sm">Team Leaderboard</h2>
+              <Users size={13} className="text-fg-secondary" />
+              <CardTitle className="text-[length:var(--font-size-dense)]">Team Leaderboard</CardTitle>
             </div>
             <div className="space-y-2.5">
               {leaderboard.map(([name, count], i) => {
-                const pct    = Math.round((count / leaderMax) * 100);
+                const pct = Math.round((count / leaderMax) * 100);
+                // Rank medals (gold/silver/bronze) have no equivalent status
+                // token — they're a decorative rank cue, not a semantic state.
                 const medals = ["#fbbf24", "#9ca3af", "#a16207"];
+                const barColor = i === 0 ? "var(--brand-400)" : i === 1 ? "var(--brand-500)" : "var(--brand-600)";
                 return (
                   <div key={name}>
                     <div className="flex items-center gap-2 mb-1">
                       <div
-                        className="w-4 h-4 rounded-full flex items-center justify-center shrink-0 text-[9px] font-bold"
+                        className="w-4 h-4 rounded-pill flex items-center justify-center shrink-0 text-[9px] font-bold"
                         style={i < 3
                           ? { backgroundColor: `${medals[i]}20`, color: medals[i] }
-                          : { backgroundColor: "#1f2937", color: "#6b7280" }}
+                          : { backgroundColor: "var(--neutral-200)", color: "var(--neutral-500)" }}
                       >
                         {i + 1}
                       </div>
-                      <span className="text-xs text-gray-300 flex-1">{name}</span>
-                      <span className="text-xs font-bold text-white tabular-nums">{count}</span>
+                      <span className="text-[length:var(--font-size-xs)] text-fg-primary flex-1">{name}</span>
+                      <span className="text-[length:var(--font-size-xs)] font-bold text-fg-primary tabular-nums">{count}</span>
                     </div>
-                    <div className="ml-6 h-1 bg-gray-800 rounded-full overflow-hidden">
-                      <div
-                        className="h-full rounded-full"
-                        style={{ width: `${pct}%`, backgroundColor: i === 0 ? "#818cf8" : i === 1 ? "#6366f1" : "#4338ca" }}
-                      />
+                    <div className="ml-6 h-1 bg-neutral-300 rounded-pill overflow-hidden">
+                      <div className="h-full rounded-pill" style={{ width: `${pct}%`, backgroundColor: barColor }} />
                     </div>
                   </div>
                 );
               })}
             </div>
-            <div className="mt-3 pt-3 border-t border-gray-800 grid grid-cols-2 gap-2">
-              <div className="bg-gray-800/50 rounded-lg px-3 py-2 flex items-center gap-2">
-                <BookOpen size={11} className="text-violet-400 shrink-0" />
+            <div className="mt-3 pt-3 border-t border-neutral-200 grid grid-cols-2 gap-2">
+              <div className="bg-neutral-200/50 rounded-md px-3 py-2 flex items-center gap-2">
+                <BookOpen size={11} className="text-brand-400 shrink-0" />
                 <div>
-                  <p className="text-sm font-bold text-violet-400 leading-none">{playbook.length}</p>
-                  <p className="text-[10px] text-gray-500">Playbook</p>
+                  <p className="text-[length:var(--font-size-md)] font-bold text-brand-400 leading-none">{playbook.length}</p>
+                  <p className="text-[length:var(--font-size-xs)] text-fg-secondary">Playbook</p>
                 </div>
               </div>
-              <div className="bg-gray-800/50 rounded-lg px-3 py-2 flex items-center gap-2">
-                <Layers size={11} className="text-sky-400 shrink-0" />
+              <div className="bg-neutral-200/50 rounded-md px-3 py-2 flex items-center gap-2">
+                <Layers size={11} className="text-info-400 shrink-0" />
                 <div>
-                  <p className="text-sm font-bold text-sky-400 leading-none">{blueprints.length}</p>
-                  <p className="text-[10px] text-gray-500">Blueprints</p>
+                  <p className="text-[length:var(--font-size-md)] font-bold text-info-400 leading-none">{blueprints.length}</p>
+                  <p className="text-[length:var(--font-size-xs)] text-fg-secondary">Blueprints</p>
                 </div>
               </div>
             </div>
-          </div>
+          </Card>
 
           {/* Complexity donut */}
           <ComplexityDonut low={cx.Low} medium={cx.Medium} high={cx.High} />
 
           {/* Recent requests */}
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 flex flex-col">
+          <Card compact className="flex flex-col">
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-white font-semibold text-sm">Recent Requests</h2>
-              <Link href="/solution-requests" className="flex items-center gap-0.5 text-[11px] text-indigo-400 hover:text-indigo-300 transition-colors">
+              <CardTitle className="text-[length:var(--font-size-dense)]">Recent Requests</CardTitle>
+              <Link href="/solution-requests" className="flex items-center gap-0.5 text-[length:var(--font-size-xs)] text-brand-400 hover:text-brand-300 transition-colors duration-150 ease-in-out">
                 View all <ArrowUpRight size={10} />
               </Link>
             </div>
@@ -203,23 +193,21 @@ export default async function OverviewPage() {
                 const fm     = req.frontmatter;
                 const client = String(fm.client ?? fm.client_name ?? "—");
                 const status = normalizeStatus(fm.status);
-                const meta   = STATUS_META[status] ?? { label: status, color: "#6b7280", bg: "rgba(107,114,128,0.12)" };
+                const meta   = STATUS_META[status] ?? { label: status, variant: "neutral" as const, dot: "var(--neutral-500)" };
                 const date   = String(fm.submitted_at ?? fm.date ?? "");
                 return (
-                  <div key={i} className="flex items-center gap-2 py-2 border-b border-gray-800 last:border-0">
-                    <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: meta.color }} />
-                    <span className="text-xs text-gray-300 truncate flex-1">{client}</span>
+                  <div key={i} className="flex items-center gap-2 py-2 border-b border-neutral-200 last:border-0">
+                    <div className="w-1.5 h-1.5 rounded-pill shrink-0" style={{ backgroundColor: meta.dot }} />
+                    <span className="text-[length:var(--font-size-xs)] text-fg-primary truncate flex-1">{client}</span>
                     <div className="flex flex-col items-end gap-0.5 shrink-0">
-                      <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full" style={{ color: meta.color, backgroundColor: meta.bg }}>
-                        {meta.label}
-                      </span>
-                      {date && <span className="text-[10px] text-gray-600">{formatDate(date)}</span>}
+                      <Badge variant={meta.variant}>{meta.label}</Badge>
+                      {date && <span className="text-[length:var(--font-size-xs)] text-fg-secondary">{formatDate(date)}</span>}
                     </div>
                   </div>
                 );
               })}
             </div>
-          </div>
+          </Card>
 
         </div>
       </div>

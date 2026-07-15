@@ -3,6 +3,8 @@
 import { useState } from "react";
 import useSWR from "swr";
 import { Rocket, Plus, AlertTriangle, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge, type BadgeProps } from "@/components/ui/badge";
 import type { Release, SectionKey, SectionStatus } from "./types";
 import { SECTIONS_FOR_TYPE, computeReleaseStatus } from "./types";
 import CreateReleaseModal from "./CreateReleaseModal";
@@ -17,26 +19,26 @@ const RELEASE_TYPE_LABELS: Record<string, string> = {
   integration: "Integration",
 };
 
-const RELEASE_TYPE_BADGE: Record<string, string> = {
-  "new-feature": "bg-indigo-900/50 text-indigo-300 border-indigo-700",
-  customization: "bg-blue-900/50 text-blue-300 border-blue-700",
-  hotfix: "bg-red-900/50 text-red-300 border-red-700",
-  integration: "bg-purple-900/50 text-purple-300 border-purple-700",
+const RELEASE_TYPE_BADGE: Record<string, NonNullable<BadgeProps["variant"]>> = {
+  "new-feature": "brand",
+  customization: "info",
+  hotfix: "error",
+  integration: "neutral",
 };
 
-const STATUS_BADGE: Record<string, string> = {
-  draft: "bg-gray-800 text-gray-400 border-gray-700",
-  "in-progress": "bg-yellow-900/40 text-yellow-300 border-yellow-700",
-  blocked: "bg-red-900/40 text-red-300 border-red-700",
-  ready: "bg-green-900/40 text-green-300 border-green-700",
-  deployed: "bg-indigo-900/40 text-indigo-300 border-indigo-700",
+const STATUS_BADGE: Record<string, NonNullable<BadgeProps["variant"]>> = {
+  draft: "neutral",
+  "in-progress": "warning",
+  blocked: "error",
+  ready: "success",
+  deployed: "brand",
 };
 
 const SECTION_DOT_COLOR: Record<SectionStatus, string> = {
-  pending: "bg-gray-600",
-  "in-progress": "bg-yellow-400",
-  complete: "bg-green-400",
-  na: "bg-gray-700",
+  pending: "bg-neutral-300",
+  "in-progress": "bg-warning-400",
+  complete: "bg-success-400",
+  na: "bg-neutral-200",
 };
 
 const SECTION_SHORT: Record<SectionKey, string> = {
@@ -97,27 +99,24 @@ export default function ReleaseTracker() {
       {/* Page header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-indigo-600/20 border border-indigo-600/30 flex items-center justify-center">
-            <Rocket size={16} className="text-indigo-400" />
+          <div className="w-8 h-8 rounded-lg bg-brand-50 border border-brand-200 flex items-center justify-center">
+            <Rocket size={16} className="text-brand-500" />
           </div>
           <div>
-            <h1 className="text-white font-semibold text-lg leading-tight">Release Tracker</h1>
-            <p className="text-gray-500 text-xs">Production Go-Live Validation Protocol</p>
+            <h1 className="text-fg-primary font-semibold text-lg leading-tight">Release Tracker</h1>
+            <p className="text-fg-secondary text-xs">Production Go-Live Validation Protocol</p>
           </div>
         </div>
-        <button
-          onClick={() => setCreateOpen(true)}
-          className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium px-3 py-1.5 rounded-lg transition-colors"
-        >
+        <Button onClick={() => setCreateOpen(true)}>
           <Plus size={14} />
           New Release
-        </button>
+        </Button>
       </div>
 
       {/* Untracked tickets banner */}
       {untracked.length > 0 && showUntrackedBanner && (
-        <div className="flex items-center justify-between bg-amber-900/20 border border-amber-700/50 rounded-xl px-4 py-3">
-          <div className="flex items-center gap-2.5 text-amber-300">
+        <div className="flex items-center justify-between bg-warning-25 border border-warning-200 rounded-xl px-4 py-3">
+          <div className="flex items-center gap-2.5 text-warning-600">
             <AlertTriangle size={15} className="shrink-0" />
             <span className="text-sm">
               <strong>{untracked.length}</strong> Jira{" "}
@@ -127,7 +126,7 @@ export default function ReleaseTracker() {
           </div>
           <button
             onClick={() => setShowUntrackedBanner(false)}
-            className="text-amber-600 hover:text-amber-400 text-xs transition-colors ml-4 shrink-0"
+            className="text-warning-600 hover:text-warning-500 text-xs transition-colors duration-200 ease-in-out ml-4 shrink-0"
           >
             Dismiss
           </button>
@@ -135,63 +134,60 @@ export default function ReleaseTracker() {
       )}
 
       {/* Table */}
-      <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+      <div className="bg-surface-card border border-neutral-200 rounded-xl overflow-hidden">
         {isLoading ? (
-          <div className="flex items-center justify-center py-16 text-gray-600 gap-2">
-            <div className="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+          <div className="flex items-center justify-center py-16 text-fg-secondary gap-2">
+            <div className="w-4 h-4 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
             <span className="text-sm">Loading releases…</span>
           </div>
         ) : releaseList.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center px-6">
-            <Rocket size={32} className="text-gray-700 mb-3" />
-            <p className="text-gray-400 text-sm font-medium">No releases yet</p>
-            <p className="text-gray-600 text-xs mt-1 max-w-xs">
+            <Rocket size={32} className="text-neutral-300 mb-3" />
+            <p className="text-fg-primary text-sm font-medium">No releases yet</p>
+            <p className="text-fg-secondary text-xs mt-1 max-w-xs">
               Create your first release to start tracking go-live readiness.
             </p>
-            <button
-              onClick={() => setCreateOpen(true)}
-              className="mt-4 flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium px-3 py-1.5 rounded-lg transition-colors"
-            >
+            <Button className="mt-4" onClick={() => setCreateOpen(true)}>
               <Plus size={14} />
               New Release
-            </button>
+            </Button>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-800">
-                  <th className="text-left px-4 py-3 text-gray-500 font-medium text-xs whitespace-nowrap">
+                <tr className="border-b border-neutral-200">
+                  <th className="text-left px-4 py-3 text-fg-secondary font-medium text-xs whitespace-nowrap">
                     Release ID
                   </th>
-                  <th className="text-left px-4 py-3 text-gray-500 font-medium text-xs whitespace-nowrap">
+                  <th className="text-left px-4 py-3 text-fg-secondary font-medium text-xs whitespace-nowrap">
                     Name
                   </th>
-                  <th className="text-left px-4 py-3 text-gray-500 font-medium text-xs whitespace-nowrap">
+                  <th className="text-left px-4 py-3 text-fg-secondary font-medium text-xs whitespace-nowrap">
                     Type
                   </th>
-                  <th className="text-left px-4 py-3 text-gray-500 font-medium text-xs whitespace-nowrap">
+                  <th className="text-left px-4 py-3 text-fg-secondary font-medium text-xs whitespace-nowrap">
                     Client(s)
                   </th>
-                  <th className="text-left px-4 py-3 text-gray-500 font-medium text-xs whitespace-nowrap">
+                  <th className="text-left px-4 py-3 text-fg-secondary font-medium text-xs whitespace-nowrap">
                     Product
                   </th>
-                  <th className="text-left px-4 py-3 text-gray-500 font-medium text-xs whitespace-nowrap">
+                  <th className="text-left px-4 py-3 text-fg-secondary font-medium text-xs whitespace-nowrap">
                     Deploy Date
                   </th>
-                  <th className="text-left px-4 py-3 text-gray-500 font-medium text-xs whitespace-nowrap">
+                  <th className="text-left px-4 py-3 text-fg-secondary font-medium text-xs whitespace-nowrap">
                     PM Owner
                   </th>
-                  <th className="text-left px-4 py-3 text-gray-500 font-medium text-xs whitespace-nowrap">
+                  <th className="text-left px-4 py-3 text-fg-secondary font-medium text-xs whitespace-nowrap">
                     Sections
                   </th>
-                  <th className="text-left px-4 py-3 text-gray-500 font-medium text-xs whitespace-nowrap">
+                  <th className="text-left px-4 py-3 text-fg-secondary font-medium text-xs whitespace-nowrap">
                     Status
                   </th>
                   <th className="px-4 py-3" />
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-800/60">
+              <tbody className="divide-y divide-neutral-200">
                 {releaseList.map((release) => {
                   const requiredSections = SECTIONS_FOR_TYPE[release.releaseType];
                   const overallStatus = computeReleaseStatus(release);
@@ -199,36 +195,32 @@ export default function ReleaseTracker() {
                   return (
                     <tr
                       key={release.id}
-                      className="hover:bg-gray-800/30 transition-colors"
+                      className="hover:bg-neutral-100 transition-colors duration-200 ease-in-out"
                     >
                       {/* ID */}
                       <td className="px-4 py-3">
-                        <span className="font-mono text-indigo-400 text-xs font-semibold">
+                        <span className="font-mono text-brand-500 text-xs font-semibold">
                           {release.id}
                         </span>
                       </td>
 
                       {/* Name */}
                       <td className="px-4 py-3">
-                        <span className="text-white text-sm font-medium max-w-[200px] truncate block">
+                        <span className="text-fg-primary text-sm font-medium max-w-[200px] truncate block">
                           {release.name}
                         </span>
                       </td>
 
                       {/* Type */}
                       <td className="px-4 py-3">
-                        <span
-                          className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full border whitespace-nowrap ${
-                            RELEASE_TYPE_BADGE[release.releaseType] ?? ""
-                          }`}
-                        >
+                        <Badge variant={RELEASE_TYPE_BADGE[release.releaseType] ?? "neutral"} className="whitespace-nowrap">
                           {RELEASE_TYPE_LABELS[release.releaseType] ?? release.releaseType}
-                        </span>
+                        </Badge>
                       </td>
 
                       {/* Clients */}
                       <td className="px-4 py-3">
-                        <span className="text-gray-300 text-xs max-w-[140px] truncate block">
+                        <span className="text-fg-secondary text-xs max-w-[140px] truncate block">
                           {release.clients.join(", ") || "—"}
                         </span>
                       </td>
@@ -238,19 +230,19 @@ export default function ReleaseTracker() {
                         {release.products?.length > 0 ? (
                           <div className="flex flex-wrap gap-1">
                             {release.products.map((p) => (
-                              <span key={p} className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-gray-800 border border-gray-700 text-gray-300 whitespace-nowrap">
+                              <Badge key={p} variant="neutral" className="whitespace-nowrap">
                                 {p}
-                              </span>
+                              </Badge>
                             ))}
                           </div>
                         ) : (
-                          <span className="text-gray-600">—</span>
+                          <span className="text-neutral-400">—</span>
                         )}
                       </td>
 
                       {/* Deploy Date */}
                       <td className="px-4 py-3">
-                        <span className="text-gray-300 text-xs whitespace-nowrap">
+                        <span className="text-fg-secondary text-xs whitespace-nowrap">
                           {release.deploymentDate
                             ? new Date(release.deploymentDate + "T00:00:00").toLocaleDateString()
                             : "—"}
@@ -259,7 +251,7 @@ export default function ReleaseTracker() {
 
                       {/* PM Owner */}
                       <td className="px-4 py-3">
-                        <span className="text-gray-300 text-xs whitespace-nowrap">
+                        <span className="text-fg-secondary text-xs whitespace-nowrap">
                           {TEAM_MEMBER_LABELS[release.pmOwner] ?? release.pmOwner}
                         </span>
                       </td>
@@ -273,7 +265,7 @@ export default function ReleaseTracker() {
                               <span
                                 key={key}
                                 title={`${key}: ${status}`}
-                                className={`w-2.5 h-2.5 rounded-full ${SECTION_DOT_COLOR[status]}`}
+                                className={`w-2.5 h-2.5 rounded-pill ${SECTION_DOT_COLOR[status]}`}
                               />
                             );
                           })}
@@ -282,20 +274,16 @@ export default function ReleaseTracker() {
 
                       {/* Overall status */}
                       <td className="px-4 py-3">
-                        <span
-                          className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full border whitespace-nowrap ${
-                            STATUS_BADGE[overallStatus] ?? ""
-                          }`}
-                        >
+                        <Badge variant={STATUS_BADGE[overallStatus] ?? "neutral"} className="whitespace-nowrap">
                           {overallStatus}
-                        </span>
+                        </Badge>
                       </td>
 
                       {/* Actions */}
                       <td className="px-4 py-3">
                         <button
                           onClick={() => setSelectedRelease(release)}
-                          className="flex items-center gap-1 text-gray-400 hover:text-white text-xs transition-colors whitespace-nowrap"
+                          className="flex items-center gap-1 text-fg-secondary hover:text-fg-primary text-xs transition-colors duration-200 ease-in-out whitespace-nowrap"
                         >
                           Manage
                           <ChevronRight size={12} />

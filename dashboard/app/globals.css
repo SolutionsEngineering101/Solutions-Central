@@ -1,12 +1,320 @@
 @import "tailwindcss";
 
+/* Class-based dark mode (toggled via .dark on <html>), not the media-query
+   default — needed so components can pair a -600 "text on tint" step
+   (kept literal for its other job as a solid-fill/hover color) with a
+   lighter step when the tint itself has flipped dark. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ─── Design tokens — from PRODUCT-DESIGN-SYSTEM.md, §22 ───────────────────
+   Light by default, per spec. Values are the spec's literal light-mode
+   hex — no adaptation needed, this file mirrors §22's quick reference.
+   ────────────────────────────────────────────────────────────────────── */
+:root {
+  /* Brand (runtime override-able) */
+  --brand-25:  #f6f4fb;
+  --brand-50:  #f1edf8;
+  --brand-100: #e2daf1;
+  --brand-200: #c5b5e2;
+  --brand-300: #a086d0;
+  --brand-400: #7a56bd;
+  --brand-500: #5b3b97;
+  --brand-600: #472e75;
+  --company-color-hex: var(--brand-500);
+
+  /* Info, Success, Warning, Error — 25-600 ramp per spec §3.2 */
+  --info-25:  #f5fbff;
+  --info-50:  #f0f9ff;
+  --info-100: #e0f2fe;
+  --info-200: #b9e6fe;
+  --info-300: #7cd4fd;
+  --info-400: #36bffa;
+  --info-500: #0ba5ec;
+  --info-600: #0086c9;
+
+  --success-25:  #f6fef9;
+  --success-50:  #ecfdf3;
+  --success-100: #d1fadf;
+  --success-200: #a6f4c5;
+  --success-300: #6ce9a6;
+  --success-400: #32d583;
+  --success-500: #12b76a;
+  --success-600: #039855;
+
+  --warning-25:  #fffcf5;
+  --warning-50:  #fffaeb;
+  --warning-100: #fef0c7;
+  --warning-200: #fedf89;
+  --warning-300: #fec84b;
+  --warning-400: #fdb022;
+  --warning-500: #f79009;
+  --warning-600: #dc6803;
+
+  --error-25:  #fffbfa;
+  --error-50:  #fef3f2;
+  --error-100: #fee4e2;
+  --error-200: #fecdca;
+  --error-300: #fda29b;
+  --error-400: #f97066;
+  --error-500: #f04438;
+  --error-600: #d92d20;
+
+  /* Neutral — bluish-warm ramp per spec §3.3 */
+  --neutral-50:  #f5f5f7;
+  --neutral-100: #eff2f5;
+  --neutral-200: #eef0f4;
+  --neutral-300: #d9dde7;
+  --neutral-400: #637281;
+  --neutral-500: #5c6c7c;
+  --neutral-600: #475467;
+
+  /* Semantic — Text */
+  --text-primary:   #33475b;
+  --text-secondary: var(--neutral-500);
+  --color-white:    #ffffff;
+
+  /* Surface — card/modal/input backgrounds. Spec says these are literal
+     white in light mode, but a literal Tailwind `bg-white` can't respond
+     to a dark-mode override, so this is the token everything reaches for
+     instead of `white` directly (see the `.dark` block below). */
+  --surface-card: #ffffff;
+
+  /* Semantic — Status (flat tokens, distinct from the 25-600 ramp above) */
+  --color-success:      #28a745;
+  --color-success-bg:   #d4edda;
+  --color-error:        #dc3545;
+  --color-error-bg:     #f8d7da;
+  --color-warning:      #ffc107;
+  --color-warning-bg:   #fff3cd;
+  --color-warning-text: #856404;
+
+  /* Interactive */
+  --color-link:  var(--brand-500);
+  --color-focus: rgba(91, 59, 151, 0.25);
+
+  /* Disabled (always applied together) */
+  --color-disabled-bg:   var(--neutral-200);
+  --color-disabled-text: var(--neutral-400);
+
+  /* Overlays */
+  --overlay-modal:  rgba(0, 0, 0, 0.5);
+  --overlay-subtle: rgba(0, 0, 0, 0.1);
+
+  /* Availability (product-specific) */
+  --color-available:      #6dd400;
+  --color-available-dark: #459d14;
+
+  /* Spacing */
+  --space-1: 4px; --space-2: 8px; --space-3: 10px; --space-4: 12px;
+  --space-5: 16px; --space-6: 20px; --space-7: 24px; --space-8: 32px;
+
+  /* Typography */
+  --font-family-base: var(--font-inter, 'Inter'), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-family-mono: ui-monospace, 'SF Mono', Consolas, monospace;
+
+  --font-size-xs:    0.6875rem; /* 11 */
+  --font-size-sm:    0.75rem;   /* 12 */
+  --font-size-dense: 0.8125rem; /* 13 */
+  --font-size-md:    0.875rem;  /* 14 */
+  --font-size-lg:    1rem;      /* 16 */
+  --font-size-xl:    1.125rem;  /* 18 */
+  --font-size-2xl:   1.25rem;   /* 20 */
+  --font-size-3xl:   1.625rem;  /* 26 */
+
+  --font-weight-regular:  400;
+  --font-weight-medium:   500;
+  --font-weight-semibold: 600;
+  --font-weight-bold:     700;
+
+  --line-height-tight: 1.2;
+  --line-height-base:  1.5;
+
+  --letter-spacing-normal: 0;
+  --letter-spacing-wide:   0.05em;
+
+  /* Motion */
+  --duration-fast:   150ms;
+  --duration-base:   200ms;
+  --duration-slow:   300ms;
+  --duration-slower: 500ms;
+}
+
+/* ─── Tailwind v4 theme wiring — projects the tokens above into utility
+   classes (bg-brand-500, text-fg-primary, rounded-xl, shadow-sm, …) ────── */
 @theme inline {
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-family-base);
+  --font-mono: var(--font-family-mono);
+
+  --color-brand-25:  var(--brand-25);
+  --color-brand-50:  var(--brand-50);
+  --color-brand-100: var(--brand-100);
+  --color-brand-200: var(--brand-200);
+  --color-brand-300: var(--brand-300);
+  --color-brand-400: var(--brand-400);
+  --color-brand-500: var(--brand-500);
+  --color-brand-600: var(--brand-600);
+
+  --color-info-25:  var(--info-25);
+  --color-info-50:  var(--info-50);
+  --color-info-100: var(--info-100);
+  --color-info-200: var(--info-200);
+  --color-info-300: var(--info-300);
+  --color-info-400: var(--info-400);
+  --color-info-500: var(--info-500);
+  --color-info-600: var(--info-600);
+
+  --color-success-25:  var(--success-25);
+  --color-success-50:  var(--success-50);
+  --color-success-100: var(--success-100);
+  --color-success-200: var(--success-200);
+  --color-success-300: var(--success-300);
+  --color-success-400: var(--success-400);
+  --color-success-500: var(--success-500);
+  --color-success-600: var(--success-600);
+
+  --color-warning-25:  var(--warning-25);
+  --color-warning-50:  var(--warning-50);
+  --color-warning-100: var(--warning-100);
+  --color-warning-200: var(--warning-200);
+  --color-warning-300: var(--warning-300);
+  --color-warning-400: var(--warning-400);
+  --color-warning-500: var(--warning-500);
+  --color-warning-600: var(--warning-600);
+
+  --color-error-25:  var(--error-25);
+  --color-error-50:  var(--error-50);
+  --color-error-100: var(--error-100);
+  --color-error-200: var(--error-200);
+  --color-error-300: var(--error-300);
+  --color-error-400: var(--error-400);
+  --color-error-500: var(--error-500);
+  --color-error-600: var(--error-600);
+
+  --color-neutral-50:  var(--neutral-50);
+  --color-neutral-100: var(--neutral-100);
+  --color-neutral-200: var(--neutral-200);
+  --color-neutral-300: var(--neutral-300);
+  --color-neutral-400: var(--neutral-400);
+  --color-neutral-500: var(--neutral-500);
+  --color-neutral-600: var(--neutral-600);
+
+  --color-fg-primary:   var(--text-primary);
+  --color-fg-secondary: var(--text-secondary);
+  --color-surface-card: var(--surface-card);
+
+  /* Radius — overrides Tailwind's built-in scale to match spec exactly */
+  --radius-2xs: 2px;
+  --radius-xs:  4px;
+  --radius-sm:  6px;
+  --radius:     8px;
+  --radius-md:  10px;
+  --radius-lg:  12px;
+  --radius-xl:  16px;
+  --radius-pill: 50px;
+
+  /* Shadow — overrides Tailwind's built-in scale to match spec exactly */
+  --shadow-xs:  0px 1px 2px rgba(16,24,40,0.05);
+  --shadow-sm:  0px 1px 3px rgba(16,24,40,0.10), 0px 1px 2px rgba(16,24,40,0.06);
+  --shadow-md:  0px 4px 8px rgba(16,24,40,0.10), 0px 2px 4px rgba(16,24,40,0.06);
+  --shadow-lg:  0px 12px 16px rgba(16,24,40,0.08), 0px 4px 6px rgba(16,24,40,0.03);
+  --shadow-xl:  0px 20px 24px rgba(16,24,40,0.08), 0px 8px 8px rgba(16,24,40,0.03);
+  --shadow-2xl: 0px 24px 48px rgba(16,24,40,0.18);
+
+  /* Easing — overrides Tailwind's defaults; duration needs no override,
+     since duration-150/200/300/500 already equal fast/base/slow/slower */
+  --ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ─── Dark mode — same token names, dark-adapted values ────────────────────
+   Toggled by adding `.dark` to <html> (see components/ui/theme-toggle.tsx).
+   Solid/accent steps (500/600) keep the spec's literal brand values since
+   they read fine as fills on a dark surface; tint steps (25-200) invert to
+   dark tints, and the "text on tint" role moves from step 600 (the
+   light-mode choice) to a lighter step (300/400) for contrast.
+   ────────────────────────────────────────────────────────────────────── */
+.dark {
+  --brand-25:  #1c1730;
+  --brand-50:  #241d3d;
+  --brand-100: #302650;
+  --brand-200: #453873;
+  --brand-300: #9d87d4;
+  --brand-400: #b19fe0;
+
+  --info-25:  #071c26;
+  --info-50:  #0a2430;
+  --info-100: #0e2f3d;
+  --info-200: #143f50;
+  --info-300: #7cd4fd;
+
+  --success-25:  #0c1f16;
+  --success-50:  #11291c;
+  --success-100: #163524;
+  --success-200: #1d4630;
+  --success-300: #6ce9a6;
+
+  --warning-25:  #2b2008;
+  --warning-50:  #362808;
+  --warning-100: #46340c;
+  --warning-200: #5c4512;
+  --warning-300: #fec84b;
+
+  --error-25:  #2a1210;
+  --error-50:  #351815;
+  --error-100: #45201c;
+  --error-200: #5c2b25;
+  --error-300: #fda29b;
+
+  --neutral-50:  #0b0d12;
+  --neutral-100: #14171e;
+  --neutral-200: #1e222a;
+  --neutral-300: #2f343e;
+  --neutral-400: #5c6c7c;
+  --neutral-500: #8a94a3;
+  --neutral-600: #b6bec8;
+
+  --text-primary:   #eef0f3;
+  --surface-card:   #14171e;
+
+  --color-success-bg:   #10291a;
+  --color-error-bg:     #2e1417;
+  --color-warning-bg:   #2c2208;
+
+  /* brand-500 reads muted against a near-black surface (it's tuned for a
+     light background), so links/focus lean on the lighter brand-400 */
+  --color-link:  var(--brand-400);
+  --color-focus: rgba(177, 159, 224, 0.35);
+
+  --overlay-modal:  rgba(0, 0, 0, 0.6);
+  --overlay-subtle: rgba(255, 255, 255, 0.06);
+
+  --color-available-dark: #8fe05a;
+
+  /* rgba(16,24,40,…) shadows read as nearly invisible against a near-black
+     surface — pure-black base with boosted alpha instead. Borders remain
+     the primary depth cue either way, same as the rest of the system. */
+  --shadow-xs:  0px 1px 2px rgba(0,0,0,0.30);
+  --shadow-sm:  0px 1px 3px rgba(0,0,0,0.40), 0px 1px 2px rgba(0,0,0,0.30);
+  --shadow-md:  0px 4px 8px rgba(0,0,0,0.40), 0px 2px 4px rgba(0,0,0,0.30);
+  --shadow-lg:  0px 12px 16px rgba(0,0,0,0.35), 0px 4px 6px rgba(0,0,0,0.25);
+  --shadow-xl:  0px 20px 24px rgba(0,0,0,0.35), 0px 8px 8px rgba(0,0,0,0.25);
+  --shadow-2xl: 0px 24px 48px rgba(0,0,0,0.50);
+
+  color-scheme: dark;
+}
+
+html {
+  color-scheme: light;
 }
 
 body {
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-md);
+  line-height: var(--line-height-base);
+  letter-spacing: var(--letter-spacing-normal);
+  color: var(--text-primary);
+  background: var(--neutral-50);
 }
 
 /* ─── Scrollbar utility ─────────────────────────────────────────────────── */

@@ -5,6 +5,7 @@ import { DashboardHome } from "./DashboardHome";
 import { ProjectDetail } from "./ProjectDetail";
 import CSVUpload from "./CSVUpload";
 import type { Project, PortfolioItem } from "./types";
+import { Button } from "@/components/ui/button";
 
 const STORAGE_KEY = "stt_projects_v1";
 
@@ -132,7 +133,7 @@ export function PortfolioTracker() {
   if (!hydrated) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+        <div className="w-6 h-6 border-2 border-brand-500 border-t-transparent rounded-pill animate-spin" />
       </div>
     );
   }
@@ -153,17 +154,14 @@ export function PortfolioTracker() {
         <div className="flex items-center justify-between mb-4">
           <button
             onClick={() => { setCurrentScreen("dashboard"); setAtRiskFilter(false); }}
-            className="flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors"
+            className="flex items-center gap-2 text-sm text-fg-secondary hover:text-fg-primary transition-colors duration-200 ease-in-out"
           >
             ← Back to Overview
           </button>
-          <button
-            onClick={() => setCurrentScreen("upload")}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg transition-colors"
-          >
+          <Button onClick={() => setCurrentScreen("upload")}>
             <Upload size={15} />
             Upload CSV
-          </button>
+          </Button>
         </div>
         <ProjectDetail
           projects={projects}
@@ -180,13 +178,10 @@ export function PortfolioTracker() {
   return (
     <div className="space-y-0">
       <div className="flex items-center justify-end mb-4">
-        <button
-          onClick={() => setCurrentScreen("upload")}
-          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg transition-colors"
-        >
+        <Button onClick={() => setCurrentScreen("upload")}>
           <Upload size={15} />
           Upload CSV
-        </button>
+        </Button>
       </div>
       <DashboardHome
         projects={projects}

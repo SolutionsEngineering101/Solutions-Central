@@ -2,6 +2,8 @@
 import { useState, useRef } from "react";
 import { X, UploadCloud, AlertCircle, CheckCircle, Download } from "lucide-react";
 import type { PortfolioItem, ItemStatus } from "./types";
+import { Button } from "@/components/ui/button";
+import { Alert } from "@/components/ui/alert";
 
 function parseCSV(text: string): string[][] {
   const rows: string[][] = [];
@@ -134,18 +136,18 @@ export default function CSVUpload({ onClose, onUpload, currentItems }: CSVUpload
   };
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="w-[560px] max-w-[90vw] bg-gray-900 border border-gray-700 rounded-xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh]">
+    <div className="fixed inset-0 bg-[var(--overlay-modal)] backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <div className="w-[560px] max-w-[90vw] bg-surface-card border border-neutral-200 rounded-xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh]">
         {/* Header */}
-        <div className="px-7 py-6 border-b border-gray-800 flex items-center justify-between">
+        <div className="px-7 py-6 border-b border-neutral-200 flex items-center justify-between">
           <div>
-            <h2 className="text-2xl font-bold text-white">Upload Sprint Data</h2>
-            <p className="text-gray-500 text-sm mt-1">Upload using the standardized CSV template</p>
-            <button onClick={downloadSample} className="mt-2 text-indigo-400 text-xs flex items-center gap-1 hover:text-indigo-300 transition-colors">
+            <h2 className="text-2xl font-bold text-fg-primary">Upload Sprint Data</h2>
+            <p className="text-fg-secondary text-sm mt-1">Upload using the standardized CSV template</p>
+            <button onClick={downloadSample} className="mt-2 text-brand-500 text-xs flex items-center gap-1 hover:text-brand-600 transition-colors">
               <Download size={12} /> Download Sample Template
             </button>
           </div>
-          <button onClick={onClose} className="w-9 h-9 rounded-lg flex items-center justify-center text-gray-500 hover:text-white hover:bg-gray-800 transition-colors ml-3 shrink-0">
+          <button onClick={onClose} className="w-9 h-9 rounded-lg flex items-center justify-center text-fg-secondary hover:text-fg-primary hover:bg-neutral-100 transition-colors ml-3 shrink-0">
             <X size={18} />
           </button>
         </div>
@@ -160,31 +162,31 @@ export default function CSVUpload({ onClose, onUpload, currentItems }: CSVUpload
                 onClick={() => fileInputRef.current?.click()}
                 onDragOver={e => { e.preventDefault(); e.stopPropagation(); }}
                 onDrop={e => { e.preventDefault(); e.stopPropagation(); const f = e.dataTransfer.files?.[0]; if (f) handleFile(f); }}
-                className={`border-2 border-dashed rounded-2xl p-10 flex flex-col items-center justify-center text-center min-h-[200px] cursor-pointer transition-colors ${uploadedFile ? "border-emerald-700 bg-emerald-950/20" : "border-gray-700 bg-gray-800/50 hover:border-indigo-600 hover:bg-indigo-950/20"}`}
+                className={`border-2 border-dashed rounded-2xl p-10 flex flex-col items-center justify-center text-center min-h-[200px] cursor-pointer transition-colors ${uploadedFile ? "border-success-300 bg-success-25" : "border-neutral-300 bg-neutral-50 hover:border-brand-400 hover:bg-brand-25"}`}
               >
-                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-4 ${uploadedFile ? "bg-emerald-950" : "bg-indigo-950"}`}>
-                  {uploadedFile ? <CheckCircle size={26} className="text-emerald-400" /> : <UploadCloud size={26} className="text-indigo-400" />}
+                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-4 ${uploadedFile ? "bg-success-100" : "bg-brand-100"}`}>
+                  {uploadedFile ? <CheckCircle size={26} className="text-success-600" /> : <UploadCloud size={26} className="text-brand-500" />}
                 </div>
                 {uploadedFile ? (
                   <>
-                    <p className="text-lg font-semibold text-emerald-400">✓ File Selected</p>
-                    <p className="text-gray-400 text-sm mt-1">{uploadedFile.name}</p>
-                    <p className="text-gray-600 text-xs mt-2">Click again to choose a different file</p>
+                    <p className="text-lg font-semibold text-success-600">✓ File Selected</p>
+                    <p className="text-fg-secondary text-sm mt-1">{uploadedFile.name}</p>
+                    <p className="text-fg-secondary text-xs mt-2">Click again to choose a different file</p>
                   </>
                 ) : (
                   <>
-                    <p className="text-lg font-semibold text-white">Drag & drop your CSV</p>
-                    <p className="text-gray-400 text-sm mt-1">or click to browse</p>
-                    <p className="text-gray-600 text-xs mt-2">Max 5MB · CSV only</p>
+                    <p className="text-lg font-semibold text-fg-primary">Drag & drop your CSV</p>
+                    <p className="text-fg-secondary text-sm mt-1">or click to browse</p>
+                    <p className="text-fg-secondary text-xs mt-2">Max 5MB · CSV only</p>
                   </>
                 )}
               </div>
 
-              <div className="bg-gray-800 border border-gray-700 rounded-xl p-4">
-                <p className="text-sm font-semibold text-gray-300 mb-3">Expected Columns</p>
+              <div className="bg-neutral-100 border border-neutral-200 rounded-xl p-4">
+                <p className="text-sm font-semibold text-fg-primary mb-3">Expected Columns</p>
                 <div className="flex flex-wrap gap-2">
                   {["Sl No", "Form Req Id", "Epic", "Product Category", "Backend Status", "Frontend Status", "QA Status", "Overall Status", "Planned Release Date", "Blocker", "Backend Owner", "Frontend Owner", "QA Owner", "Backend Ticket", "Frontend Ticket", "QA Ticket", "Doc Link(s)"].map(col => (
-                    <span key={col} className="px-2.5 py-1 rounded-full bg-gray-900 border border-gray-700 text-xs text-gray-400">{col}</span>
+                    <span key={col} className="px-2.5 py-1 rounded-pill bg-surface-card border border-neutral-300 text-xs text-fg-secondary">{col}</span>
                   ))}
                 </div>
               </div>
@@ -193,28 +195,28 @@ export default function CSVUpload({ onClose, onUpload, currentItems }: CSVUpload
 
           {step === "preview" && (
             <>
-              <p className="text-sm font-semibold text-gray-300">Preview — first {previewRows.length} of {totalItems} rows</p>
-              <div className="overflow-x-auto border border-gray-700 rounded-xl">
+              <p className="text-sm font-semibold text-fg-primary">Preview — first {previewRows.length} of {totalItems} rows</p>
+              <div className="overflow-x-auto border border-neutral-200 rounded-xl">
                 <table className="w-full text-xs">
                   <thead>
-                    <tr className="bg-gray-800 border-b border-gray-700">
+                    <tr className="bg-neutral-100 border-b border-neutral-200">
                       {["Form Req Id", "Epic", "Product Category", "Backend", "Frontend", "QA", "Release Date"].map(h => (
-                        <th key={h} className="px-3 py-2.5 text-left font-semibold text-gray-400 whitespace-nowrap">{h}</th>
+                        <th key={h} className="px-3 py-2.5 text-left font-semibold text-fg-secondary whitespace-nowrap">{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {previewRows.map((row, i) => (
-                      <tr key={i} className="border-b border-gray-800">
-                        <td className="px-3 py-2.5 text-indigo-400 font-medium">{getCell(row, "form req id")}</td>
-                        <td className="px-3 py-2.5 text-gray-300 max-w-32 overflow-hidden text-ellipsis whitespace-nowrap">{getCell(row, "epic")}</td>
-                        <td className="px-3 py-2.5 text-gray-400 whitespace-nowrap">{getCell(row, "product category")}</td>
+                      <tr key={i} className="border-b border-neutral-200">
+                        <td className="px-3 py-2.5 text-brand-500 font-medium">{getCell(row, "form req id")}</td>
+                        <td className="px-3 py-2.5 text-fg-primary max-w-32 overflow-hidden text-ellipsis whitespace-nowrap">{getCell(row, "epic")}</td>
+                        <td className="px-3 py-2.5 text-fg-secondary whitespace-nowrap">{getCell(row, "product category")}</td>
                         {["backend status", "frontend status", "qa status"].map(col => {
                           const v = getCell(row, col).toLowerCase();
-                          const c = v === "done" ? "text-emerald-400 bg-emerald-950/50" : v.includes("progress") ? "text-indigo-400 bg-indigo-950/50" : v === "blocked" ? "text-red-400 bg-red-950/50" : "text-gray-400 bg-gray-800";
+                          const c = v === "done" ? "text-success-600 bg-success-50" : v.includes("progress") ? "text-brand-600 bg-brand-50" : v === "blocked" ? "text-error-600 bg-error-50" : "text-fg-secondary bg-neutral-100";
                           return <td key={col} className="px-3 py-2.5"><span className={`px-2 py-0.5 rounded text-xs font-medium ${c}`}>{getCell(row, col) || "—"}</span></td>;
                         })}
-                        <td className="px-3 py-2.5 text-gray-500 whitespace-nowrap">{getCell(row, "planned release date") || "—"}</td>
+                        <td className="px-3 py-2.5 text-fg-secondary whitespace-nowrap">{getCell(row, "planned release date") || "—"}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -230,41 +232,36 @@ export default function CSVUpload({ onClose, onUpload, currentItems }: CSVUpload
 
           {step === "confirm" && (
             <>
-              <div className="bg-gray-800 border border-gray-700 rounded-xl p-4 space-y-2">
-                <p className="text-sm font-semibold text-gray-300 mb-1">Upload Summary</p>
-                <p className="text-emerald-400 text-sm">✦ <strong>{newCount}</strong> new item{newCount !== 1 ? "s" : ""} will be added</p>
-                <p className="text-indigo-400 text-sm">✎ <strong>{updatedCount}</strong> existing item{updatedCount !== 1 ? "s" : ""} will be updated</p>
-                <p className="text-gray-500 text-sm">⟳ <strong>{retainedCount}</strong> item{retainedCount !== 1 ? "s" : ""} not in this file will be retained</p>
+              <div className="bg-neutral-100 border border-neutral-200 rounded-xl p-4 space-y-2">
+                <p className="text-sm font-semibold text-fg-primary mb-1">Upload Summary</p>
+                <p className="text-success-600 text-sm">✦ <strong>{newCount}</strong> new item{newCount !== 1 ? "s" : ""} will be added</p>
+                <p className="text-brand-600 text-sm">✎ <strong>{updatedCount}</strong> existing item{updatedCount !== 1 ? "s" : ""} will be updated</p>
+                <p className="text-fg-secondary text-sm">⟳ <strong>{retainedCount}</strong> item{retainedCount !== 1 ? "s" : ""} not in this file will be retained</p>
               </div>
-              <div className="bg-indigo-950/50 border border-indigo-800 rounded-xl p-4">
-                <p className="text-indigo-400 text-sm font-semibold mb-1">ℹ Merge behaviour</p>
-                <p className="text-indigo-300 text-xs">Items matched by <strong>Sl No</strong>. Items not in this CSV are preserved — nothing is deleted.</p>
-              </div>
+              <Alert variant="brand" title="ℹ Merge behaviour">
+                Items matched by <strong>Sl No</strong>. Items not in this CSV are preserved — nothing is deleted.
+              </Alert>
             </>
           )}
         </div>
 
         {/* Footer */}
-        <div className="px-7 py-5 border-t border-gray-800 flex justify-end gap-3">
+        <div className="px-7 py-5 border-t border-neutral-200 flex justify-end gap-3">
           {step === "select" && (
-            <button onClick={() => uploadedFile && setStep("preview")} disabled={!uploadedFile}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${uploadedFile ? "bg-indigo-600 text-white hover:bg-indigo-700" : "bg-gray-800 text-gray-600 cursor-not-allowed"}`}>
+            <Button variant="primary" disabled={!uploadedFile} onClick={() => uploadedFile && setStep("preview")}>
               <UploadCloud size={15} /> Upload CSV
-            </button>
+            </Button>
           )}
           {step === "preview" && (
             <>
-              <button onClick={() => setStep("select")} className="px-5 py-2.5 rounded-xl bg-gray-800 text-gray-300 text-sm font-semibold border border-gray-700 hover:bg-gray-700 transition-colors">← Back</button>
-              <button onClick={() => setStep("confirm")} disabled={!hasRequiredCols}
-                className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors ${hasRequiredCols ? "bg-indigo-600 text-white hover:bg-indigo-700" : "bg-gray-800 text-gray-600 cursor-not-allowed"}`}>
-                Continue →
-              </button>
+              <Button variant="neutral" onClick={() => setStep("select")}>← Back</Button>
+              <Button variant="primary" disabled={!hasRequiredCols} onClick={() => setStep("confirm")}>Continue →</Button>
             </>
           )}
           {step === "confirm" && (
             <>
-              <button onClick={() => setStep("preview")} className="px-5 py-2.5 rounded-xl bg-gray-800 text-gray-300 text-sm font-semibold border border-gray-700 hover:bg-gray-700 transition-colors">← Back</button>
-              <button onClick={() => onUpload(parsedItems)} className="px-5 py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 transition-colors">Confirm Upload ✓</button>
+              <Button variant="neutral" onClick={() => setStep("preview")}>← Back</Button>
+              <Button variant="success" onClick={() => onUpload(parsedItems)}>Confirm Upload ✓</Button>
             </>
           )}
         </div>
@@ -275,7 +272,7 @@ export default function CSVUpload({ onClose, onUpload, currentItems }: CSVUpload
 
 function Check({ ok, text, warn }: { ok: boolean; text: string; warn?: boolean }) {
   const Icon = ok ? CheckCircle : AlertCircle;
-  const color = ok ? "text-emerald-400" : warn ? "text-amber-400" : "text-red-400";
+  const color = ok ? "text-success-600" : warn ? "text-warning-600" : "text-error-600";
   return (
     <div className={`flex items-start gap-2 text-sm font-medium ${color}`}>
       <Icon size={16} className="shrink-0 mt-0.5" />

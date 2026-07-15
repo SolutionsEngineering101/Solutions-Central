@@ -2,14 +2,14 @@
 import type { ItemStatus } from "./types";
 
 const statusConfig: Record<ItemStatus, { emoji: string; label: string; color: string; bg: string }> = {
-  not_started:    { emoji: "❌", label: "Not Started",    color: "#9ca3af", bg: "rgba(156,163,175,0.12)" },
-  in_progress:    { emoji: "🔵", label: "In Progress",    color: "#818cf8", bg: "rgba(129,140,248,0.12)" },
-  review:         { emoji: "⏳", label: "Review",         color: "#fbbf24", bg: "rgba(251,191,36,0.12)"  },
-  done:           { emoji: "✅", label: "Done",           color: "#34d399", bg: "rgba(52,211,153,0.12)"  },
-  blocked:        { emoji: "🚫", label: "Blocked",        color: "#f87171", bg: "rgba(248,113,113,0.12)" },
-  on_hold:        { emoji: "🛑", label: "On Hold",        color: "#a78bfa", bg: "rgba(167,139,250,0.12)" },
-  not_applicable: { emoji: "➖", label: "N/A",            color: "#6b7280", bg: "rgba(107,114,128,0.12)" },
-  tbd:            { emoji: "📋", label: "TBD",            color: "#d97706", bg: "rgba(217,119,6,0.12)"   },
+  not_started:    { emoji: "❌", label: "Not Started",    color: "var(--neutral-600)", bg: "var(--neutral-100)" },
+  in_progress:    { emoji: "🔵", label: "In Progress",    color: "var(--brand-600)",   bg: "var(--brand-50)"    },
+  review:         { emoji: "⏳", label: "Review",         color: "var(--warning-600)", bg: "var(--warning-50)"  },
+  done:           { emoji: "✅", label: "Done",           color: "var(--success-600)", bg: "var(--success-50)"  },
+  blocked:        { emoji: "🚫", label: "Blocked",        color: "var(--error-600)",   bg: "var(--error-50)"    },
+  on_hold:        { emoji: "🛑", label: "On Hold",        color: "var(--info-600)",    bg: "var(--info-50)"     },
+  not_applicable: { emoji: "➖", label: "N/A",            color: "var(--neutral-500)", bg: "var(--neutral-50)"  },
+  tbd:            { emoji: "📋", label: "TBD",            color: "var(--warning-600)", bg: "var(--warning-100)" },
 };
 
 interface StatusBadgeProps {
@@ -48,7 +48,7 @@ export function StatusDropdown({ currentStatus, onStatusSelect, onClose }: {
 }) {
   const statuses: ItemStatus[] = ["not_started", "in_progress", "review", "done", "blocked", "on_hold"];
   return (
-    <div className="bg-gray-900 border border-gray-700 rounded-lg shadow-2xl py-1 min-w-40">
+    <div className="bg-surface-card border border-neutral-200 rounded-lg shadow-2xl py-1 min-w-40">
       {statuses.map(s => {
         const cfg = statusConfig[s];
         const isSelected = s === currentStatus;
@@ -56,11 +56,11 @@ export function StatusDropdown({ currentStatus, onStatusSelect, onClose }: {
           <button
             key={s}
             onClick={() => { onStatusSelect(s); onClose(); }}
-            className={`w-full px-4 py-2 text-left text-sm flex items-center gap-2 transition-colors ${isSelected ? "bg-indigo-950 text-indigo-300 font-semibold" : "text-gray-300 hover:bg-gray-800"}`}
+            className={`w-full px-4 py-2 text-left text-sm flex items-center gap-2 transition-colors ${isSelected ? "bg-brand-50 text-brand-600 font-semibold" : "text-fg-primary hover:bg-neutral-100"}`}
           >
             <span>{cfg.emoji}</span>
             <span>{cfg.label}</span>
-            {isSelected && <span className="ml-auto text-indigo-400">✓</span>}
+            {isSelected && <span className="ml-auto text-brand-500">✓</span>}
           </button>
         );
       })}

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import { cn } from "@/lib/utils";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import {
   LayoutDashboard,
   FileText,
@@ -36,10 +37,10 @@ export function Sidebar() {
   const { data: session } = useSession();
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-56 bg-gray-900 border-r border-gray-700 flex flex-col">
-      <div className="px-5 py-5 border-b border-gray-700">
-        <p className="text-white font-semibold text-sm tracking-wide">Solutions Central</p>
-        <p className="text-gray-500 text-xs mt-0.5">SE Team Dashboard</p>
+    <aside className="fixed left-0 top-0 h-screen w-56 bg-neutral-100 border-r border-neutral-300 flex flex-col">
+      <div className="px-5 py-5 border-b border-neutral-300">
+        <p className="text-fg-primary font-semibold text-sm tracking-wide">Solutions Central</p>
+        <p className="text-fg-secondary text-xs mt-0.5">SE Team Dashboard</p>
       </div>
 
       <nav className="flex-1 px-3 py-4 space-y-0.5">
@@ -48,10 +49,10 @@ export function Sidebar() {
             key={href}
             href={href}
             className={cn(
-              "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
+              "flex items-center gap-3 px-3 py-2 rounded-[8px] text-sm font-medium transition-colors duration-200 ease-in-out",
               pathname === href || (href === "/documents" && ["/confluence", "/playbook", "/blueprints", "/rfp"].includes(pathname))
-                ? "bg-indigo-600 text-white"
-                : "text-gray-400 hover:text-white hover:bg-gray-800"
+                ? "bg-brand-500 text-white"
+                : "text-fg-secondary hover:text-fg-primary hover:bg-neutral-200"
             )}
           >
             <Icon size={15} />
@@ -60,19 +61,23 @@ export function Sidebar() {
         ))}
       </nav>
 
+      <div className="px-4 py-3 border-t border-neutral-300">
+        <ThemeToggle />
+      </div>
+
       {session?.user && (
-        <div className="px-4 py-4 border-t border-gray-700">
+        <div className="px-4 py-4 border-t border-neutral-300">
           <div className="flex items-center gap-2 mb-3">
             {session.user.image && (
-              <img src={session.user.image} className="w-7 h-7 rounded-full" alt="" />
+              <img src={session.user.image} className="w-7 h-7 rounded-pill" alt="" />
             )}
             <div className="min-w-0">
-              <p className="text-white text-xs font-medium truncate">{session.user.name}</p>
+              <p className="text-fg-primary text-xs font-medium truncate">{session.user.name}</p>
             </div>
           </div>
           <button
             onClick={() => signOut()}
-            className="flex items-center gap-2 text-gray-500 hover:text-white text-xs transition-colors"
+            className="flex items-center gap-2 text-fg-secondary hover:text-fg-primary text-xs transition-colors duration-200 ease-in-out"
           >
             <LogOut size={13} />
             Sign out

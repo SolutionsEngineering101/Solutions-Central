@@ -4,6 +4,9 @@ import { Suspense } from "react";
 import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import { GitBranch, AlertTriangle } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Alert } from "@/components/ui/alert";
 
 // Maps NextAuth error codes (passed back as ?error=) to human-readable reasons,
 // so a blocked teammate sees *why* instead of a generic screen.
@@ -26,42 +29,35 @@ function LoginCard() {
   const errorMessage = errorCode ? ERROR_MESSAGES[errorCode] ?? ERROR_MESSAGES.Default : null;
 
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-xl p-10 w-full max-w-sm text-center">
+    <Card className="p-10 md:p-10 w-full max-w-sm text-center">
       <div className="mb-6">
-        <div className="w-12 h-12 bg-indigo-600 rounded-xl mx-auto mb-4 flex items-center justify-center">
+        <div className="w-12 h-12 bg-brand-500 rounded-xl mx-auto mb-4 flex items-center justify-center">
           <span className="text-white font-bold text-lg">SC</span>
         </div>
-        <h1 className="text-white text-xl font-semibold">Solutions Central</h1>
-        <p className="text-gray-400 text-sm mt-1">SE Team · Vantage Circle</p>
+        <h1 className="text-fg-primary text-xl font-semibold">Solutions Central</h1>
+        <p className="text-fg-secondary text-sm mt-1">SE Team · Vantage Circle</p>
       </div>
 
       {errorMessage && (
-        <div className="mb-5 text-left bg-red-950/50 border border-red-900 rounded-lg p-3 flex gap-2">
-          <AlertTriangle size={15} className="text-red-400 shrink-0 mt-0.5" />
-          <div>
-            <p className="text-red-300 text-xs font-medium">Couldn&apos;t sign in</p>
-            <p className="text-red-200/80 text-xs mt-0.5">{errorMessage}</p>
-            <p className="text-red-200/40 text-[10px] mt-1">Error code: {errorCode}</p>
-          </div>
-        </div>
+        <Alert variant="error" icon={<AlertTriangle size={15} />} title="Couldn't sign in" className="mb-5 text-left">
+          <p>{errorMessage}</p>
+          <p className="opacity-60 mt-1">Error code: {errorCode}</p>
+        </Alert>
       )}
 
-      <button
-        onClick={() => signIn("github", { callbackUrl: "/" })}
-        className="w-full flex items-center justify-center gap-2 bg-white text-gray-900 font-medium py-2.5 px-4 rounded-lg hover:bg-gray-100 transition-colors text-sm"
-      >
+      <Button variant="neutral" size="lg" className="w-full" onClick={() => signIn("github", { callbackUrl: "/" })}>
         <GitBranch size={16} />
         Sign in with GitHub
-      </button>
-      <p className="text-gray-600 text-xs mt-4">Anyone with a GitHub account on the SE team can sign in</p>
-    </div>
+      </Button>
+      <p className="text-fg-secondary text-xs mt-4">Anyone with a GitHub account on the SE team can sign in</p>
+    </Card>
   );
 }
 
 export default function LoginPage() {
   return (
-    <div className="min-h-screen bg-gray-950 flex items-center justify-center p-4">
-      <Suspense fallback={<div className="text-gray-600 text-sm">Loading…</div>}>
+    <div className="min-h-screen bg-neutral-50 flex items-center justify-center p-4">
+      <Suspense fallback={<div className="text-fg-secondary text-sm">Loading…</div>}>
         <LoginCard />
       </Suspense>
     </div>

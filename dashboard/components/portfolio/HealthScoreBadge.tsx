@@ -9,10 +9,10 @@ function getEmoji(score: number) {
 }
 
 function getColor(score: number) {
-  if (score >= 80) return "#34d399";
-  if (score >= 60) return "#fbbf24";
-  if (score >= 40) return "#f59e0b";
-  return "#f87171";
+  if (score >= 80) return "var(--success-500)";
+  if (score >= 60) return "var(--warning-400)";
+  if (score >= 40) return "var(--warning-600)";
+  return "var(--error-500)";
 }
 
 export function HealthScoreBadge({ score, onClick, size = "md", showLabel = true }: {
@@ -44,7 +44,7 @@ export function HealthScoreCircle({ score }: { score: number }) {
   return (
     <div className="relative w-40 h-40 flex items-center justify-center">
       <svg className="absolute w-full h-full" viewBox="0 0 100 100">
-        <circle cx="50" cy="50" r="45" fill="none" stroke="#374151" strokeWidth="2" />
+        <circle cx="50" cy="50" r="45" fill="none" stroke="var(--neutral-300)" strokeWidth="2" />
         <circle cx="50" cy="50" r="45" fill="none" stroke={color} strokeWidth="3"
           strokeDasharray={`${(score / 100) * 283} 283`} strokeLinecap="round"
           transform="rotate(-90 50 50)" />

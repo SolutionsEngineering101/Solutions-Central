@@ -7,6 +7,7 @@ import {
   AlertTriangle, CheckCircle2, UploadCloud, FileSpreadsheet, Trash2,
 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 // ─── Excel → markdown (runs in the browser, no server round-trip) ─────────────
 
@@ -76,8 +77,8 @@ const CONFIG = {
     nounPlural: "entries",
     subtitle: "team learnings and processes",
     Icon: BookOpen,
-    iconBg: "bg-amber-950",
-    iconColor: "text-amber-400",
+    iconBg: "bg-warning-50",
+    iconColor: "text-warning-600",
     emptyHint: 'Upload a document, or run "add to playbook" in Claude.',
   },
   blueprint: {
@@ -86,8 +87,8 @@ const CONFIG = {
     nounPlural: "pre-built solutions",
     subtitle: "reusable across clients",
     Icon: Layers,
-    iconBg: "bg-emerald-950",
-    iconColor: "text-emerald-400",
+    iconBg: "bg-success-50",
+    iconColor: "text-success-600",
     emptyHint: "Upload a document, or record a solution as a blueprint from the Pipeline page.",
   },
   rfp: {
@@ -96,8 +97,8 @@ const CONFIG = {
     nounPlural: "RFPs",
     subtitle: "requests for proposal",
     Icon: FileSpreadsheet,
-    iconBg: "bg-blue-950",
-    iconColor: "text-blue-400",
+    iconBg: "bg-info-50",
+    iconColor: "text-info-600",
     emptyHint: "Upload an Excel file (.xlsx / .xls) to add an RFP.",
   },
 } as const;
@@ -220,18 +221,15 @@ export function EntryLibrary({ kind, entries }: Props) {
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-white text-2xl font-semibold">{cfg.title}</h1>
-          <p className="text-gray-400 text-sm mt-1">
+          <h1 className="text-fg-primary text-[length:var(--font-size-2xl)] font-semibold">{cfg.title}</h1>
+          <p className="text-fg-secondary text-sm mt-1">
             {sorted.length} {sorted.length === 1 ? cfg.noun : cfg.nounPlural} — {cfg.subtitle}
           </p>
         </div>
-        <button
-          onClick={() => setStep("pick")}
-          className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors shrink-0"
-        >
+        <Button onClick={() => setStep("pick")} className="shrink-0">
           <Upload size={15} />
           Upload document
-        </button>
+        </Button>
       </div>
 
       {/* Grid */}
@@ -245,13 +243,13 @@ export function EntryLibrary({ kind, entries }: Props) {
           return (
             <div
               key={entry.path}
-              className="relative group bg-gray-900 border border-gray-800 rounded-xl p-5 hover:border-gray-600 transition-colors"
+              className="relative group bg-surface-card border border-neutral-200 rounded-xl p-5 shadow-sm hover:shadow-md hover:border-neutral-300 transition-[box-shadow,border-color] duration-200 ease-in-out"
             >
               {/* Delete button — top right, visible on hover */}
               {!isConfirming && (
                 <button
                   onClick={(e) => { e.stopPropagation(); setConfirmDelete(entry.path); }}
-                  className="absolute top-3 right-3 p-1.5 rounded-md text-gray-700 hover:text-red-400 hover:bg-gray-800 opacity-0 group-hover:opacity-100 transition-all"
+                  className="absolute top-3 right-3 p-1.5 rounded-md text-neutral-400 hover:text-error-600 hover:bg-neutral-100 opacity-0 group-hover:opacity-100 transition-all duration-200 ease-in-out"
                   title="Delete"
                 >
                   <Trash2 size={13} />
@@ -260,25 +258,27 @@ export function EntryLibrary({ kind, entries }: Props) {
 
               {/* Inline delete confirmation */}
               {isConfirming && (
-                <div className="absolute inset-0 bg-gray-900/95 rounded-xl flex flex-col items-center justify-center gap-3 z-10 p-4">
-                  <p className="text-white text-sm font-medium text-center">Delete this {cfg.noun}?</p>
-                  <p className="text-gray-500 text-xs text-center">This removes it from GitHub permanently.</p>
+                <div className="absolute inset-0 bg-surface-card/95 rounded-xl flex flex-col items-center justify-center gap-3 z-10 p-4">
+                  <p className="text-fg-primary text-sm font-medium text-center">Delete this {cfg.noun}?</p>
+                  <p className="text-fg-secondary text-xs text-center">This removes it from GitHub permanently.</p>
                   <div className="flex gap-2">
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={() => setConfirmDelete(null)}
                       disabled={deleting}
-                      className="px-3 py-1.5 text-xs text-gray-400 hover:text-white rounded-lg hover:bg-gray-800 transition-colors"
                     >
                       Cancel
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      variant="danger"
+                      size="sm"
                       onClick={() => doDelete(entry.path)}
                       disabled={deleting}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-red-700 hover:bg-red-600 rounded-lg transition-colors disabled:opacity-50"
                     >
                       {deleting ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
                       {deleting ? "Deleting…" : "Delete"}
-                    </button>
+                    </Button>
                   </div>
                 </div>
               )}
@@ -293,16 +293,16 @@ export function EntryLibrary({ kind, entries }: Props) {
                     <cfg.Icon size={14} className={cfg.iconColor} />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-white text-sm font-medium">{title}</p>
-                    <p className="text-gray-500 text-xs mt-0.5">{metaLine(kind, entry.frontmatter)}</p>
+                    <p className="text-fg-primary text-sm font-medium">{title}</p>
+                    <p className="text-fg-secondary text-xs mt-0.5">{metaLine(kind, entry.frontmatter)}</p>
                     {tags.length > 0 && (
                       <div className="flex flex-wrap gap-1 mt-2">
                         {tags.map((t) => (
-                          <span key={t} className="px-2 py-0.5 bg-gray-800 text-gray-400 text-xs rounded-full">{t}</span>
+                          <span key={t} className="px-2 py-0.5 bg-neutral-100 text-fg-secondary text-xs rounded-pill">{t}</span>
                         ))}
                       </div>
                     )}
-                    <p className="text-gray-600 text-xs mt-2 line-clamp-2">{entry.content.slice(0, 120)}…</p>
+                    <p className="text-fg-secondary/70 text-xs mt-2 line-clamp-2">{entry.content.slice(0, 120)}…</p>
                   </div>
                 </div>
               </button>
@@ -312,9 +312,9 @@ export function EntryLibrary({ kind, entries }: Props) {
 
         {sorted.length === 0 && (
           <div className="col-span-2 text-center py-16">
-            <cfg.Icon size={32} className="text-gray-700 mx-auto mb-3" />
-            <p className="text-gray-500 text-sm">No {cfg.nounPlural} yet.</p>
-            <p className="text-gray-600 text-xs mt-1">{cfg.emptyHint}</p>
+            <cfg.Icon size={32} className="text-neutral-300 mx-auto mb-3" />
+            <p className="text-fg-secondary text-sm">No {cfg.nounPlural} yet.</p>
+            <p className="text-fg-secondary/70 text-xs mt-1">{cfg.emptyHint}</p>
           </div>
         )}
       </div>
@@ -322,24 +322,24 @@ export function EntryLibrary({ kind, entries }: Props) {
       {/* ── View panel — shows the document as is ─────────────────────────── */}
       {viewing && (
         <div className="fixed inset-0 z-50 flex justify-end">
-          <div className="absolute inset-0 bg-black/60" onClick={() => setViewing(null)} />
-          <div className="relative w-full max-w-2xl h-full bg-gray-950 border-l border-gray-800 overflow-y-auto">
-            <div className="sticky top-0 bg-gray-950/95 backdrop-blur border-b border-gray-800 px-6 py-4 flex items-start justify-between gap-4">
+          <div className="absolute inset-0 bg-[var(--overlay-modal)]" onClick={() => setViewing(null)} />
+          <div className="relative w-full max-w-2xl h-full bg-surface-card border-l border-neutral-200 overflow-y-auto">
+            <div className="sticky top-0 bg-surface-card/95 backdrop-blur border-b border-neutral-200 px-6 py-4 flex items-start justify-between gap-4">
               <div className="min-w-0">
-                <p className="text-white font-semibold">
+                <p className="text-fg-primary font-semibold">
                   {str(viewing.frontmatter.title) || viewing.path.split("/").pop()}
                 </p>
-                <p className="text-gray-500 text-xs mt-0.5 truncate">{viewing.path}</p>
+                <p className="text-fg-secondary text-xs mt-0.5 truncate">{viewing.path}</p>
               </div>
-              <button onClick={() => setViewing(null)} className="text-gray-500 hover:text-white shrink-0">
+              <button onClick={() => setViewing(null)} className="text-fg-secondary hover:text-fg-primary shrink-0 transition-colors duration-150 ease-in-out">
                 <X size={18} />
               </button>
             </div>
             <div className="px-6 py-5">
               {metaLine(kind, viewing.frontmatter) && (
-                <p className="text-gray-500 text-xs mb-4">{metaLine(kind, viewing.frontmatter)}</p>
+                <p className="text-fg-secondary text-xs mb-4">{metaLine(kind, viewing.frontmatter)}</p>
               )}
-              <pre className="whitespace-pre-wrap break-words text-gray-300 text-sm leading-relaxed font-sans">
+              <pre className="whitespace-pre-wrap break-words text-fg-primary text-sm leading-relaxed font-sans">
                 {viewing.content.trim()}
               </pre>
             </div>
@@ -350,21 +350,21 @@ export function EntryLibrary({ kind, entries }: Props) {
       {/* ── Upload modal ───────────────────────────────────────────────────── */}
       {step !== "closed" && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/70" onClick={step === "uploading" ? undefined : resetUpload} />
-          <div className="relative w-full max-w-md bg-gray-900 border border-gray-800 rounded-2xl shadow-2xl p-6">
+          <div className="absolute inset-0 bg-[var(--overlay-modal)]" onClick={step === "uploading" ? undefined : resetUpload} />
+          <div className="relative w-full max-w-md bg-surface-card border border-neutral-200 rounded-2xl shadow-2xl p-6">
 
             {/* Step 1 — pick a file */}
             {step === "pick" && (
               <>
                 <div className="flex items-center gap-2 mb-1">
-                  <UploadCloud size={18} className="text-indigo-400" />
-                  <h2 className="text-white font-semibold">Upload to {cfg.title}</h2>
+                  <UploadCloud size={18} className="text-brand-500" />
+                  <h2 className="text-fg-primary font-semibold">Upload to {cfg.title}</h2>
                 </div>
-                <p className="text-gray-500 text-xs mb-4">
+                <p className="text-fg-secondary text-xs mb-4">
                   Choose a Markdown or text document. It will be saved to the {cfg.title} and committed to GitHub.
                 </p>
 
-                <label className="block border-2 border-dashed border-gray-700 hover:border-indigo-500 rounded-xl px-4 py-8 text-center cursor-pointer transition-colors">
+                <label className="block border-2 border-dashed border-neutral-300 hover:border-brand-400 rounded-xl px-4 py-8 text-center cursor-pointer transition-colors duration-200 ease-in-out">
                   <input
                     type="file"
                     accept={kind === "rfp" ? ACCEPT_RFP : ACCEPT}
@@ -372,30 +372,26 @@ export function EntryLibrary({ kind, entries }: Props) {
                     onChange={(e) => onFile(e.target.files?.[0])}
                   />
                   {kind === "rfp"
-                    ? <FileSpreadsheet size={22} className="text-gray-500 mx-auto mb-2" />
-                    : <FileText size={22} className="text-gray-500 mx-auto mb-2" />}
+                    ? <FileSpreadsheet size={22} className="text-fg-secondary mx-auto mb-2" />
+                    : <FileText size={22} className="text-fg-secondary mx-auto mb-2" />}
                   {fileName ? (
-                    <p className="text-gray-200 text-sm">{fileName}</p>
+                    <p className="text-fg-primary text-sm">{fileName}</p>
                   ) : (
-                    <p className="text-gray-500 text-sm">
+                    <p className="text-fg-secondary text-sm">
                       {kind === "rfp" ? "Click to choose a file (.xlsx, .xls)" : "Click to choose a file (.md, .markdown, .txt)"}
                     </p>
                   )}
                 </label>
 
-                {error && <p className="text-red-400 text-xs mt-3">{error}</p>}
+                {error && <p className="text-error-600 text-xs mt-3">{error}</p>}
 
                 <div className="flex justify-end gap-2 mt-5">
-                  <button onClick={resetUpload} className="px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors">
+                  <Button variant="ghost" onClick={resetUpload}>
                     Cancel
-                  </button>
-                  <button
-                    disabled={!fileText}
-                    onClick={() => setStep("confirm")}
-                    className="px-4 py-2 text-sm font-medium rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed text-white transition-colors"
-                  >
+                  </Button>
+                  <Button disabled={!fileText} onClick={() => setStep("confirm")}>
                     Continue
-                  </button>
+                  </Button>
                 </div>
               </>
             )}
@@ -404,32 +400,28 @@ export function EntryLibrary({ kind, entries }: Props) {
             {(step === "confirm" || step === "uploading") && (
               <>
                 <div className="flex items-center gap-2 mb-1">
-                  <AlertTriangle size={18} className="text-amber-400" />
-                  <h2 className="text-white font-semibold">Are you sure?</h2>
+                  <AlertTriangle size={18} className="text-warning-500" />
+                  <h2 className="text-fg-primary font-semibold">Are you sure?</h2>
                 </div>
-                <p className="text-gray-400 text-sm mb-4">
-                  Upload <span className="text-white font-medium">{fileName}</span> to the {cfg.title}? It will be
+                <p className="text-fg-secondary text-sm mb-4">
+                  Upload <span className="text-fg-primary font-medium">{fileName}</span> to the {cfg.title}? It will be
                   committed to GitHub and visible to the whole team. This appears on this page immediately.
                 </p>
 
-                {error && <p className="text-red-400 text-xs mb-3">{error}</p>}
+                {error && <p className="text-error-600 text-xs mb-3">{error}</p>}
 
                 <div className="flex justify-end gap-2">
-                  <button
+                  <Button
+                    variant="ghost"
                     onClick={() => { setError(null); setStep("pick"); }}
                     disabled={step === "uploading"}
-                    className="px-4 py-2 text-sm text-gray-400 hover:text-white disabled:opacity-40 transition-colors"
                   >
                     Back
-                  </button>
-                  <button
-                    onClick={doUpload}
-                    disabled={step === "uploading"}
-                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 text-white transition-colors"
-                  >
+                  </Button>
+                  <Button onClick={doUpload} disabled={step === "uploading"}>
                     {step === "uploading" && <Loader2 size={14} className="animate-spin" />}
                     {step === "uploading" ? "Uploading…" : "Yes, upload"}
-                  </button>
+                  </Button>
                 </div>
               </>
             )}
@@ -437,17 +429,14 @@ export function EntryLibrary({ kind, entries }: Props) {
             {/* Step 3 — done */}
             {step === "done" && (
               <div className="text-center py-4">
-                <CheckCircle2 size={40} className="text-emerald-400 mx-auto mb-3" />
-                <h2 className="text-white font-semibold">Uploaded</h2>
-                <p className="text-gray-400 text-sm mt-1 mb-5">
-                  <span className="text-white">{fileName}</span> was committed to GitHub and added to the {cfg.title}.
+                <CheckCircle2 size={40} className="text-success-500 mx-auto mb-3" />
+                <h2 className="text-fg-primary font-semibold">Uploaded</h2>
+                <p className="text-fg-secondary text-sm mt-1 mb-5">
+                  <span className="text-fg-primary">{fileName}</span> was committed to GitHub and added to the {cfg.title}.
                 </p>
-                <button
-                  onClick={resetUpload}
-                  className="px-5 py-2 text-sm font-medium rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white transition-colors"
-                >
+                <Button onClick={resetUpload}>
                   Done
-                </button>
+                </Button>
               </div>
             )}
           </div>

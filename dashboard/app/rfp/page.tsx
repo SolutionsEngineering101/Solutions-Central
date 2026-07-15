@@ -10,7 +10,7 @@ export default async function RFPPage() {
   return (
     <AppShell>
       <div className="mb-5">
-        <Link href="/documents" className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-white transition-colors">
+        <Link href="/documents" className="inline-flex items-center gap-1.5 text-sm text-fg-secondary hover:text-fg-primary transition-colors">
           ← Documents
         </Link>
       </div>

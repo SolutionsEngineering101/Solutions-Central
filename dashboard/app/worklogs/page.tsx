@@ -3,6 +3,7 @@ import { getMarkdownFiles } from "@/lib/github";
 import { formatDate } from "@/lib/utils";
 import { ClipboardList } from "lucide-react";
 import { CommitActivity } from "@/components/worklogs/CommitActivity";
+import { Card } from "@/components/ui/card";
 
 const MEMBERS = [
   "bhargav-nath", "hemanga-bharadwaj", "pankaj-chakrabarty",
@@ -28,15 +29,15 @@ export default async function WorklogsPage() {
     <AppShell>
       <div className="space-y-6">
         <div>
-          <h1 className="text-white text-2xl font-semibold">Worklogs</h1>
-          <p className="text-gray-400 text-sm mt-1">Code activity from GitHub + manual worklogs</p>
+          <h1 className="text-fg-primary text-2xl font-semibold">Worklogs</h1>
+          <p className="text-fg-secondary text-sm mt-1">Code activity from GitHub + manual worklogs</p>
         </div>
 
         {/* Live commit activity — who pushed what */}
         <CommitActivity />
 
         {/* Manual worklog entries */}
-        <h2 className="text-white font-semibold text-sm pt-2">Worklog entries</h2>
+        <h2 className="text-fg-primary font-semibold text-sm pt-2">Worklog entries</h2>
         <div className="space-y-3">
           {flat.map((log) => {
             const { date, member: memberName } = log.frontmatter as Record<string, string>;
@@ -44,27 +45,27 @@ export default async function WorklogsPage() {
             const work = log.content.match(/## Today's Work\n([\s\S]*?)(?=\n##|$)/)?.[1]?.trim();
 
             return (
-              <div key={log.path} className="bg-gray-900 border border-gray-800 rounded-xl p-5">
+              <Card key={log.path} compact>
                 <div className="flex items-start justify-between gap-4 mb-2">
                   <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 bg-indigo-600 rounded-full flex items-center justify-center shrink-0">
+                    <div className="w-6 h-6 bg-brand-500 rounded-pill flex items-center justify-center shrink-0">
                       <span className="text-white text-xs font-medium">
                         {displayMember.split(" ").map((w: string) => w[0]).join("").slice(0, 2)}
                       </span>
                     </div>
-                    <span className="text-white text-sm font-medium">{displayMember}</span>
+                    <span className="text-fg-primary text-sm font-medium">{displayMember}</span>
                   </div>
-                  {date && <span className="text-gray-500 text-xs shrink-0">{formatDate(date)}</span>}
+                  {date && <span className="text-fg-secondary text-xs shrink-0">{formatDate(date)}</span>}
                 </div>
-                {work && <p className="text-gray-400 text-sm ml-8">{work.slice(0, 200)}{work.length > 200 ? "…" : ""}</p>}
-              </div>
+                {work && <p className="text-fg-secondary text-sm ml-8">{work.slice(0, 200)}{work.length > 200 ? "…" : ""}</p>}
+              </Card>
             );
           })}
           {flat.length === 0 && (
             <div className="text-center py-16">
-              <ClipboardList size={32} className="text-gray-700 mx-auto mb-3" />
-              <p className="text-gray-500 text-sm">No worklogs yet.</p>
-              <p className="text-gray-600 text-xs mt-1">Run "log today's work" in Claude to add one.</p>
+              <ClipboardList size={32} className="text-neutral-300 mx-auto mb-3" />
+              <p className="text-fg-secondary text-sm">No worklogs yet.</p>
+              <p className="text-fg-secondary text-xs mt-1">Run "log today's work" in Claude to add one.</p>
             </div>
           )}
         </div>

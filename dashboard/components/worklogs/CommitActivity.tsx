@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { Loader2, GitCommit, ChevronRight, FilePlus2, FileMinus2, FilePen, AlertCircle, RefreshCw } from "lucide-react";
+import { Card, CardTitle } from "@/components/ui/card";
+import { Alert } from "@/components/ui/alert";
 
 interface Commit {
   sha: string;
@@ -31,10 +33,10 @@ function initials(name: string): string {
   return (name || "?").split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
 }
 const STATUS_ICON: Record<string, { Icon: typeof FilePlus2; color: string }> = {
-  added: { Icon: FilePlus2, color: "#34d399" },
-  removed: { Icon: FileMinus2, color: "#f87171" },
-  modified: { Icon: FilePen, color: "#fbbf24" },
-  renamed: { Icon: FilePen, color: "#818cf8" },
+  added: { Icon: FilePlus2, color: "var(--success-500)" },
+  removed: { Icon: FileMinus2, color: "var(--error-500)" },
+  modified: { Icon: FilePen, color: "var(--warning-500)" },
+  renamed: { Icon: FilePen, color: "var(--brand-400)" },
 };
 
 export function CommitActivity() {
@@ -81,48 +83,48 @@ export function CommitActivity() {
   }
 
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
+    <Card compact>
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <GitCommit size={16} className="text-indigo-400" />
-          <h2 className="text-white font-semibold">Recent Activity</h2>
-          <span className="text-[11px] text-gray-500">who pushed what</span>
+          <GitCommit size={16} className="text-brand-500" />
+          <CardTitle className="text-[length:var(--font-size-md)] font-semibold">Recent Activity</CardTitle>
+          <span className="text-[11px] text-fg-secondary">who pushed what</span>
         </div>
-        <button onClick={load} disabled={loading} className="p-1.5 rounded-md text-gray-500 hover:text-white hover:bg-gray-800 transition-colors" title="Refresh">
+        <button onClick={load} disabled={loading} className="p-1.5 rounded-md text-fg-secondary hover:text-fg-primary hover:bg-neutral-100 transition-colors duration-200 ease-in-out" title="Refresh">
           <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
         </button>
       </div>
 
-      {loading && <div className="flex items-center gap-2 text-gray-500 text-sm py-6 justify-center"><Loader2 size={16} className="animate-spin" /> Loading commits…</div>}
-      {error && <div className="flex items-start gap-2 text-red-400 text-sm"><AlertCircle size={14} className="shrink-0 mt-0.5" />{error}</div>}
+      {loading && <div className="flex items-center gap-2 text-fg-secondary text-sm py-6 justify-center"><Loader2 size={16} className="animate-spin" /> Loading commits…</div>}
+      {error && <Alert variant="error" icon={<AlertCircle size={14} />}>{error}</Alert>}
 
       {!loading && !error && (
         <div className="space-y-5">
           {groups.map((g) => (
             <div key={g.day}>
-              <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-600 mb-2">{g.day}</p>
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-fg-secondary mb-2">{g.day}</p>
               <div className="space-y-1">
                 {g.items.map((c) => {
                   const open = openSha === c.sha;
                   const files = filesBySha[c.sha];
                   return (
-                    <div key={c.sha} className="rounded-lg bg-gray-950 border border-gray-800">
-                      <button onClick={() => toggle(c.sha)} className="w-full flex items-start gap-3 px-3 py-2.5 text-left hover:bg-gray-900/60 transition-colors rounded-lg">
+                    <div key={c.sha} className="rounded-lg bg-neutral-100 border border-neutral-200">
+                      <button onClick={() => toggle(c.sha)} className="w-full flex items-start gap-3 px-3 py-2.5 text-left hover:bg-neutral-200/60 transition-colors duration-200 ease-in-out rounded-lg">
                         {c.avatarUrl
-                          ? <img src={c.avatarUrl} alt="" className="w-6 h-6 rounded-full shrink-0 mt-0.5" />
-                          : <div className="w-6 h-6 rounded-full bg-indigo-600 flex items-center justify-center shrink-0 mt-0.5"><span className="text-white text-[9px] font-semibold">{initials(c.author)}</span></div>}
+                          ? <img src={c.avatarUrl} alt="" className="w-6 h-6 rounded-pill shrink-0 mt-0.5" />
+                          : <div className="w-6 h-6 rounded-pill bg-brand-500 flex items-center justify-center shrink-0 mt-0.5"><span className="text-white text-[9px] font-semibold">{initials(c.author)}</span></div>}
                         <div className="min-w-0 flex-1">
-                          <p className="text-gray-200 text-sm truncate">{c.message}</p>
-                          <p className="text-[11px] text-gray-500 mt-0.5">
-                            <span className="text-gray-400">{c.author}</span> · {timeLabel(c.date)} · <span className="font-mono">{c.sha.slice(0, 7)}</span>
+                          <p className="text-fg-primary text-sm truncate">{c.message}</p>
+                          <p className="text-[11px] text-fg-secondary mt-0.5">
+                            <span className="text-fg-secondary">{c.author}</span> · {timeLabel(c.date)} · <span className="font-mono">{c.sha.slice(0, 7)}</span>
                           </p>
                         </div>
-                        <ChevronRight size={14} className={`text-gray-600 shrink-0 mt-1 transition-transform ${open ? "rotate-90" : ""}`} />
+                        <ChevronRight size={14} className={`text-fg-secondary shrink-0 mt-1 transition-transform duration-200 ease-in-out ${open ? "rotate-90" : ""}`} />
                       </button>
                       {open && (
-                        <div className="px-3 pb-3 pt-1 border-t border-gray-800/60">
+                        <div className="px-3 pb-3 pt-1 border-t border-neutral-200/60">
                           {filesLoading === c.sha ? (
-                            <p className="text-gray-600 text-xs flex items-center gap-1.5 py-1"><Loader2 size={11} className="animate-spin" /> Loading changes…</p>
+                            <p className="text-fg-secondary text-xs flex items-center gap-1.5 py-1"><Loader2 size={11} className="animate-spin" /> Loading changes…</p>
                           ) : files && files.length > 0 ? (
                             <ul className="space-y-1 mt-1">
                               {files.map((f) => {
@@ -130,15 +132,15 @@ export function CommitActivity() {
                                 return (
                                   <li key={f.filename} className="flex items-center gap-2 text-xs">
                                     <meta.Icon size={12} style={{ color: meta.color }} className="shrink-0" />
-                                    <span className="text-gray-400 truncate flex-1 font-mono">{f.filename}</span>
-                                    {f.additions > 0 && <span className="text-emerald-400 shrink-0">+{f.additions}</span>}
-                                    {f.deletions > 0 && <span className="text-red-400 shrink-0">−{f.deletions}</span>}
+                                    <span className="text-fg-secondary truncate flex-1 font-mono">{f.filename}</span>
+                                    {f.additions > 0 && <span className="text-success-500 shrink-0">+{f.additions}</span>}
+                                    {f.deletions > 0 && <span className="text-error-500 shrink-0">−{f.deletions}</span>}
                                   </li>
                                 );
                               })}
                             </ul>
                           ) : (
-                            <p className="text-gray-600 text-xs py-1">No file changes.</p>
+                            <p className="text-fg-secondary text-xs py-1">No file changes.</p>
                           )}
                         </div>
                       )}
@@ -148,9 +150,9 @@ export function CommitActivity() {
               </div>
             </div>
           ))}
-          {groups.length === 0 && <p className="text-gray-600 text-sm">No commits found.</p>}
+          {groups.length === 0 && <p className="text-fg-secondary text-sm">No commits found.</p>}
         </div>
       )}
-    </div>
+    </Card>
   );
 }

@@ -7,6 +7,12 @@ import {
   AlertCircle, ChevronDown, ChevronUp, Plus,
 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
+import { Badge, type BadgeProps } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label, FormField } from "@/components/ui/label";
+import { Alert } from "@/components/ui/alert";
+import { StatCard } from "@/components/ui/stat-card";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -22,21 +28,20 @@ function str(v: unknown): string {
   return typeof v === "string" ? v : "";
 }
 
-const STATUS_STYLES: Record<string, string> = {
-  open:      "bg-amber-950 text-amber-400 border-amber-800",
-  submitted: "bg-indigo-950 text-indigo-400 border-indigo-800",
-  won:       "bg-emerald-950 text-emerald-400 border-emerald-800",
-  lost:      "bg-red-950 text-red-400 border-red-800",
-  closed:    "bg-gray-800 text-gray-400 border-gray-700",
+// Semantic extension of the same status→variant philosophy used for
+// solution requests: amber/pending=warning, in-flight=brand, won=success,
+// lost=error, closed=neutral.
+const STATUS_VARIANT: Record<string, NonNullable<BadgeProps["variant"]>> = {
+  open:      "warning",
+  submitted: "brand",
+  won:       "success",
+  lost:      "error",
+  closed:    "neutral",
 };
 
 function StatusBadge({ status }: { status: string }) {
-  const style = STATUS_STYLES[status.toLowerCase()] ?? STATUS_STYLES.closed;
-  return (
-    <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium border ${style}`}>
-      {status}
-    </span>
-  );
+  const variant = STATUS_VARIANT[status.toLowerCase()] ?? "neutral";
+  return <Badge variant={variant}>{status}</Badge>;
 }
 
 const STATUSES = ["Open", "Submitted", "Won", "Lost", "Closed"];
@@ -78,28 +83,27 @@ function UploadModal({ onClose, onSuccess }: UploadModalProps) {
     }
   };
 
-  const inputCls = "w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500";
-  const labelCls = "block text-xs text-gray-500 mb-1";
+  const selectCls = "w-full bg-surface-card border border-neutral-300 rounded-[8px] px-[16px] py-[12px] text-sm text-fg-primary transition-colors duration-200 ease-in-out outline-none focus:border-brand-500 focus:shadow-[0_0_0_4px_var(--color-focus)]";
 
   return (
-    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-      <div className="bg-gray-900 border border-gray-700 rounded-xl w-full max-w-xl max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-800">
-          <h2 className="text-white font-semibold text-sm">Upload RFP</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-white transition-colors"><X size={16} /></button>
+    <div className="fixed inset-0 bg-[var(--overlay-modal)] backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-surface-card border border-neutral-200 rounded-xl shadow-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-200">
+          <h2 className="text-fg-primary font-semibold text-sm">Upload RFP</h2>
+          <button onClick={onClose} className="text-fg-secondary hover:text-fg-primary transition-colors"><X size={16} /></button>
         </div>
 
         <div className="px-6 py-5 space-y-4">
           {/* File picker */}
           <div>
-            <label className={labelCls}>Excel File <span className="text-red-500">*</span></label>
+            <Label className="block text-xs mb-1 font-normal">Excel File <span className="text-error-500">*</span></Label>
             <div
               onClick={() => fileRef.current?.click()}
               className={`flex items-center gap-3 px-4 py-3 border border-dashed rounded-lg cursor-pointer transition-colors
-                ${file ? "border-indigo-600 bg-indigo-950/20" : "border-gray-700 hover:border-gray-500"}`}
+                ${file ? "border-brand-500 bg-brand-50" : "border-neutral-300 hover:border-neutral-400"}`}
             >
-              <FileSpreadsheet size={18} className={file ? "text-indigo-400" : "text-gray-600"} />
-              <span className={`text-sm truncate ${file ? "text-indigo-300" : "text-gray-500"}`}>
+              <FileSpreadsheet size={18} className={file ? "text-brand-500" : "text-neutral-400"} />
+              <span className={`text-sm truncate ${file ? "text-brand-600" : "text-fg-secondary"}`}>
                 {file ? file.name : "Click to select .xlsx / .xls file"}
               </span>
             </div>
@@ -114,61 +118,57 @@ function UploadModal({ onClose, onSuccess }: UploadModalProps) {
 
           {/* Metadata */}
           <div className="grid grid-cols-2 gap-3">
-            <div className="col-span-2">
-              <label className={labelCls}>Client Name <span className="text-red-500">*</span></label>
-              <input value={form.client} onChange={set("client")} placeholder="e.g. Acme Corp" className={inputCls} />
-            </div>
-            <div className="col-span-2">
-              <label className={labelCls}>RFP Title</label>
-              <input value={form.title} onChange={set("title")} placeholder="Leave blank to auto-generate" className={inputCls} />
-            </div>
-            <div>
-              <label className={labelCls}>Date Received</label>
-              <input type="date" value={form.date_received} onChange={set("date_received")} className={inputCls} />
-            </div>
-            <div>
-              <label className={labelCls}>Submission Deadline</label>
-              <input type="date" value={form.deadline} onChange={set("deadline")} className={inputCls} />
-            </div>
-            <div>
-              <label className={labelCls}>Status</label>
-              <select value={form.status} onChange={set("status")} className={inputCls}>
+            <FormField className="col-span-2 mb-0">
+              <Label>Client Name <span className="text-error-500">*</span></Label>
+              <Input value={form.client} onChange={set("client")} placeholder="e.g. Acme Corp" />
+            </FormField>
+            <FormField className="col-span-2 mb-0">
+              <Label>RFP Title</Label>
+              <Input value={form.title} onChange={set("title")} placeholder="Leave blank to auto-generate" />
+            </FormField>
+            <FormField className="mb-0">
+              <Label>Date Received</Label>
+              <Input type="date" value={form.date_received} onChange={set("date_received")} />
+            </FormField>
+            <FormField className="mb-0">
+              <Label>Submission Deadline</Label>
+              <Input type="date" value={form.deadline} onChange={set("deadline")} />
+            </FormField>
+            <FormField className="mb-0">
+              <Label>Status</Label>
+              <select value={form.status} onChange={set("status")} className={selectCls}>
                 {STATUSES.map(s => <option key={s}>{s}</option>)}
               </select>
-            </div>
-            <div>
-              <label className={labelCls}>Assigned To</label>
-              <input value={form.assigned_to} onChange={set("assigned_to")} placeholder="Team member name" className={inputCls} />
-            </div>
-            <div>
-              <label className={labelCls}>Estimated Value</label>
-              <input value={form.estimated_value} onChange={set("estimated_value")} placeholder="e.g. ₹50L" className={inputCls} />
-            </div>
-            <div>
-              <label className={labelCls}>Tags</label>
-              <input value={form.tags} onChange={set("tags")} placeholder="enterprise, recognition" className={inputCls} />
-            </div>
+            </FormField>
+            <FormField className="mb-0">
+              <Label>Assigned To</Label>
+              <Input value={form.assigned_to} onChange={set("assigned_to")} placeholder="Team member name" />
+            </FormField>
+            <FormField className="mb-0">
+              <Label>Estimated Value</Label>
+              <Input value={form.estimated_value} onChange={set("estimated_value")} placeholder="e.g. ₹50L" />
+            </FormField>
+            <FormField className="mb-0">
+              <Label>Tags</Label>
+              <Input value={form.tags} onChange={set("tags")} placeholder="enterprise, recognition" />
+            </FormField>
           </div>
 
           {error && (
-            <div className="flex items-center gap-2 text-red-400 text-sm bg-red-950/40 border border-red-900/60 rounded-lg px-3 py-2">
-              <AlertCircle size={14} className="shrink-0" /> {error}
-            </div>
+            <Alert variant="error" icon={<AlertCircle size={14} />}>
+              {error}
+            </Alert>
           )}
         </div>
 
-        <div className="flex justify-end gap-2 px-6 py-4 border-t border-gray-800">
-          <button onClick={onClose} className="px-4 py-2 text-sm text-gray-400 hover:text-white rounded-lg hover:bg-gray-800 transition-colors">
+        <div className="flex justify-end gap-2 px-6 py-4 border-t border-neutral-200">
+          <Button variant="ghost" onClick={onClose}>
             Cancel
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={saving}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg transition-colors disabled:opacity-50"
-          >
+          </Button>
+          <Button variant="primary" onClick={handleSubmit} disabled={saving}>
             {saving ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
             {saving ? "Uploading…" : "Upload RFP"}
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -237,51 +237,41 @@ export function RFPLibrary({ entries }: { entries: Entry[] }) {
       {/* Header */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-white text-2xl font-semibold">RFPs</h1>
-          <p className="text-gray-500 text-sm mt-1">{kpis.total} requests for proposal</p>
+          <h1 className="text-fg-primary text-2xl font-semibold">RFPs</h1>
+          <p className="text-fg-secondary text-sm mt-1">{kpis.total} requests for proposal</p>
         </div>
         <div className="flex items-center gap-2">
           {success && (
-            <span className="flex items-center gap-1 text-emerald-400 text-sm">
+            <span className="flex items-center gap-1 text-success-600 text-sm">
               <Check size={14} /> Uploaded to knowledge base
             </span>
           )}
-          <button
-            onClick={() => setShowUpload(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg transition-colors"
-          >
+          <Button variant="primary" onClick={() => setShowUpload(true)}>
             <Plus size={14} /> Upload RFP
-          </button>
+          </Button>
         </div>
       </div>
 
       {/* KPI strip */}
       <div className="grid grid-cols-4 gap-4">
-        {[
-          { label: "Total",     value: kpis.total,     color: "#e5e7eb" },
-          { label: "Open",      value: kpis.open,      color: "#fbbf24" },
-          { label: "Submitted", value: kpis.submitted, color: "#818cf8" },
-          { label: "Won",       value: kpis.won,       color: "#34d399" },
-        ].map(({ label, value, color }) => (
-          <div key={label} className="bg-gray-900 border border-gray-800 rounded-xl px-5 py-4">
-            <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-500">{label}</p>
-            <p className="text-[34px] font-bold leading-none mt-1" style={{ color }}>{value}</p>
-          </div>
-        ))}
+        <StatCard label="Total" value={kpis.total} tone="neutral" />
+        <StatCard label="Open" value={kpis.open} tone="warning" />
+        <StatCard label="Submitted" value={kpis.submitted} tone="brand" />
+        <StatCard label="Won" value={kpis.won} tone="success" />
       </div>
 
       {/* Toolbar */}
       <div className="flex items-center gap-3 flex-wrap">
         <div className="relative flex-1 min-w-48">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
-          <input
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-secondary pointer-events-none" />
+          <Input
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Search by client, title, assignee…"
-            className="w-full pl-9 pr-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="pl-9 pr-9"
           />
           {search && (
-            <button onClick={() => setSearch("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white">
+            <button onClick={() => setSearch("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-fg-secondary hover:text-fg-primary">
               <X size={13} />
             </button>
           )}
@@ -289,7 +279,7 @@ export function RFPLibrary({ entries }: { entries: Entry[] }) {
         <select
           value={statusFilter}
           onChange={e => setStatus(e.target.value)}
-          className="px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className="px-3 py-2 bg-surface-card border border-neutral-300 rounded-[8px] text-sm text-fg-primary outline-none transition-colors duration-200 ease-in-out focus:border-brand-500 focus:shadow-[0_0_0_4px_var(--color-focus)]"
         >
           <option value="all">All statuses</option>
           {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
@@ -298,78 +288,78 @@ export function RFPLibrary({ entries }: { entries: Entry[] }) {
 
       {/* RFP list */}
       {rfps.length === 0 ? (
-        <div className="bg-gray-900 border border-dashed border-gray-700 rounded-xl p-16 text-center">
-          <FileSpreadsheet size={32} className="text-gray-700 mx-auto mb-3" />
-          <p className="text-gray-400 font-medium text-sm">
+        <div className="bg-surface-card border border-dashed border-neutral-300 rounded-xl p-16 text-center">
+          <FileSpreadsheet size={32} className="text-neutral-300 mx-auto mb-3" />
+          <p className="text-fg-primary font-medium text-sm">
             {search || statusFilter !== "all" ? "No RFPs match your filters" : "No RFPs uploaded yet"}
           </p>
-          <p className="text-gray-600 text-xs mt-1">
+          <p className="text-fg-secondary text-xs mt-1">
             {search || statusFilter !== "all" ? "Clear filters to see all RFPs" : 'Click "Upload RFP" to add the first one'}
           </p>
         </div>
       ) : (
-        <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+        <div className="bg-surface-card border border-neutral-200 rounded-xl overflow-hidden">
           {rfps.map((rfp, i) => (
-            <div key={rfp.path} className={`${i < rfps.length - 1 ? "border-b border-gray-800" : ""}`}>
+            <div key={rfp.path} className={`${i < rfps.length - 1 ? "border-b border-neutral-200" : ""}`}>
 
               {/* Row */}
               <div
-                className="flex items-center gap-4 px-5 py-4 cursor-pointer hover:bg-gray-800/40 transition-colors"
+                className="flex items-center gap-4 px-5 py-4 cursor-pointer hover:bg-neutral-100 transition-colors"
                 onClick={() => setExpanded(expanded === rfp.path ? null : rfp.path)}
               >
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap mb-1">
-                    <span className="text-white text-sm font-medium truncate">{rfp.client}</span>
+                    <span className="text-fg-primary text-sm font-medium truncate">{rfp.client}</span>
                     <StatusBadge status={rfp.status} />
                   </div>
-                  <p className="text-gray-500 text-xs truncate">{rfp.title}</p>
+                  <p className="text-fg-secondary text-xs truncate">{rfp.title}</p>
                 </div>
 
-                <div className="hidden sm:flex items-center gap-6 text-xs text-gray-500 shrink-0">
+                <div className="hidden sm:flex items-center gap-6 text-xs text-fg-secondary shrink-0">
                   {rfp.deadline && (
                     <div className="text-right">
-                      <p className="text-gray-600 text-[10px] uppercase tracking-wide">Deadline</p>
-                      <p className="text-gray-400">{rfp.deadline}</p>
+                      <p className="text-fg-secondary text-[10px] uppercase tracking-wide">Deadline</p>
+                      <p className="text-fg-secondary">{rfp.deadline}</p>
                     </div>
                   )}
                   {rfp.assignedTo && (
                     <div className="text-right">
-                      <p className="text-gray-600 text-[10px] uppercase tracking-wide">Assigned</p>
-                      <p className="text-gray-400">{rfp.assignedTo.split(" ")[0]}</p>
+                      <p className="text-fg-secondary text-[10px] uppercase tracking-wide">Assigned</p>
+                      <p className="text-fg-secondary">{rfp.assignedTo.split(" ")[0]}</p>
                     </div>
                   )}
                   {rfp.estimatedValue && (
                     <div className="text-right">
-                      <p className="text-gray-600 text-[10px] uppercase tracking-wide">Value</p>
-                      <p className="text-gray-400">{rfp.estimatedValue}</p>
+                      <p className="text-fg-secondary text-[10px] uppercase tracking-wide">Value</p>
+                      <p className="text-fg-secondary">{rfp.estimatedValue}</p>
                     </div>
                   )}
                   <div className="text-right">
-                    <p className="text-gray-600 text-[10px] uppercase tracking-wide">Received</p>
-                    <p className="text-gray-400">{rfp.dateReceived}</p>
+                    <p className="text-fg-secondary text-[10px] uppercase tracking-wide">Received</p>
+                    <p className="text-fg-secondary">{rfp.dateReceived}</p>
                   </div>
                 </div>
 
-                <div className="text-gray-600 shrink-0">
+                <div className="text-fg-secondary shrink-0">
                   {expanded === rfp.path ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
                 </div>
               </div>
 
               {/* Expanded content */}
               {expanded === rfp.path && (
-                <div className="px-5 pb-5 border-t border-gray-800 bg-gray-900/60">
+                <div className="px-5 pb-5 border-t border-neutral-200 bg-neutral-50">
                   {rfp.tags.length > 0 && (
                     <div className="flex gap-1.5 flex-wrap pt-3 mb-3">
                       {rfp.tags.map(t => (
-                        <span key={t} className="px-2 py-0.5 bg-gray-800 border border-gray-700 rounded text-[11px] text-gray-400">{t}</span>
+                        <span key={t} className="px-2 py-0.5 bg-neutral-100 border border-neutral-300 rounded text-[11px] text-fg-secondary">{t}</span>
                       ))}
                     </div>
                   )}
-                  <div className="prose-rfp text-sm text-gray-400 overflow-x-auto whitespace-pre-wrap font-mono leading-relaxed max-h-96 overflow-y-auto">
+                  <div className="prose-rfp text-sm text-fg-secondary overflow-x-auto whitespace-pre-wrap font-mono leading-relaxed max-h-96 overflow-y-auto">
                     {rfp.content || "_No content extracted._"}
                   </div>
                   {rfp.sourceFile && (
-                    <p className="mt-3 text-[11px] text-gray-600">Source: {rfp.sourceFile}</p>
+                    <p className="mt-3 text-[11px] text-fg-secondary">Source: {rfp.sourceFile}</p>
                   )}
                 </div>
               )}

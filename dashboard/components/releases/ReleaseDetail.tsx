@@ -3,6 +3,8 @@
 import { useState, useCallback, useRef } from "react";
 import { X, Loader2, Trash2, Check, Minus, ChevronDown, ChevronRight, Paperclip, Upload } from "lucide-react";
 import { useSession } from "next-auth/react";
+import { Button } from "@/components/ui/button";
+import { Badge, type BadgeProps } from "@/components/ui/badge";
 import type { Release, SectionKey, SectionState, SectionStatus, ReleaseAttachment } from "./types";
 import { CHECKLIST_DEFINITIONS, SECTIONS_FOR_TYPE, getEffectiveChecks, computeReleaseStatus } from "./types";
 
@@ -25,27 +27,27 @@ const RELEASE_TYPE_LABELS: Record<string, string> = {
   integration: "Integration",
 };
 
-const RELEASE_TYPE_COLORS: Record<string, string> = {
-  "new-feature": "bg-indigo-900/50 text-indigo-300 border-indigo-700",
-  enhancement: "bg-teal-900/50 text-teal-300 border-teal-700",
-  customization: "bg-blue-900/50 text-blue-300 border-blue-700",
-  hotfix: "bg-red-900/50 text-red-300 border-red-700",
-  integration: "bg-purple-900/50 text-purple-300 border-purple-700",
+const RELEASE_TYPE_BADGE: Record<string, NonNullable<BadgeProps["variant"]>> = {
+  "new-feature": "brand",
+  enhancement: "success",
+  customization: "info",
+  hotfix: "error",
+  integration: "neutral",
 };
 
-const STATUS_COLORS: Record<string, string> = {
-  draft: "bg-gray-800 text-gray-400 border-gray-700",
-  "in-progress": "bg-yellow-900/40 text-yellow-300 border-yellow-700",
-  blocked: "bg-red-900/40 text-red-300 border-red-700",
-  ready: "bg-green-900/40 text-green-300 border-green-700",
-  deployed: "bg-indigo-900/40 text-indigo-300 border-indigo-700",
+const STATUS_BADGE: Record<string, NonNullable<BadgeProps["variant"]>> = {
+  draft: "neutral",
+  "in-progress": "warning",
+  blocked: "error",
+  ready: "success",
+  deployed: "brand",
 };
 
-const SECTION_STATUS_COLORS: Record<SectionStatus, string> = {
-  pending: "bg-gray-800 text-gray-400 border-gray-700",
-  "in-progress": "bg-yellow-900/40 text-yellow-300 border-yellow-700",
-  complete: "bg-green-900/40 text-green-300 border-green-700",
-  na: "bg-gray-800 text-gray-500 border-gray-700",
+const SECTION_STATUS_BADGE: Record<SectionStatus, NonNullable<BadgeProps["variant"]>> = {
+  pending: "neutral",
+  "in-progress": "warning",
+  complete: "success",
+  na: "neutral",
 };
 
 function getItemState(id: string, completedChecks: string[], naChecks: string[]): ItemState {
@@ -116,20 +118,20 @@ function AttachmentsSection({ release, userName, onChanged }: AttachmentsSection
   }
 
   return (
-    <div className="border border-gray-800 rounded-xl overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-3 bg-gray-900">
+    <div className="border border-neutral-200 rounded-xl overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-3 bg-neutral-100">
         <div className="flex items-center gap-3">
-          <Paperclip size={13} className="text-gray-500" />
-          <span className="text-white text-sm font-medium">Attachments</span>
+          <Paperclip size={13} className="text-fg-secondary" />
+          <span className="text-fg-primary text-sm font-medium">Attachments</span>
           {attachments.length > 0 && (
-            <span className="text-gray-500 text-xs">{attachments.length}</span>
+            <span className="text-fg-secondary text-xs">{attachments.length}</span>
           )}
         </div>
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
           disabled={uploading}
-          className="flex items-center gap-1.5 text-xs text-indigo-400 hover:text-indigo-300 transition-colors disabled:opacity-50"
+          className="flex items-center gap-1.5 text-xs text-brand-500 hover:text-brand-600 transition-colors duration-200 ease-in-out disabled:opacity-50"
         >
           {uploading ? <Loader2 size={12} className="animate-spin" /> : <Upload size={12} />}
           {uploading ? "Uploading…" : "Upload file"}
@@ -138,26 +140,26 @@ function AttachmentsSection({ release, userName, onChanged }: AttachmentsSection
       </div>
 
       {attachments.length > 0 && (
-        <div className="bg-gray-950 px-4 py-3 space-y-2">
+        <div className="bg-surface-card px-4 py-3 space-y-2">
           {attachments.map((a) => (
             <div key={a.name} className="flex items-center gap-3 group">
-              <Paperclip size={12} className="text-gray-600 shrink-0" />
+              <Paperclip size={12} className="text-neutral-400 shrink-0" />
               <a
                 href={`/api/releases/${release.id}/attachments/${encodeURIComponent(a.name)}`}
                 download={a.name}
-                className="text-sm text-gray-300 hover:text-white flex-1 truncate transition-colors"
+                className="text-sm text-fg-secondary hover:text-fg-primary flex-1 truncate transition-colors duration-200 ease-in-out"
               >
                 {a.name}
               </a>
-              <span className="text-xs text-gray-600 shrink-0">{formatBytes(a.size)}</span>
-              <span className="text-[10px] text-gray-700 shrink-0 hidden group-hover:block">
+              <span className="text-xs text-fg-secondary shrink-0">{formatBytes(a.size)}</span>
+              <span className="text-[10px] text-neutral-400 shrink-0 hidden group-hover:block">
                 {a.uploadedBy}
               </span>
               <button
                 type="button"
                 onClick={() => handleDelete(a)}
                 disabled={deletingName === a.name}
-                className="text-gray-700 hover:text-red-400 transition-colors shrink-0 opacity-0 group-hover:opacity-100"
+                className="text-neutral-400 hover:text-error-500 transition-colors duration-200 ease-in-out shrink-0 opacity-0 group-hover:opacity-100"
                 title="Remove attachment"
               >
                 {deletingName === a.name ? (
@@ -173,10 +175,10 @@ function AttachmentsSection({ release, userName, onChanged }: AttachmentsSection
 
       {attachments.length === 0 && (
         <div
-          className="bg-gray-950 px-4 py-6 text-center cursor-pointer"
+          className="bg-surface-card px-4 py-6 text-center cursor-pointer"
           onClick={() => fileInputRef.current?.click()}
         >
-          <p className="text-xs text-gray-600">No attachments yet — click Upload file or drop files here</p>
+          <p className="text-xs text-fg-secondary">No attachments yet — click Upload file or drop files here</p>
         </div>
       )}
     </div>
@@ -290,43 +292,39 @@ function SectionPanel({ release, sectionKey, sectionState, userName, onUpdate }:
   }
 
   return (
-    <div ref={panelRef} className="border border-gray-800 rounded-xl overflow-hidden">
+    <div ref={panelRef} className="border border-neutral-200 rounded-xl overflow-hidden">
       <button
         type="button"
         onClick={handleToggle}
-        className="w-full flex items-center justify-between px-4 py-3 bg-gray-900 hover:bg-gray-800/60 transition-colors"
+        className="w-full flex items-center justify-between px-4 py-3 bg-neutral-100 hover:bg-neutral-200 transition-colors duration-200 ease-in-out"
       >
         <div className="flex items-center gap-3 flex-wrap">
-          <span className="text-white text-sm font-medium">{definition?.title ?? sectionKey}</span>
-          <span className="text-gray-500 text-xs">{resolved}/{effectiveItems.length}</span>
-          <span
-            className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full border ${SECTION_STATUS_COLORS[dynamicStatus]}`}
-          >
-            {dynamicStatus}
-          </span>
+          <span className="text-fg-primary text-sm font-medium">{definition?.title ?? sectionKey}</span>
+          <span className="text-fg-secondary text-xs">{resolved}/{effectiveItems.length}</span>
+          <Badge variant={SECTION_STATUS_BADGE[dynamicStatus]}>{dynamicStatus}</Badge>
           {sectionState.signedOffBy && (
-            <span className="text-[10px] text-green-400 font-medium">
+            <span className="text-[10px] text-success-600 font-medium">
               Signed off · {sectionState.signedOffBy}
             </span>
           )}
         </div>
         {expanded ? (
-          <ChevronDown size={15} className="text-gray-500 shrink-0" />
+          <ChevronDown size={15} className="text-fg-secondary shrink-0" />
         ) : (
-          <ChevronRight size={15} className="text-gray-500 shrink-0" />
+          <ChevronRight size={15} className="text-fg-secondary shrink-0" />
         )}
       </button>
 
       {expanded && (
-        <div className="bg-gray-950 px-4 py-4 space-y-4">
+        <div className="bg-surface-card px-4 py-4 space-y-4">
           {/* Bulk actions */}
           <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-600">Mark all:</span>
+            <span className="text-xs text-fg-secondary">Mark all:</span>
             <button
               type="button"
               onClick={() => handleMarkAll("done")}
               disabled={bulkUpdating}
-              className="text-xs text-green-500 hover:text-green-400 px-2 py-0.5 rounded border border-green-900/50 hover:border-green-700 transition-colors disabled:opacity-40"
+              className="text-xs text-success-600 hover:text-success-500 px-2 py-0.5 rounded border border-success-200 hover:border-success-300 transition-colors duration-200 ease-in-out disabled:opacity-40"
             >
               Done
             </button>
@@ -334,7 +332,7 @@ function SectionPanel({ release, sectionKey, sectionState, userName, onUpdate }:
               type="button"
               onClick={() => handleMarkAll("na")}
               disabled={bulkUpdating}
-              className="text-xs text-gray-500 hover:text-gray-400 px-2 py-0.5 rounded border border-gray-800 hover:border-gray-600 transition-colors disabled:opacity-40"
+              className="text-xs text-fg-secondary hover:text-fg-primary px-2 py-0.5 rounded border border-neutral-200 hover:border-neutral-300 transition-colors duration-200 ease-in-out disabled:opacity-40"
             >
               N/A
             </button>
@@ -342,11 +340,11 @@ function SectionPanel({ release, sectionKey, sectionState, userName, onUpdate }:
               type="button"
               onClick={() => handleMarkAll("reset")}
               disabled={bulkUpdating}
-              className="text-xs text-gray-600 hover:text-gray-400 px-2 py-0.5 rounded border border-gray-800 hover:border-gray-600 transition-colors disabled:opacity-40"
+              className="text-xs text-fg-secondary hover:text-fg-primary px-2 py-0.5 rounded border border-neutral-200 hover:border-neutral-300 transition-colors duration-200 ease-in-out disabled:opacity-40"
             >
               Reset
             </button>
-            {bulkUpdating && <Loader2 size={12} className="text-indigo-400 animate-spin" />}
+            {bulkUpdating && <Loader2 size={12} className="text-brand-500 animate-spin" />}
           </div>
 
           {/* Checklist items */}
@@ -358,36 +356,36 @@ function SectionPanel({ release, sectionKey, sectionState, userName, onUpdate }:
               return (
                 <div
                   key={item.id}
-                  className="flex items-center gap-2 group hover:bg-gray-900 rounded-lg px-2 py-1.5 transition-colors"
+                  className="flex items-center gap-2 group hover:bg-neutral-100 rounded-lg px-2 py-1.5 transition-colors duration-200 ease-in-out"
                 >
                   {/* Checkbox — toggles Done / Pending */}
                   <button
                     type="button"
                     onClick={() => handleCheckboxClick(item.id, state)}
                     disabled={disabled}
-                    className="shrink-0 w-5 h-5 rounded flex items-center justify-center border transition-colors disabled:cursor-wait"
+                    className="shrink-0 w-5 h-5 rounded flex items-center justify-center border transition-colors duration-200 ease-in-out disabled:cursor-wait"
                     style={{
-                      backgroundColor: state === "done" ? "#16a34a22" : "#1f293722",
-                      borderColor: state === "done" ? "#16a34a" : state === "na" ? "#6b728055" : "#374151",
+                      backgroundColor: state === "done" ? "var(--success-50)" : "var(--neutral-50)",
+                      borderColor: state === "done" ? "var(--color-success)" : state === "na" ? "var(--neutral-400)" : "var(--neutral-300)",
                     }}
                   >
                     {isLoading ? (
-                      <Loader2 size={10} className="text-indigo-400 animate-spin" />
+                      <Loader2 size={10} className="text-brand-500 animate-spin" />
                     ) : state === "done" ? (
-                      <Check size={11} className="text-green-400" />
+                      <Check size={11} className="text-success-600" />
                     ) : state === "na" ? (
-                      <Minus size={11} className="text-gray-700" />
+                      <Minus size={11} className="text-neutral-400" />
                     ) : null}
                   </button>
 
                   {/* Label */}
                   <span
-                    className={`text-sm flex-1 transition-colors ${
+                    className={`text-sm flex-1 transition-colors duration-200 ease-in-out ${
                       state === "done"
-                        ? "text-gray-500 line-through"
+                        ? "text-fg-secondary line-through"
                         : state === "na"
-                        ? "text-gray-600 line-through"
-                        : "text-gray-300 group-hover:text-white"
+                        ? "text-fg-secondary line-through"
+                        : "text-fg-primary group-hover:text-fg-primary"
                     }`}
                   >
                     {item.label}
@@ -398,10 +396,10 @@ function SectionPanel({ release, sectionKey, sectionState, userName, onUpdate }:
                     type="button"
                     onClick={() => handleNaClick(item.id, state)}
                     disabled={disabled}
-                    className={`text-[10px] px-1.5 py-0.5 rounded border transition-colors shrink-0 disabled:cursor-wait ${
+                    className={`text-[10px] px-1.5 py-0.5 rounded border transition-colors duration-200 ease-in-out shrink-0 disabled:cursor-wait ${
                       state === "na"
-                        ? "text-gray-400 border-gray-600 bg-gray-800"
-                        : "text-gray-700 border-gray-800 opacity-0 group-hover:opacity-100 hover:text-gray-400 hover:border-gray-600"
+                        ? "text-fg-secondary border-neutral-300 bg-neutral-100"
+                        : "text-neutral-400 border-neutral-200 opacity-0 group-hover:opacity-100 hover:text-fg-secondary hover:border-neutral-300"
                     }`}
                   >
                     N/A
@@ -413,14 +411,14 @@ function SectionPanel({ release, sectionKey, sectionState, userName, onUpdate }:
 
           {/* Sign-off */}
           {allResolved && (
-            <div className="border-t border-gray-800 pt-4">
+            <div className="border-t border-neutral-200 pt-4">
               {sectionState.signedOffBy ? (
-                <div className="flex items-center gap-2 text-sm text-green-400">
+                <div className="flex items-center gap-2 text-sm text-success-600">
                   <Check size={14} />
                   <span>
                     Signed off by <strong>{sectionState.signedOffBy}</strong>
                     {sectionState.signedOffAt && (
-                      <span className="text-gray-500 ml-1.5 text-xs">
+                      <span className="text-fg-secondary ml-1.5 text-xs">
                         {new Date(sectionState.signedOffAt).toLocaleDateString()}
                       </span>
                     )}
@@ -428,27 +426,29 @@ function SectionPanel({ release, sectionKey, sectionState, userName, onUpdate }:
                 </div>
               ) : (
                 <div className="flex items-center gap-3">
-                  <p className="text-sm text-gray-400 flex-1">
+                  <p className="text-sm text-fg-secondary flex-1">
                     All items resolved. Sign off as{" "}
-                    <span className="text-white font-medium">{userName || "you"}</span>?
+                    <span className="text-fg-primary font-medium">{userName || "you"}</span>?
                   </p>
-                  <button
+                  <Button
                     type="button"
+                    variant="success"
+                    size="sm"
                     onClick={handleSignOff}
                     disabled={signingOff || !userName}
-                    className="bg-green-700 hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 shrink-0"
+                    className="shrink-0"
                   >
                     {signingOff && <Loader2 size={12} className="animate-spin" />}
                     Sign Off
-                  </button>
+                  </Button>
                 </div>
               )}
             </div>
           )}
 
           {/* Notes */}
-          <div className="border-t border-gray-800 pt-3">
-            <label className="block text-xs text-gray-500 mb-1.5">Notes</label>
+          <div className="border-t border-neutral-200 pt-3">
+            <label className="block text-xs text-fg-secondary mb-1.5">Notes</label>
             <div className="relative">
               <textarea
                 rows={2}
@@ -456,10 +456,10 @@ function SectionPanel({ release, sectionKey, sectionState, userName, onUpdate }:
                 onChange={(e) => setNotesValue(e.target.value)}
                 onBlur={handleNotesBlur}
                 placeholder="Add notes…"
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500 resize-none"
+                className="w-full bg-surface-card border border-neutral-300 rounded-lg px-3 py-2 text-sm text-fg-primary placeholder:text-fg-secondary focus:outline-none focus:border-brand-500 focus:shadow-[0_0_0_4px_var(--color-focus)] transition-colors duration-200 ease-in-out resize-none"
               />
               {savingNotes && (
-                <Loader2 size={12} className="absolute right-2.5 top-2.5 text-indigo-400 animate-spin" />
+                <Loader2 size={12} className="absolute right-2.5 top-2.5 text-brand-500 animate-spin" />
               )}
             </div>
           </div>
@@ -529,59 +529,45 @@ export default function ReleaseDetail({ release, onClose, onUpdated, onDeleted }
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/50 z-40" onClick={onClose} />
+      <div className="fixed inset-0 bg-[var(--overlay-modal)] z-40" onClick={onClose} />
 
-      <div className="fixed right-0 top-0 h-screen w-[680px] bg-gray-950 border-l border-gray-800 z-50 flex flex-col shadow-2xl">
+      <div className="fixed right-0 top-0 h-screen w-[680px] bg-surface-card border-l border-neutral-200 z-50 flex flex-col shadow-2xl">
         {/* Header */}
-        <div className="px-6 py-5 border-b border-gray-800 shrink-0">
+        <div className="px-6 py-5 border-b border-neutral-200 shrink-0">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 flex-wrap mb-1">
-                <span className="font-mono text-indigo-400 text-sm font-semibold">
+                <span className="font-mono text-brand-500 text-sm font-semibold">
                   {localRelease.id}
                 </span>
-                <span
-                  className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full border ${
-                    RELEASE_TYPE_COLORS[localRelease.releaseType] ?? ""
-                  }`}
-                >
+                <Badge variant={RELEASE_TYPE_BADGE[localRelease.releaseType] ?? "neutral"}>
                   {RELEASE_TYPE_LABELS[localRelease.releaseType] ?? localRelease.releaseType}
-                </span>
+                </Badge>
                 {localRelease.products?.map((p) => (
-                  <span
-                    key={p}
-                    className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-gray-800 border border-gray-700 text-gray-300"
-                  >
-                    {p}
-                  </span>
+                  <Badge key={p} variant="neutral">{p}</Badge>
                 ))}
-                <span
-                  className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full border ${
-                    STATUS_COLORS[overallStatus] ?? ""
-                  }`}
-                >
-                  {overallStatus}
-                </span>
+                <Badge variant={STATUS_BADGE[overallStatus] ?? "neutral"}>{overallStatus}</Badge>
               </div>
-              <h2 className="text-white font-semibold text-lg leading-tight">{localRelease.name}</h2>
+              <h2 className="text-fg-primary font-semibold text-lg leading-tight">{localRelease.name}</h2>
             </div>
 
             <div className="flex items-center gap-2 shrink-0">
               {/* Delete */}
               {confirmDelete ? (
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-red-400">Delete this release?</span>
-                  <button
+                  <span className="text-xs text-error-500">Delete this release?</span>
+                  <Button
+                    variant="danger"
+                    size="sm"
                     onClick={handleDelete}
                     disabled={deleting}
-                    className="text-xs bg-red-700 hover:bg-red-600 text-white px-2.5 py-1 rounded-lg flex items-center gap-1 disabled:opacity-50"
                   >
                     {deleting ? <Loader2 size={11} className="animate-spin" /> : null}
                     Yes, delete
-                  </button>
+                  </Button>
                   <button
                     onClick={() => setConfirmDelete(false)}
-                    className="text-xs text-gray-500 hover:text-white px-2 py-1"
+                    className="text-xs text-fg-secondary hover:text-fg-primary px-2 py-1"
                   >
                     Cancel
                   </button>
@@ -589,41 +575,41 @@ export default function ReleaseDetail({ release, onClose, onUpdated, onDeleted }
               ) : (
                 <button
                   onClick={() => setConfirmDelete(true)}
-                  className="text-gray-600 hover:text-red-400 transition-colors p-1 rounded"
+                  className="text-neutral-400 hover:text-error-500 transition-colors duration-200 ease-in-out p-1 rounded"
                   title="Delete release"
                 >
                   <Trash2 size={15} />
                 </button>
               )}
-              <button onClick={onClose} className="text-gray-500 hover:text-white transition-colors p-1">
+              <button onClick={onClose} className="text-fg-secondary hover:text-fg-primary transition-colors duration-200 ease-in-out p-1">
                 <X size={18} />
               </button>
             </div>
           </div>
 
-          <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-xs text-gray-500">
+          <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-xs text-fg-secondary">
             <span>
-              <span className="text-gray-600">Clients:</span>{" "}
-              <span className="text-gray-300">{localRelease.clients.join(", ") || "—"}</span>
+              <span className="text-fg-secondary">Clients:</span>{" "}
+              <span className="text-fg-primary">{localRelease.clients.join(", ") || "—"}</span>
             </span>
             <span>
-              <span className="text-gray-600">Deploy:</span>{" "}
-              <span className="text-gray-300">
+              <span className="text-fg-secondary">Deploy:</span>{" "}
+              <span className="text-fg-primary">
                 {localRelease.deploymentDate
                   ? new Date(localRelease.deploymentDate + "T00:00:00").toLocaleDateString()
                   : "—"}
               </span>
             </span>
             <span>
-              <span className="text-gray-600">PM:</span>{" "}
-              <span className="text-gray-300">
+              <span className="text-fg-secondary">PM:</span>{" "}
+              <span className="text-fg-primary">
                 {TEAM_MEMBER_LABELS[localRelease.pmOwner] ?? localRelease.pmOwner}
               </span>
             </span>
             {localRelease.jiraTickets?.length > 0 && (
               <span>
-                <span className="text-gray-600">Tickets:</span>{" "}
-                <span className="font-mono text-gray-300">
+                <span className="text-fg-secondary">Tickets:</span>{" "}
+                <span className="font-mono text-fg-primary">
                   {localRelease.jiraTickets
                     .map((t) => (typeof t === "string" ? t : t.key))
                     .join(", ")}

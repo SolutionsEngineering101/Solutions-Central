@@ -18,8 +18,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   if (!devMode && status === "loading") {
     return (
-      <div className="h-screen flex items-center justify-center bg-gray-900">
-        <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+      <div className="h-screen flex items-center justify-center bg-neutral-50">
+        <div className="w-6 h-6 border-2 border-brand-500 border-t-transparent rounded-pill animate-spin" />
       </div>
     );
   }
@@ -28,7 +28,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <AssistantProvider>
-      <div className="flex h-screen bg-gray-950">
+      <div className="flex h-screen bg-neutral-50">
         <Sidebar />
         <main className="ml-56 flex-1 h-screen overflow-y-auto p-5">{children}</main>
       </div>

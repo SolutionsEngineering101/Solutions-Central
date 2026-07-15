@@ -5,6 +5,11 @@ import {
   AlertCircle, Loader2, Search, ChevronUp, ChevronDown,
   ChevronsUpDown, LayoutGrid, AlignJustify,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge, type BadgeProps } from "@/components/ui/badge";
+import { Alert } from "@/components/ui/alert";
+import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -128,52 +133,45 @@ function computeRowStatus(row: string[], headers: string[]): string {
 }
 
 // ─── Style helpers ────────────────────────────────────────────────────────────
+// Status/priority tiers map onto the badge semantic variants (§9) — brand
+// stands in for "in progress" per the accent-colour mapping used across the
+// dashboard, and the -50/-600 bg/text pairing lives inside the Badge primitive.
 
-function statusStyle(text: string) {
+function statusVariant(text: string): NonNullable<BadgeProps["variant"]> {
   const v = text.toLowerCase();
-  if (/done|complete|closed|delivered/i.test(v))
-    return { bg: "rgba(52,211,153,0.12)", fg: "#34d399", dot: "#34d399" };
-  if (/in.?progress|active|ongoing|wip/i.test(v))
-    return { bg: "rgba(129,140,248,0.12)", fg: "#818cf8", dot: "#818cf8" };
-  if (/block|hold|risk|stall/i.test(v))
-    return { bg: "rgba(248,113,113,0.12)", fg: "#f87171", dot: "#f87171" };
-  if (/review|pending|approval/i.test(v))
-    return { bg: "rgba(251,191,36,0.12)", fg: "#fbbf24", dot: "#fbbf24" };
-  if (/not.?start|to.?do|open|new/i.test(v))
-    return { bg: "rgba(107,114,128,0.12)", fg: "#9ca3af", dot: "#6b7280" };
-  return { bg: "rgba(107,114,128,0.10)", fg: "#9ca3af", dot: "#6b7280" };
+  if (/done|complete|closed|delivered/i.test(v)) return "success";
+  if (/in.?progress|active|ongoing|wip/i.test(v)) return "brand";
+  if (/block|hold|risk|stall/i.test(v)) return "error";
+  if (/review|pending|approval/i.test(v)) return "warning";
+  return "neutral";
 }
 
+// Priority has four severity tiers but the token system only defines three
+// status ramps (error/warning/success) — critical and high both read as
+// urgent so they share the error/warning boundary via bg intensity (-100 vs
+// -50) rather than inventing a fourth colour family.
 function priorityStyle(text: string) {
-  if (/critical|p0|urgent/i.test(text)) return { bg: "rgba(248,113,113,0.15)", fg: "#f87171" };
-  if (/high|p1/i.test(text))            return { bg: "rgba(251,146,60,0.15)",  fg: "#fb923c" };
-  if (/medium|med|p2/i.test(text))      return { bg: "rgba(251,191,36,0.12)",  fg: "#fbbf24" };
-  if (/low|p3/i.test(text))             return { bg: "rgba(52,211,153,0.12)",  fg: "#34d399" };
-  return { bg: "rgba(107,114,128,0.10)", fg: "#9ca3af" };
+  if (/critical|p0|urgent/i.test(text)) return { bg: "bg-error-50", fg: "text-error-600" };
+  if (/high|p1/i.test(text))            return { bg: "bg-warning-100", fg: "text-warning-600" };
+  if (/medium|med|p2/i.test(text))      return { bg: "bg-warning-50", fg: "text-warning-600" };
+  if (/low|p3/i.test(text))             return { bg: "bg-success-50", fg: "text-success-600" };
+  return { bg: "bg-neutral-100", fg: "text-neutral-600" };
 }
 
 // ─── Small sub-components ─────────────────────────────────────────────────────
 
 function StatusPill({ text }: { text: string }) {
-  const s = statusStyle(text);
   return (
-    <span
-      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap"
-      style={{ backgroundColor: s.bg, color: s.fg }}
-    >
-      <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: s.dot }} />
+    <Badge variant={statusVariant(text)} dot>
       {text}
-    </span>
+    </Badge>
   );
 }
 
 function PriorityPill({ text }: { text: string }) {
   const s = priorityStyle(text);
   return (
-    <span
-      className="inline-flex px-2.5 py-1 rounded-md text-xs font-semibold uppercase tracking-wide"
-      style={{ backgroundColor: s.bg, color: s.fg }}
-    >
+    <span className={cn("inline-flex px-2.5 py-1 rounded-md text-[length:var(--font-size-xs)] font-semibold uppercase tracking-wide", s.bg, s.fg)}>
       {text}
     </span>
   );
@@ -181,9 +179,9 @@ function PriorityPill({ text }: { text: string }) {
 
 function OverdueBadge() {
   return (
-    <span className="ml-2 inline-flex px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-red-950 text-red-400 border border-red-900">
+    <Badge variant="error" className="ml-2">
       Overdue
-    </span>
+    </Badge>
   );
 }
 
@@ -191,20 +189,20 @@ function KPICard({ label, value, color }: {
   label: string; value: number | string; color: string;
 }) {
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-lg px-3 py-3 flex flex-col gap-0.5">
-      <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-500 truncate">{label}</p>
-      <p className="text-[22px] font-bold leading-none mt-0.5" style={{ color }}>{value}</p>
+    <div className="bg-neutral-100 border border-neutral-200 rounded-lg px-3 py-3 flex flex-col gap-0.5">
+      <p className="text-[length:var(--font-size-xs)] font-semibold uppercase tracking-widest text-fg-secondary truncate">{label}</p>
+      <p className="text-[length:var(--font-size-2xl)] font-bold leading-none mt-0.5" style={{ color }}>{value}</p>
     </div>
   );
 }
 
 function SkeletonRow({ cols, density }: { cols: number; density: "compact" | "comfortable" }) {
   return (
-    <tr className="border-b border-gray-800/60">
+    <tr className="border-b border-neutral-200">
       {Array.from({ length: cols + 1 }).map((_, i) => (
         <td key={i} className={`px-4 ${density === "compact" ? "py-2.5" : "py-3.5"}`}>
           <div
-            className="h-4 rounded bg-gray-800 animate-pulse"
+            className="h-4 rounded bg-neutral-200 animate-pulse"
             style={{ width: i === 0 ? "55%" : i === cols ? "24px" : `${60 + (i * 13) % 30}%` }}
           />
         </td>
@@ -218,21 +216,15 @@ function Toast({ toasts, dismiss }: { toasts: ToastItem[]; dismiss: (id: number)
   return (
     <div className="fixed bottom-6 right-6 flex flex-col gap-2 z-50 pointer-events-none">
       {toasts.map(t => (
-        <div
+        <Alert
           key={t.id}
-          className={`pointer-events-auto flex items-center gap-2.5 pl-4 pr-3 py-3 rounded-xl shadow-xl text-sm font-medium
-            ${t.type === "success"
-              ? "bg-gray-900 border border-emerald-800 text-emerald-300"
-              : "bg-gray-900 border border-red-800 text-red-300"}`}
+          variant={t.type === "success" ? "success" : "error"}
+          icon={t.type === "success" ? <Check size={14} /> : <AlertCircle size={14} />}
+          onDismiss={() => dismiss(t.id)}
+          className="pointer-events-auto shadow-xl"
         >
-          {t.type === "success"
-            ? <Check size={14} className="text-emerald-400 shrink-0" />
-            : <AlertCircle size={14} className="text-red-400 shrink-0" />}
-          <span>{t.msg}</span>
-          <button onClick={() => dismiss(t.id)} className="ml-1 text-gray-600 hover:text-gray-400 transition-colors">
-            <X size={13} />
-          </button>
-        </div>
+          {t.msg}
+        </Alert>
       ))}
     </div>
   );
@@ -402,7 +394,7 @@ export function ProjectTracker() {
   };
 
   const renderCell = (cell: string, colIdx: number, row: string[]) => {
-    if (!data) return <span className="text-gray-300">{cell}</span>;
+    if (!data) return <span className="text-fg-primary">{cell}</span>;
     const header = data.table.headers[colIdx] ?? "";
     const type = colType(header);
 
@@ -412,12 +404,12 @@ export function ProjectTracker() {
       return <StatusPill text={display} />;
     }
 
-    if (!cell) return <span className="text-gray-700">—</span>;
+    if (!cell) return <span className="text-neutral-400">—</span>;
     if (type === "status") return <StatusPill text={cell} />;
     if (type === "priority") return <PriorityPill text={cell} />;
     if (type === "date") {
       return (
-        <span className="text-gray-400 text-sm whitespace-nowrap">
+        <span className="text-fg-secondary text-[length:var(--font-size-md)] whitespace-nowrap">
           {cell}
           {isOverdue(cell, row, data.table.headers, header) && <OverdueBadge />}
         </span>
@@ -452,14 +444,14 @@ export function ProjectTracker() {
           target="_blank"
           rel="noopener noreferrer"
           onClick={e => e.stopPropagation()}
-          className="inline-flex items-center gap-1.5 text-indigo-400 hover:text-indigo-300 text-sm font-medium transition-colors group/link"
+          className="inline-flex items-center gap-1.5 text-brand-500 hover:text-brand-600 text-[length:var(--font-size-md)] font-medium transition-colors duration-200 ease-in-out group/link"
         >
           <span>{label}</span>
           <ExternalLink size={11} className="shrink-0 opacity-50 group-hover/link:opacity-100 transition-opacity" />
         </a>
       );
     }
-    return <span className="text-gray-300 text-sm">{cell}</span>;
+    return <span className="text-fg-primary text-[length:var(--font-size-md)]">{cell}</span>;
   };
 
   const syncLabel = lastSynced
@@ -487,27 +479,24 @@ export function ProjectTracker() {
   if (error) {
     const isConfig = error.includes("not configured");
     return (
-      <div className="bg-gray-900 border border-red-900/60 rounded-xl p-6 max-w-xl">
-        <div className="flex items-start gap-3">
-          <AlertCircle size={18} className="text-red-400 mt-0.5 shrink-0" />
-          <div>
-            <p className="text-red-400 font-semibold text-sm mb-1">
-              {isConfig ? "Confluence not configured" : "Failed to load data"}
-            </p>
-            {isConfig ? (
-              <div className="text-gray-400 text-sm space-y-2">
-                <p>Add to <code className="text-indigo-400 bg-gray-800 px-1 rounded">.env.local</code> then restart:</p>
-                <pre className="bg-gray-800 rounded-lg p-3 text-xs text-gray-300">{`CONFLUENCE_EMAIL=bhargav.nath@vantagecircle.com
+      <Alert
+        variant="error"
+        icon={<AlertCircle size={18} />}
+        title={isConfig ? "Confluence not configured" : "Failed to load data"}
+        className="max-w-xl"
+      >
+        {isConfig ? (
+          <div className="space-y-2">
+            <p>Add to <code className="text-brand-600 bg-neutral-100 px-1 rounded-xs">.env.local</code> then restart:</p>
+            <pre className="bg-neutral-100 rounded-lg p-3 text-[length:var(--font-size-xs)] text-fg-primary">{`CONFLUENCE_EMAIL=bhargav.nath@vantagecircle.com
 CONFLUENCE_API_TOKEN=<from id.atlassian.com>
 CONFLUENCE_DOMAIN=vantagecirclejira.atlassian.net
 CONFLUENCE_PAGE_ID=567050244`}</pre>
-              </div>
-            ) : (
-              <p className="text-gray-500 text-sm">{error}</p>
-            )}
           </div>
-        </div>
-      </div>
+        ) : (
+          <p>{error}</p>
+        )}
+      </Alert>
     );
   }
 
@@ -518,40 +507,30 @@ CONFLUENCE_PAGE_ID=567050244`}</pre>
       {/* Page header */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-white text-2xl font-semibold">Confluence Project Dev Tracker</h1>
-          <p className="text-gray-500 text-sm mt-1">
+          <h1 className="text-fg-primary text-[length:var(--font-size-2xl)] font-semibold">Confluence Project Dev Tracker</h1>
+          <p className="text-fg-secondary text-[length:var(--font-size-md)] mt-1">
             {loading
               ? "Loading from Confluence…"
               : `${kpis?.total ?? 0} items · ${syncLabel}`}
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <button
-            onClick={fetchPage}
-            disabled={loading}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white text-sm transition-colors disabled:opacity-50"
-          >
+          <Button variant="neutral" onClick={fetchPage} disabled={loading}>
             <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
             Refresh
-          </button>
+          </Button>
           {data?.url && (
-            <a
-              href={data.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white text-sm transition-colors"
-            >
-              <ExternalLink size={14} />
-              Open in Confluence
-            </a>
+            <Button variant="neutral" asChild>
+              <a href={data.url} target="_blank" rel="noopener noreferrer">
+                <ExternalLink size={14} />
+                Open in Confluence
+              </a>
+            </Button>
           )}
-          <button
-            onClick={() => { setShowAddRow(v => !v); setEditRowIdx(null); setDeleteConfirm(null); }}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition-colors"
-          >
+          <Button onClick={() => { setShowAddRow(v => !v); setEditRowIdx(null); setDeleteConfirm(null); }}>
             <Plus size={14} />
             Add Row
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -559,17 +538,17 @@ CONFLUENCE_PAGE_ID=567050244`}</pre>
       <div className="grid grid-cols-7 gap-2">
         {loading ? (
           Array.from({ length: 7 }).map((_, i) => (
-            <div key={i} className="bg-gray-900 border border-gray-800 rounded-lg px-3 py-3 h-16 animate-pulse" />
+            <div key={i} className="bg-neutral-100 border border-neutral-200 rounded-lg px-3 py-3 h-16 animate-pulse" />
           ))
         ) : kpis ? (
           <>
-            <KPICard label="Total"       value={kpis.total}      color="#e5e7eb" />
-            <KPICard label="Not Started" value={kpis.notStarted} color="#6b7280" />
-            <KPICard label="To Do"       value={kpis.todo}       color="#60a5fa" />
-            <KPICard label="In Progress" value={kpis.inProgress} color="#818cf8" />
-            <KPICard label="Blocked"     value={kpis.blocked}    color={kpis.blocked > 0 ? "#f87171" : "#6b7280"} />
-            <KPICard label="Overdue"     value={kpis.overdue}    color={kpis.overdue > 0 ? "#fb923c" : "#6b7280"} />
-            <KPICard label="Done"        value={kpis.done}       color="#34d399" />
+            <KPICard label="Total"       value={kpis.total}      color="var(--text-primary)" />
+            <KPICard label="Not Started" value={kpis.notStarted} color="var(--neutral-500)" />
+            <KPICard label="To Do"       value={kpis.todo}       color="var(--info-400)" />
+            <KPICard label="In Progress" value={kpis.inProgress} color="var(--brand-400)" />
+            <KPICard label="Blocked"     value={kpis.blocked}    color={kpis.blocked > 0 ? "var(--error-400)" : "var(--neutral-400)"} />
+            <KPICard label="Overdue"     value={kpis.overdue}    color={kpis.overdue > 0 ? "var(--warning-400)" : "var(--neutral-400)"} />
+            <KPICard label="Done"        value={kpis.done}       color="var(--success-400)" />
           </>
         ) : null}
       </div>
@@ -577,17 +556,17 @@ CONFLUENCE_PAGE_ID=567050244`}</pre>
       {/* Filter + search toolbar */}
       <div className="flex items-center gap-3 flex-wrap">
         <div className="relative flex-1 min-w-48">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
-          <input
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-secondary pointer-events-none" />
+          <Input
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Search anything…"
-            className="w-full pl-9 pr-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-shadow"
+            className="pl-9 pr-9"
           />
           {search && (
             <button
               onClick={() => setSearch("")}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-fg-secondary hover:text-fg-primary transition-colors duration-200 ease-in-out"
             >
               <X size={13} />
             </button>
@@ -598,32 +577,38 @@ CONFLUENCE_PAGE_ID=567050244`}</pre>
           <select
             value={statusFilter}
             onChange={e => setStatusFilter(e.target.value)}
-            className="px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="px-3 py-2 bg-surface-card border border-neutral-300 rounded-[8px] text-[length:var(--font-size-md)] text-fg-primary focus:outline-none focus:border-brand-500 focus:shadow-[0_0_0_4px_var(--color-focus)] transition-colors duration-200 ease-in-out"
           >
             <option value="all">All statuses</option>
             {statusValues.map(v => <option key={v} value={v}>{v}</option>)}
           </select>
         )}
 
-        <div className="flex items-center gap-0.5 bg-gray-800 border border-gray-700 rounded-lg p-1">
+        <div className="flex items-center gap-0.5 bg-neutral-100 border border-neutral-300 rounded-lg p-1">
           <button
             onClick={() => setDensity("comfortable")}
             title="Comfortable"
-            className={`p-1.5 rounded transition-colors ${density === "comfortable" ? "bg-gray-700 text-white" : "text-gray-500 hover:text-white"}`}
+            className={cn(
+              "p-1.5 rounded-[6px] transition-colors duration-200 ease-in-out",
+              density === "comfortable" ? "bg-surface-card text-fg-primary shadow-xs" : "text-fg-secondary hover:text-fg-primary"
+            )}
           >
             <LayoutGrid size={14} />
           </button>
           <button
             onClick={() => setDensity("compact")}
             title="Compact"
-            className={`p-1.5 rounded transition-colors ${density === "compact" ? "bg-gray-700 text-white" : "text-gray-500 hover:text-white"}`}
+            className={cn(
+              "p-1.5 rounded-[6px] transition-colors duration-200 ease-in-out",
+              density === "compact" ? "bg-surface-card text-fg-primary shadow-xs" : "text-fg-secondary hover:text-fg-primary"
+            )}
           >
             <AlignJustify size={14} />
           </button>
         </div>
 
         {(search || statusFilter !== "all") && (
-          <span className="text-xs text-gray-500">
+          <span className="text-[length:var(--font-size-xs)] text-fg-secondary">
             {displayRows.length} of {kpis?.total ?? 0} shown
           </span>
         )}
@@ -631,10 +616,10 @@ CONFLUENCE_PAGE_ID=567050244`}</pre>
 
       {/* Add Row form */}
       {showAddRow && headers.length > 0 && (
-        <div className="bg-gray-900 border border-indigo-800/50 rounded-xl p-5">
+        <div className="bg-surface-card border border-brand-200 rounded-xl p-5 shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-white font-semibold text-sm">New Row</h3>
-            <button onClick={() => setShowAddRow(false)} className="text-gray-500 hover:text-white transition-colors">
+            <h3 className="text-fg-primary font-semibold text-[length:var(--font-size-md)]">New Row</h3>
+            <button onClick={() => setShowAddRow(false)} className="text-fg-secondary hover:text-fg-primary transition-colors duration-200 ease-in-out">
               <X size={16} />
             </button>
           </div>
@@ -645,7 +630,7 @@ CONFLUENCE_PAGE_ID=567050244`}</pre>
               const isStatus = type === "status";
               return (
                 <div key={i}>
-                  <label className="block text-xs text-gray-500 mb-1">{h}</label>
+                  <label className="block text-[length:var(--font-size-xs)] text-fg-secondary mb-1">{h}</label>
                   {isStatus ? (
                     <select
                       value={newCells[i] ?? ""}
@@ -654,7 +639,7 @@ CONFLUENCE_PAGE_ID=567050244`}</pre>
                         n[i] = e.target.value;
                         return n;
                       })}
-                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full px-3 py-2 bg-surface-card border border-neutral-300 rounded-[8px] text-[length:var(--font-size-md)] text-fg-primary focus:outline-none focus:border-brand-500 focus:shadow-[0_0_0_4px_var(--color-focus)] transition-colors duration-200 ease-in-out"
                     >
                       <option value="">—</option>
                       {STATUS_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
@@ -663,7 +648,7 @@ CONFLUENCE_PAGE_ID=567050244`}</pre>
                       )}
                     </select>
                   ) : (
-                    <input
+                    <Input
                       type={isDate ? "date" : "text"}
                       value={isDate ? dmyToIso(newCells[i] ?? "") : (newCells[i] ?? "")}
                       onChange={e => setNewCells(prev => {
@@ -672,7 +657,7 @@ CONFLUENCE_PAGE_ID=567050244`}</pre>
                         return n;
                       })}
                       placeholder={isDate ? "" : h}
-                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="px-3 py-2"
                     />
                   )}
                 </div>
@@ -680,36 +665,29 @@ CONFLUENCE_PAGE_ID=567050244`}</pre>
             })}
           </div>
           <div className="flex justify-end gap-2">
-            <button
-              onClick={() => setShowAddRow(false)}
-              className="px-4 py-2 text-sm text-gray-400 hover:text-white rounded-lg hover:bg-gray-800 transition-colors"
-            >
+            <Button variant="neutral" onClick={() => setShowAddRow(false)}>
               Cancel
-            </button>
-            <button
-              onClick={() => handleSave("append_row", newCells)}
-              disabled={saving}
-              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg transition-colors disabled:opacity-50"
-            >
+            </Button>
+            <Button onClick={() => handleSave("append_row", newCells)} disabled={saving}>
               {saving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
               Add to Confluence
-            </button>
+            </Button>
           </div>
         </div>
       )}
 
       {/* Table */}
-      <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+      <div className="bg-surface-card border border-neutral-200 rounded-xl overflow-hidden shadow-sm">
         <div className="overflow-auto max-h-[72vh] hide-scrollbar">
-          <table className="w-full text-sm">
+          <table className="w-full text-[length:var(--font-size-md)]">
 
             {/* Header — sticky on vertical scroll */}
             <thead className="sticky top-0 z-20">
-              <tr className="border-b border-gray-800">
+              <tr className="border-b border-neutral-200">
                 {loading ? (
                   Array.from({ length: 6 }).map((_, i) => (
-                    <th key={i} className="px-4 py-3 bg-gray-900">
-                      <div className="h-3 rounded bg-gray-800 animate-pulse w-16" />
+                    <th key={i} className="px-4 py-3 bg-surface-card">
+                      <div className="h-3 rounded bg-neutral-200 animate-pulse w-16" />
                     </th>
                   ))
                 ) : (
@@ -718,22 +696,22 @@ CONFLUENCE_PAGE_ID=567050244`}</pre>
                       <th
                         key={ci}
                         onClick={() => cycleSort(ci)}
-                        className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-gray-500 cursor-pointer hover:text-gray-300 select-none whitespace-nowrap transition-colors bg-gray-900"
+                        className="text-left px-4 py-3 text-[length:var(--font-size-xs)] font-semibold uppercase tracking-wide text-fg-secondary cursor-pointer hover:text-fg-primary select-none whitespace-nowrap transition-colors duration-200 ease-in-out bg-surface-card"
                       >
                         <span className="inline-flex items-center gap-1">
                           {headers[ci]}
                           {sort.col === ci ? (
                             sort.dir === "asc"
-                              ? <ChevronUp size={11} className="text-indigo-400" />
-                              : <ChevronDown size={11} className="text-indigo-400" />
+                              ? <ChevronUp size={11} className="text-brand-500" />
+                              : <ChevronDown size={11} className="text-brand-500" />
                           ) : (
-                            <ChevronsUpDown size={11} className="text-gray-700" />
+                            <ChevronsUpDown size={11} className="text-neutral-400" />
                           )}
                         </span>
                       </th>
                     ))}
                     {/* Actions — pinned to the right + top corner */}
-                    <th className="px-4 py-3 w-24 text-right text-[11px] font-semibold uppercase tracking-wide text-gray-500 sticky right-0 z-30 bg-gray-900">
+                    <th className="px-4 py-3 w-24 text-right text-[length:var(--font-size-xs)] font-semibold uppercase tracking-wide text-fg-secondary sticky right-0 z-30 bg-surface-card">
                       Actions
                     </th>
                   </>
@@ -751,12 +729,12 @@ CONFLUENCE_PAGE_ID=567050244`}</pre>
                 <tr>
                   <td colSpan={visibleIdx.length + 1} className="px-4 py-16 text-center">
                     <div className="text-4xl mb-3">🗂️</div>
-                    <p className="text-gray-400 font-medium text-sm">
+                    <p className="text-fg-primary font-medium text-[length:var(--font-size-md)]">
                       {search || statusFilter !== "all"
                         ? "No rows match your filters"
                         : "Nothing tracked yet"}
                     </p>
-                    <p className="text-gray-600 text-xs mt-1">
+                    <p className="text-fg-secondary text-[length:var(--font-size-xs)] mt-1">
                       {search || statusFilter !== "all"
                         ? "Clear the search or filter to see all rows"
                         : "Click \"Add Row\" to add the first item"}
@@ -772,7 +750,7 @@ CONFLUENCE_PAGE_ID=567050244`}</pre>
                   // Inline edit row
                   if (isEditing) {
                     return (
-                      <tr key={origIdx} className="border-b border-gray-800 bg-indigo-950/20">
+                      <tr key={origIdx} className="border-b border-neutral-200 bg-brand-25">
                         {visibleIdx.map((ci) => {
                           const cell = editCells[ci] ?? "";
                           const type = colType(data?.table.headers[ci] ?? "");
@@ -788,7 +766,7 @@ CONFLUENCE_PAGE_ID=567050244`}</pre>
                                     n[ci] = e.target.value;
                                     return n;
                                   })}
-                                  className="w-full min-w-[72px] px-2 py-1.5 bg-gray-800 border border-gray-700 rounded-md text-sm text-gray-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                  className="w-full min-w-[72px] px-2 py-1.5 bg-surface-card border border-neutral-300 rounded-md text-[length:var(--font-size-md)] text-fg-primary focus:outline-none focus:border-brand-500 focus:shadow-[0_0_0_4px_var(--color-focus)] transition-colors duration-200 ease-in-out"
                                 >
                                   <option value="">—</option>
                                   {STATUS_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
@@ -805,25 +783,25 @@ CONFLUENCE_PAGE_ID=567050244`}</pre>
                                     n[ci] = isDate ? isoToDmy(e.target.value) : e.target.value;
                                     return n;
                                   })}
-                                  className="w-full min-w-[72px] px-2 py-1.5 bg-gray-800 border border-gray-700 rounded-md text-sm text-gray-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                  className="w-full min-w-[72px] px-2 py-1.5 bg-surface-card border border-neutral-300 rounded-md text-[length:var(--font-size-md)] text-fg-primary focus:outline-none focus:border-brand-500 focus:shadow-[0_0_0_4px_var(--color-focus)] transition-colors duration-200 ease-in-out"
                                 />
                               )}
                             </td>
                           );
                         })}
-                        <td className={`px-3 ${density === "compact" ? "py-2" : "py-2.5"} sticky right-0 z-10 bg-indigo-950/60`}>
+                        <td className={`px-3 ${density === "compact" ? "py-2" : "py-2.5"} sticky right-0 z-10 bg-brand-25`}>
                           <div className="flex items-center gap-1">
                             <button
                               onClick={() => handleSave("edit_row", editCells, origIdx)}
                               disabled={saving}
-                              className="p-1.5 rounded-md text-emerald-400 hover:bg-gray-800 transition-colors disabled:opacity-50"
+                              className="p-1.5 rounded-md text-success-600 hover:bg-neutral-100 transition-colors duration-200 ease-in-out disabled:opacity-50"
                               title="Save"
                             >
                               {saving ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}
                             </button>
                             <button
                               onClick={() => setEditRowIdx(null)}
-                              className="p-1.5 rounded-md text-gray-500 hover:text-white hover:bg-gray-800 transition-colors"
+                              className="p-1.5 rounded-md text-fg-secondary hover:text-fg-primary hover:bg-neutral-100 transition-colors duration-200 ease-in-out"
                               title="Cancel"
                             >
                               <X size={13} />
@@ -837,26 +815,24 @@ CONFLUENCE_PAGE_ID=567050244`}</pre>
                   // Delete confirm row
                   if (isDeleting) {
                     return (
-                      <tr key={origIdx} className="border-b border-gray-800 bg-red-950/20">
+                      <tr key={origIdx} className="border-b border-neutral-200 bg-error-25">
                         <td colSpan={visibleIdx.length + 1} className={`px-4 ${density === "compact" ? "py-2.5" : "py-3.5"}`}>
                           <div className="flex items-center gap-3">
-                            <AlertCircle size={14} className="text-red-400 shrink-0" />
-                            <span className="text-sm text-red-300">Delete this row from Confluence? This cannot be undone.</span>
+                            <AlertCircle size={14} className="text-error-600 shrink-0" />
+                            <span className="text-[length:var(--font-size-md)] text-error-600">Delete this row from Confluence? This cannot be undone.</span>
                             <div className="flex items-center gap-2 ml-auto shrink-0">
-                              <button
-                                onClick={() => setDeleteConfirm(null)}
-                                className="px-3 py-1 text-xs text-gray-400 hover:text-white rounded hover:bg-gray-800 transition-colors"
-                              >
+                              <Button variant="neutral" size="sm" onClick={() => setDeleteConfirm(null)}>
                                 Cancel
-                              </button>
-                              <button
+                              </Button>
+                              <Button
+                                variant="danger"
+                                size="sm"
                                 onClick={() => handleSave("delete_row", [], origIdx)}
                                 disabled={saving}
-                                className="flex items-center gap-1.5 px-3 py-1 text-xs text-white font-semibold bg-red-700 hover:bg-red-600 rounded transition-colors disabled:opacity-50"
                               >
                                 {saving ? <Loader2 size={11} className="animate-spin" /> : <Trash2 size={11} />}
                                 Delete
-                              </button>
+                              </Button>
                             </div>
                           </div>
                         </td>
@@ -868,7 +844,7 @@ CONFLUENCE_PAGE_ID=567050244`}</pre>
                   return (
                     <tr
                       key={origIdx}
-                      className={`border-b border-gray-800 last:border-0 hover:bg-gray-800/40 transition-colors group ${density === "compact" ? "h-10" : "h-14"}`}
+                      className={`border-b border-neutral-200 last:border-0 hover:bg-neutral-100 transition-colors duration-200 ease-in-out group ${density === "compact" ? "h-10" : "h-14"}`}
                     >
                       {visibleIdx.map((ci) => (
                         <td key={ci} className={`px-4 ${density === "compact" ? "py-2" : "py-3.5"} max-w-[260px]`}>
@@ -877,18 +853,18 @@ CONFLUENCE_PAGE_ID=567050244`}</pre>
                           </div>
                         </td>
                       ))}
-                      <td className={`px-3 ${density === "compact" ? "py-2" : "py-3.5"} sticky right-0 z-10 bg-gray-900 group-hover:bg-[#171c26]`}>
+                      <td className={`px-3 ${density === "compact" ? "py-2" : "py-3.5"} sticky right-0 z-10 bg-surface-card group-hover:bg-neutral-100`}>
                         <div className="flex items-center justify-end gap-1">
                           <button
                             onClick={() => startEdit(origIdx)}
-                            className="p-1.5 rounded-md text-gray-400 hover:text-indigo-400 hover:bg-gray-800 transition-colors"
+                            className="p-1.5 rounded-md text-fg-secondary hover:text-brand-500 hover:bg-neutral-100 transition-colors duration-200 ease-in-out"
                             title="Edit row"
                           >
                             <Pencil size={13} />
                           </button>
                           <button
                             onClick={() => { setDeleteConfirm(origIdx); setEditRowIdx(null); }}
-                            className="p-1.5 rounded-md text-gray-400 hover:text-red-400 hover:bg-gray-800 transition-colors"
+                            className="p-1.5 rounded-md text-fg-secondary hover:text-error-600 hover:bg-neutral-100 transition-colors duration-200 ease-in-out"
                             title="Delete row"
                           >
                             <Trash2 size={13} />

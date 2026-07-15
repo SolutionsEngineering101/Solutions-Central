@@ -8,7 +8,7 @@ export default function TrackerPage() {
       <div className="mb-5">
         <Link
           href="/sprint"
-          className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-white transition-colors"
+          className="inline-flex items-center gap-1.5 text-sm text-fg-secondary hover:text-fg-primary transition-colors duration-200 ease-in-out"
         >
           ← Project Tracker
         </Link>

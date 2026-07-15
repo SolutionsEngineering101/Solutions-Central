@@ -52,11 +52,11 @@ function monthBucket(when?: string): { key: string; label: string; sort: number 
 
 function SkeletonCard() {
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 animate-pulse">
-      <div className="h-4 bg-gray-800 rounded w-3/4 mb-3" />
-      <div className="h-3 bg-gray-800 rounded w-full mb-2" />
-      <div className="h-3 bg-gray-800 rounded w-5/6 mb-4" />
-      <div className="h-3 bg-gray-800 rounded w-1/3" />
+    <div className="bg-surface-card border border-neutral-200 rounded-xl shadow-sm p-5 animate-pulse">
+      <div className="h-4 bg-neutral-100 rounded w-3/4 mb-3" />
+      <div className="h-3 bg-neutral-100 rounded w-full mb-2" />
+      <div className="h-3 bg-neutral-100 rounded w-5/6 mb-4" />
+      <div className="h-3 bg-neutral-100 rounded w-1/3" />
     </div>
   );
 }
@@ -268,17 +268,17 @@ export function TechDocs() {
     return (
       <div
         key={page.id}
-        className={`rounded-xl flex flex-col transition-all p-5 ${
+        className={`rounded-xl flex flex-col transition-all duration-200 ease-in-out p-5 ${
           active
-            ? "bg-indigo-950/40 border-2 border-indigo-600"
-            : "bg-gray-900 border border-gray-800 hover:border-indigo-700/60 hover:bg-gray-800/50"
+            ? "bg-brand-25 border-2 border-brand-500"
+            : "bg-surface-card border border-neutral-200 shadow-sm hover:border-brand-300 hover:shadow-md"
         }`}
       >
         {/* Title row: clickable title + three-dot button side by side */}
         <div className="flex items-start gap-2 mb-2">
           <p
             onClick={() => openDoc(page.id)}
-            className={`font-semibold text-sm leading-snug line-clamp-2 flex-1 cursor-pointer transition-colors ${active ? "text-indigo-300" : "text-white hover:text-indigo-300"}`}
+            className={`font-semibold text-sm leading-snug line-clamp-2 flex-1 cursor-pointer transition-colors duration-200 ease-in-out ${active ? "text-brand-600" : "text-fg-primary hover:text-brand-600"}`}
           >
             {page.title}
           </p>
@@ -287,7 +287,7 @@ export function TechDocs() {
           <button
             type="button"
             onClick={e => { e.stopPropagation(); toggleMenu(page.id, e.currentTarget); }}
-            className={`p-1 rounded-md transition-colors shrink-0 ${menuOpen ? "bg-gray-700 text-white" : "text-gray-500 hover:text-white hover:bg-gray-700"}`}
+            className={`p-1 rounded-md transition-colors duration-200 ease-in-out shrink-0 ${menuOpen ? "bg-neutral-200 text-fg-primary" : "text-fg-secondary hover:text-fg-primary hover:bg-neutral-100"}`}
           >
             <MoreVertical size={15} />
           </button>
@@ -296,9 +296,9 @@ export function TechDocs() {
         {/* Excerpt + date — clickable */}
         <div onClick={() => openDoc(page.id)} className="cursor-pointer">
           {page.excerpt && (
-            <p className="text-gray-500 text-xs line-clamp-2 mb-3">{page.excerpt}</p>
+            <p className="text-fg-secondary text-xs line-clamp-2 mb-3">{page.excerpt}</p>
           )}
-          <p className="text-gray-600 text-xs">
+          <p className="text-fg-secondary/70 text-xs">
             {page.version.when ? formatWhen(page.version.when) : ""}
             {page.version.by?.displayName ? ` · ${page.version.by.displayName}` : ""}
           </p>
@@ -309,16 +309,16 @@ export function TechDocs() {
 
   if (notConfigured) {
     return (
-      <div className="bg-gray-900 border border-gray-800 rounded-xl p-8 max-w-xl">
+      <div className="bg-surface-card border border-neutral-200 rounded-xl shadow-sm p-8 max-w-xl">
         <div className="flex items-start gap-3">
-          <AlertCircle size={18} className="text-amber-400 mt-0.5 shrink-0" />
+          <AlertCircle size={18} className="text-warning-500 mt-0.5 shrink-0" />
           <div>
-            <p className="text-white font-semibold text-sm mb-2">Tech Docs not configured</p>
-            <p className="text-gray-400 text-sm">
-              Add <code className="text-indigo-400 bg-gray-800 px-1 rounded">CONFLUENCE_SPACE_KEY=&lt;key&gt;</code> to{" "}
-              <code className="text-indigo-400 bg-gray-800 px-1 rounded">.env.local</code> and restart.
+            <p className="text-fg-primary font-semibold text-sm mb-2">Tech Docs not configured</p>
+            <p className="text-fg-secondary text-sm">
+              Add <code className="text-brand-600 bg-neutral-100 px-1 rounded">CONFLUENCE_SPACE_KEY=&lt;key&gt;</code> to{" "}
+              <code className="text-brand-600 bg-neutral-100 px-1 rounded">.env.local</code> and restart.
             </p>
-            <p className="text-gray-600 text-xs mt-1">Space key appears in Confluence URLs: <code className="bg-gray-800 px-1 rounded">/wiki/spaces/YOURKEY/…</code></p>
+            <p className="text-fg-secondary/70 text-xs mt-1">Space key appears in Confluence URLs: <code className="bg-neutral-100 px-1 rounded">/wiki/spaces/YOURKEY/…</code></p>
           </div>
         </div>
       </div>
@@ -329,10 +329,10 @@ export function TechDocs() {
     <>
       {/* Scoped styles for rendered Confluence HTML */}
       <style>{`
-        .conf-body { color: #d1d5db; line-height: 1.75; }
-        .conf-body a { color: #818cf8; text-decoration: underline; }
+        .conf-body { color: var(--text-primary); line-height: 1.75; }
+        .conf-body a { color: var(--brand-500); text-decoration: underline; }
         .conf-body h1, .conf-body h2, .conf-body h3, .conf-body h4 {
-          color: #fff; font-weight: 600; margin: 1.25rem 0 0.6rem;
+          color: var(--text-primary); font-weight: 600; margin: 1.25rem 0 0.6rem;
         }
         .conf-body h1 { font-size: 1.35rem; }
         .conf-body h2 { font-size: 1.15rem; }
@@ -341,14 +341,14 @@ export function TechDocs() {
         .conf-body ul, .conf-body ol { padding-left: 1.5rem; margin-bottom: 0.75rem; }
         .conf-body li { margin-bottom: 0.2rem; }
         .conf-body table { width: 100%; border-collapse: collapse; margin-bottom: 1rem; font-size: 0.83rem; }
-        .conf-body td, .conf-body th { border: 1px solid #374151; padding: 0.45rem 0.7rem; }
-        .conf-body th { background: #1f2937; color: #9ca3af; font-weight: 600; }
-        .conf-body code { background: #1f2937; border: 1px solid #374151; border-radius: 0.25rem; font-family: ui-monospace,monospace; font-size: 0.78rem; padding: 0.1rem 0.3rem; }
-        .conf-body pre  { background: #1f2937; border: 1px solid #374151; border-radius: 0.5rem; font-family: ui-monospace,monospace; font-size: 0.78rem; padding: 1rem; overflow-x: auto; margin-bottom: 1rem; }
+        .conf-body td, .conf-body th { border: 1px solid var(--neutral-300); padding: 0.45rem 0.7rem; }
+        .conf-body th { background: var(--neutral-100); color: var(--text-secondary); font-weight: 600; }
+        .conf-body code { background: var(--neutral-100); border: 1px solid var(--neutral-300); border-radius: 0.25rem; font-family: ui-monospace,monospace; font-size: 0.78rem; padding: 0.1rem 0.3rem; }
+        .conf-body pre  { background: var(--neutral-100); border: 1px solid var(--neutral-300); border-radius: 0.5rem; font-family: ui-monospace,monospace; font-size: 0.78rem; padding: 1rem; overflow-x: auto; margin-bottom: 1rem; }
         .conf-body pre code { background: none; border: none; padding: 0; }
-        .conf-body blockquote { border-left: 3px solid #4f46e5; padding-left: 1rem; margin: 0 0 0.75rem; color: #9ca3af; }
+        .conf-body blockquote { border-left: 3px solid var(--brand-500); padding-left: 1rem; margin: 0 0 0.75rem; color: var(--text-secondary); }
         .conf-body img { max-width: 100%; border-radius: 0.5rem; }
-        .conf-body hr  { border-color: #374151; margin: 1.5rem 0; }
+        .conf-body hr  { border-color: var(--neutral-300); margin: 1.5rem 0; }
       `}</style>
 
       {/* ── Page list (always visible) ─────────────────────────────────── */}
@@ -357,15 +357,15 @@ export function TechDocs() {
         {/* Header */}
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-3">
-            <BookOpen size={20} className="text-indigo-400" />
-            <h1 className="text-white text-2xl font-semibold">Tech Docs</h1>
+            <BookOpen size={20} className="text-brand-500" />
+            <h1 className="text-fg-primary text-2xl font-semibold">Tech Docs</h1>
             {!listLoading && pages.length > 0 && (
-              <span className="text-xs text-gray-500 bg-gray-800 px-2 py-0.5 rounded-full">{pages.length}</span>
+              <span className="text-xs text-fg-secondary bg-neutral-100 px-2 py-0.5 rounded-pill">{pages.length}</span>
             )}
           </div>
           <button
             onClick={() => { setPanelMode("new"); setSelectedId(null); setSelectedPage(null); setNewTitle(""); setNewContent(""); setSaveError(null); }}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white text-sm font-semibold rounded-lg transition-colors duration-200 ease-in-out"
           >
             <Plus size={14} />
             New Document
@@ -374,15 +374,15 @@ export function TechDocs() {
 
         {/* Search */}
         <div className="relative max-w-sm">
-          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
+          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-secondary pointer-events-none" />
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Search documents…"
-            className="w-full pl-9 pr-9 py-2.5 bg-gray-900 border border-gray-800 rounded-lg text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full pl-9 pr-9 py-2.5 bg-surface-card border border-neutral-300 rounded-lg text-sm text-fg-primary placeholder:text-fg-secondary focus:outline-none focus:border-brand-500 focus:shadow-[0_0_0_4px_var(--color-focus)] transition-colors duration-200 ease-in-out"
           />
           {search && (
-            <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors">
+            <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-fg-secondary hover:text-fg-primary transition-colors duration-150 ease-in-out">
               <X size={13} />
             </button>
           )}
@@ -390,9 +390,9 @@ export function TechDocs() {
 
         {/* Error */}
         {listError && (
-          <div className="flex items-start gap-2 bg-red-950 border border-red-800 rounded-lg p-4 max-w-xl">
-            <AlertCircle size={14} className="text-red-400 shrink-0 mt-0.5" />
-            <p className="text-red-400 text-sm">{listError}</p>
+          <div className="flex items-start gap-2 bg-error-25 border border-error-200 rounded-lg p-4 max-w-xl">
+            <AlertCircle size={14} className="text-error-500 shrink-0 mt-0.5" />
+            <p className="text-error-600 text-sm">{listError}</p>
           </div>
         )}
 
@@ -405,17 +405,17 @@ export function TechDocs() {
 
         {/* Empty state */}
         {!listLoading && !listError && pages.length === 0 && (
-          <div className="border border-dashed border-gray-700 rounded-xl p-16 text-center">
-            <FileText size={30} className="text-gray-700 mx-auto mb-3" />
-            <p className="text-gray-500 text-sm">No documents found in this space.</p>
+          <div className="border border-dashed border-neutral-300 rounded-xl p-16 text-center">
+            <FileText size={30} className="text-neutral-300 mx-auto mb-3" />
+            <p className="text-fg-secondary text-sm">No documents found in this space.</p>
           </div>
         )}
 
         {/* No results */}
         {!listLoading && pages.length > 0 && filteredPages.length === 0 && (
-          <div className="border border-dashed border-gray-700 rounded-xl p-12 text-center">
-            <Search size={26} className="text-gray-700 mx-auto mb-3" />
-            <p className="text-gray-500 text-sm">No documents match your search.</p>
+          <div className="border border-dashed border-neutral-300 rounded-xl p-12 text-center">
+            <Search size={26} className="text-neutral-300 mx-auto mb-3" />
+            <p className="text-fg-secondary text-sm">No documents match your search.</p>
           </div>
         )}
 
@@ -426,11 +426,11 @@ export function TechDocs() {
               <section key={group.label}>
                 {/* Bucket header */}
                 <div className="flex items-center gap-3 mb-4">
-                  <h2 className="text-sm font-semibold text-gray-300 whitespace-nowrap">{group.label}</h2>
-                  <span className="text-[11px] text-gray-500 bg-gray-800/60 px-2 py-0.5 rounded-full tabular-nums">
+                  <h2 className="text-sm font-semibold text-fg-primary whitespace-nowrap">{group.label}</h2>
+                  <span className="text-[11px] text-fg-secondary bg-neutral-100 px-2 py-0.5 rounded-pill tabular-nums">
                     {group.pages.length}
                   </span>
-                  <div className="flex-1 h-px bg-gradient-to-r from-gray-800 to-transparent" />
+                  <div className="flex-1 h-px bg-gradient-to-r from-neutral-200 to-transparent" />
                 </div>
                 {/* Cards in this bucket */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -451,25 +451,25 @@ export function TechDocs() {
           {/* Dropdown rendered fixed so overflow-y-auto on <main> can't clip it */}
           <div
             style={{ position: "fixed", top: menuPos.top, right: menuPos.right, zIndex: 999 }}
-            className="bg-gray-900 border border-gray-700 rounded-lg shadow-2xl py-1 w-56"
+            className="bg-surface-card border border-neutral-200 rounded-lg shadow-2xl py-1 w-56"
             onClick={e => e.stopPropagation()}
           >
             {deleteConfirmId === openMenuId ? (
               <div className="px-3 py-2.5">
-                <p className="text-gray-300 text-xs font-medium mb-0.5">Remove from view?</p>
-                <p className="text-gray-600 text-[11px] mb-2.5">The page stays in Confluence.</p>
+                <p className="text-fg-primary text-xs font-medium mb-0.5">Remove from view?</p>
+                <p className="text-fg-secondary/70 text-[11px] mb-2.5">The page stays in Confluence.</p>
                 <div className="flex gap-2">
                   <button
                     type="button"
                     onClick={() => setDeleteConfirmId(null)}
-                    className="flex-1 px-2 py-1.5 text-xs text-gray-400 hover:text-white rounded-md hover:bg-gray-800 transition-colors"
+                    className="flex-1 px-2 py-1.5 text-xs text-fg-secondary hover:text-fg-primary rounded-md hover:bg-neutral-100 transition-colors duration-200 ease-in-out"
                   >
                     Cancel
                   </button>
                   <button
                     type="button"
                     onClick={() => handleLocalDelete(openMenuId)}
-                    className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-xs text-white font-semibold bg-red-700 hover:bg-red-600 rounded-md transition-colors"
+                    className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-xs text-white font-semibold bg-error-500 hover:bg-error-600 rounded-md transition-colors duration-200 ease-in-out"
                   >
                     <Trash2 size={11} /> Remove
                   </button>
@@ -480,9 +480,9 @@ export function TechDocs() {
                 <button
                   type="button"
                   onClick={() => { openDocForEdit(openMenuId); closeMenu(); }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-800 transition-colors"
+                  className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-fg-secondary hover:text-fg-primary hover:bg-neutral-100 transition-colors duration-200 ease-in-out"
                 >
-                  <Edit2 size={13} className="text-gray-500" /> Edit
+                  <Edit2 size={13} className="text-fg-secondary" /> Edit
                 </button>
                 {pages.find(p => p.id === openMenuId)?.url && (
                   <a
@@ -490,16 +490,16 @@ export function TechDocs() {
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={closeMenu}
-                    className="flex items-center gap-2.5 px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-800 transition-colors"
+                    className="flex items-center gap-2.5 px-3 py-2 text-sm text-fg-secondary hover:text-fg-primary hover:bg-neutral-100 transition-colors duration-200 ease-in-out"
                   >
-                    <ExternalLink size={13} className="text-gray-500" /> Open in Confluence
+                    <ExternalLink size={13} className="text-fg-secondary" /> Open in Confluence
                   </a>
                 )}
-                <div className="border-t border-gray-800 my-1" />
+                <div className="border-t border-neutral-200 my-1" />
                 <button
                   type="button"
                   onClick={() => setDeleteConfirmId(openMenuId)}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-red-950/40 transition-colors"
+                  className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-error-600 hover:text-error-500 hover:bg-error-25 transition-colors duration-200 ease-in-out"
                 >
                   <Trash2 size={13} /> Remove from view
                 </button>
@@ -511,24 +511,24 @@ export function TechDocs() {
 
       {/* ── Backdrop ───────────────────────────────────────────────────── */}
       <div
-        className={`fixed inset-0 bg-black/30 z-40 transition-opacity duration-300 ${panelOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}
+        className={`fixed inset-0 bg-[var(--overlay-modal)] z-40 transition-opacity duration-300 ease-in-out ${panelOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}
         onClick={closePanel}
       />
 
       {/* ── Slide-in panel ─────────────────────────────────────────────── */}
       <div
-        className="fixed top-0 right-0 h-screen bg-gray-950 border-l border-gray-800 shadow-2xl z-50 flex flex-col transition-transform duration-300 ease-in-out"
+        className="fixed top-0 right-0 h-screen bg-surface-card border-l border-neutral-200 shadow-2xl z-50 flex flex-col transition-transform duration-300 ease-in-out"
         style={{ width: "62%", transform: panelOpen ? "translateX(0)" : "translateX(100%)" }}
       >
         {/* Panel header */}
-        <div className="flex items-center justify-between gap-4 px-6 py-4 border-b border-gray-800 shrink-0">
+        <div className="flex items-center justify-between gap-4 px-6 py-4 border-b border-neutral-200 shrink-0">
           <div className="min-w-0 flex-1">
-            {panelMode === "new" && <p className="text-white font-semibold text-sm">New Document</p>}
-            {panelMode === "edit" && <p className="text-indigo-400 font-semibold text-sm">Editing</p>}
+            {panelMode === "new" && <p className="text-fg-primary font-semibold text-sm">New Document</p>}
+            {panelMode === "edit" && <p className="text-brand-600 font-semibold text-sm">Editing</p>}
             {panelMode === "view" && (
               selectedPage
-                ? <p className="text-white font-semibold text-sm truncate">{selectedPage.title}</p>
-                : <div className="h-4 w-40 bg-gray-800 rounded animate-pulse" />
+                ? <p className="text-fg-primary font-semibold text-sm truncate">{selectedPage.title}</p>
+                : <div className="h-4 w-40 bg-neutral-100 rounded animate-pulse" />
             )}
           </div>
 
@@ -538,7 +538,7 @@ export function TechDocs() {
               <>
                 <button
                   onClick={startEdit}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white text-xs font-medium transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-fg-secondary hover:text-fg-primary text-xs font-medium transition-colors duration-200 ease-in-out"
                 >
                   <Edit2 size={12} /> Edit
                 </button>
@@ -546,7 +546,7 @@ export function TechDocs() {
                   href={selectedPage.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white text-xs font-medium transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-fg-secondary hover:text-fg-primary text-xs font-medium transition-colors duration-200 ease-in-out"
                 >
                   <ExternalLink size={12} /> Confluence
                 </a>
@@ -557,14 +557,14 @@ export function TechDocs() {
               <>
                 <button
                   onClick={() => { setPanelMode("view"); setSaveError(null); }}
-                  className="px-3 py-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 text-xs font-medium transition-colors"
+                  className="px-3 py-1.5 rounded-lg text-fg-secondary hover:text-fg-primary hover:bg-neutral-100 text-xs font-medium transition-colors duration-200 ease-in-out"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSave}
                   disabled={saving}
-                  className="flex items-center gap-1.5 px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg transition-colors disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-4 py-1.5 bg-brand-500 hover:bg-brand-600 text-white text-xs font-semibold rounded-lg transition-colors duration-200 ease-in-out disabled:opacity-50"
                 >
                   {saving ? <Loader2 size={12} className="animate-spin" /> : <Save size={12} />}
                   Save to Confluence
@@ -576,14 +576,14 @@ export function TechDocs() {
               <>
                 <button
                   onClick={closePanel}
-                  className="px-3 py-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 text-xs font-medium transition-colors"
+                  className="px-3 py-1.5 rounded-lg text-fg-secondary hover:text-fg-primary hover:bg-neutral-100 text-xs font-medium transition-colors duration-200 ease-in-out"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleCreate}
                   disabled={creating || !newTitle.trim()}
-                  className="flex items-center gap-1.5 px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg transition-colors disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-4 py-1.5 bg-brand-500 hover:bg-brand-600 text-white text-xs font-semibold rounded-lg transition-colors duration-200 ease-in-out disabled:opacity-50"
                 >
                   {creating ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />}
                   Create
@@ -592,7 +592,7 @@ export function TechDocs() {
             )}
             <button
               onClick={closePanel}
-              className="p-1.5 rounded-lg text-gray-500 hover:text-white hover:bg-gray-800 transition-colors ml-1"
+              className="p-1.5 rounded-lg text-fg-secondary hover:text-fg-primary hover:bg-neutral-100 transition-colors duration-200 ease-in-out ml-1"
             >
               <X size={16} />
             </button>
@@ -606,27 +606,27 @@ export function TechDocs() {
           {panelMode === "new" && (
             <>
               <div>
-                <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-500 mb-1.5">Title</label>
+                <label className="block text-[11px] font-semibold uppercase tracking-widest text-fg-secondary mb-1.5">Title</label>
                 <input
                   value={newTitle}
                   onChange={e => setNewTitle(e.target.value)}
                   placeholder="Document title"
-                  className="w-full px-4 py-2.5 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+                  className="w-full px-4 py-2.5 bg-surface-card border border-neutral-300 rounded-lg text-fg-primary placeholder:text-fg-secondary focus:outline-none focus:border-brand-500 focus:shadow-[0_0_0_4px_var(--color-focus)] transition-colors duration-200 ease-in-out text-sm"
                 />
               </div>
               <div className="flex-1 flex flex-col min-h-0">
-                <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-500 mb-1.5">Content</label>
+                <label className="block text-[11px] font-semibold uppercase tracking-widest text-fg-secondary mb-1.5">Content</label>
                 <textarea
                   value={newContent}
                   onChange={e => setNewContent(e.target.value)}
                   placeholder={"Write your document content here…\n\nSeparate paragraphs with a blank line."}
-                  className="flex-1 w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-gray-200 placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-mono resize-none"
+                  className="flex-1 w-full px-4 py-3 bg-surface-card border border-neutral-300 rounded-lg text-fg-primary placeholder:text-fg-secondary focus:outline-none focus:border-brand-500 focus:shadow-[0_0_0_4px_var(--color-focus)] transition-colors duration-200 ease-in-out text-sm font-mono resize-none"
                 />
               </div>
               {saveError && (
-                <div className="flex items-start gap-2 bg-red-950 border border-red-800 rounded-lg p-3 shrink-0">
-                  <AlertCircle size={14} className="text-red-400 shrink-0 mt-0.5" />
-                  <p className="text-red-400 text-sm">{saveError}</p>
+                <div className="flex items-start gap-2 bg-error-25 border border-error-200 rounded-lg p-3 shrink-0">
+                  <AlertCircle size={14} className="text-error-500 shrink-0 mt-0.5" />
+                  <p className="text-error-600 text-sm">{saveError}</p>
                 </div>
               )}
             </>
@@ -636,15 +636,15 @@ export function TechDocs() {
           {panelMode === "view" && (
             <div className="flex-1 overflow-y-auto">
               {pageLoading && (
-                <div className="flex items-center justify-center h-48 gap-3 text-gray-500">
+                <div className="flex items-center justify-center h-48 gap-3 text-fg-secondary">
                   <Loader2 size={18} className="animate-spin" />
                   <span className="text-sm">Loading document…</span>
                 </div>
               )}
               {pageError && (
-                <div className="flex items-start gap-2 bg-red-950 border border-red-800 rounded-lg p-4">
-                  <AlertCircle size={14} className="text-red-400 shrink-0 mt-0.5" />
-                  <p className="text-red-400 text-sm">{pageError}</p>
+                <div className="flex items-start gap-2 bg-error-25 border border-error-200 rounded-lg p-4">
+                  <AlertCircle size={14} className="text-error-500 shrink-0 mt-0.5" />
+                  <p className="text-error-600 text-sm">{pageError}</p>
                 </div>
               )}
               {selectedPage && !pageLoading && (
@@ -657,28 +657,28 @@ export function TechDocs() {
           {panelMode === "edit" && (
             <>
               <div className="shrink-0">
-                <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-500 mb-1.5">Title</label>
+                <label className="block text-[11px] font-semibold uppercase tracking-widest text-fg-secondary mb-1.5">Title</label>
                 <input
                   value={editTitle}
                   onChange={e => setEditTitle(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-gray-900 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-semibold"
+                  className="w-full px-4 py-2.5 bg-surface-card border border-neutral-300 rounded-lg text-fg-primary focus:outline-none focus:border-brand-500 focus:shadow-[0_0_0_4px_var(--color-focus)] transition-colors duration-200 ease-in-out text-sm font-semibold"
                 />
               </div>
               <div className="flex-1 flex flex-col min-h-0">
-                <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-500 mb-1.5">Content</label>
+                <label className="block text-[11px] font-semibold uppercase tracking-widest text-fg-secondary mb-1.5">Content</label>
                 <textarea
                   value={editContent}
                   onChange={e => setEditContent(e.target.value)}
-                  className="flex-1 w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-mono resize-none"
+                  className="flex-1 w-full px-4 py-3 bg-surface-card border border-neutral-300 rounded-lg text-fg-primary focus:outline-none focus:border-brand-500 focus:shadow-[0_0_0_4px_var(--color-focus)] transition-colors duration-200 ease-in-out text-sm font-mono resize-none"
                 />
               </div>
-              <p className="text-gray-600 text-xs shrink-0">
+              <p className="text-fg-secondary/70 text-xs shrink-0">
                 Paragraphs separated by blank lines will be preserved. For rich formatting, edit directly in Confluence.
               </p>
               {saveError && (
-                <div className="flex items-start gap-2 bg-red-950 border border-red-800 rounded-lg p-3 shrink-0">
-                  <AlertCircle size={14} className="text-red-400 shrink-0 mt-0.5" />
-                  <p className="text-red-400 text-sm">{saveError}</p>
+                <div className="flex items-start gap-2 bg-error-25 border border-error-200 rounded-lg p-3 shrink-0">
+                  <AlertCircle size={14} className="text-error-500 shrink-0 mt-0.5" />
+                  <p className="text-error-600 text-sm">{saveError}</p>
                 </div>
               )}
             </>

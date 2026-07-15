@@ -7,6 +7,7 @@ import {
   Sparkles, X, Loader2, Send, FileText, BookOpen, Layers,
   ExternalLink, Download, Check, Wand2, Search,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -49,9 +50,9 @@ export function useAssistant(): AssistantCtx {
 }
 
 const REF_META = {
-  form:      { Icon: FileText, label: "Ticket",    color: "#818cf8" },
-  playbook:  { Icon: BookOpen, label: "Playbook",  color: "#fbbf24" },
-  blueprint: { Icon: Layers,   label: "Blueprint", color: "#34d399" },
+  form:      { Icon: FileText, label: "Ticket",    color: "var(--brand-500)" },
+  playbook:  { Icon: BookOpen, label: "Playbook",  color: "var(--warning-500)" },
+  blueprint: { Icon: Layers,   label: "Blueprint", color: "var(--success-500)" },
 } as const;
 
 // A pickable request, shown in the panel's empty-state picker.
@@ -263,7 +264,7 @@ export function AssistantProvider({ children }: { children: ReactNode }) {
         <button
           onClick={() => open(request)}
           title="Solution Assistant"
-          className="fixed bottom-6 right-6 z-40 w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 shadow-xl shadow-indigo-900/40 flex items-center justify-center text-white hover:scale-105 transition-transform"
+          className="fixed bottom-6 right-6 z-40 w-12 h-12 rounded-pill bg-gradient-to-br from-brand-400 to-brand-600 shadow-xl flex items-center justify-center text-white hover:scale-105 transition-transform duration-200 ease-in-out"
         >
           <Sparkles size={20} />
         </button>
@@ -271,42 +272,42 @@ export function AssistantProvider({ children }: { children: ReactNode }) {
 
       {/* Backdrop */}
       <div
-        className={`fixed inset-0 bg-black/40 z-50 transition-opacity duration-300 ${isOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+        className={`fixed inset-0 bg-[var(--overlay-modal)] z-50 transition-opacity duration-300 ${isOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`}
         onClick={close}
       />
 
       {/* Panel */}
       <div
-        className="fixed top-0 right-0 h-screen bg-gray-950 border-l border-gray-800 shadow-2xl z-50 flex flex-col transition-transform duration-300 ease-in-out"
+        className="fixed top-0 right-0 h-screen bg-surface-card border-l border-neutral-200 shadow-2xl z-50 flex flex-col transition-transform duration-300 ease-in-out"
         style={{ width: "min(560px, 95vw)", transform: isOpen ? "translateX(0)" : "translateX(100%)" }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-800 shrink-0">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-200 shrink-0">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center">
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center">
               <Sparkles size={15} className="text-white" />
             </div>
-            <p className="text-white font-semibold text-sm">Solution Assistant</p>
+            <p className="text-fg-primary font-semibold text-sm">Solution Assistant</p>
           </div>
-          <button onClick={close} className="p-1.5 rounded-lg text-gray-500 hover:text-white hover:bg-gray-800 transition-colors">
+          <button onClick={close} className="p-1.5 rounded-lg text-fg-secondary hover:text-fg-primary hover:bg-neutral-100 transition-colors duration-200 ease-in-out">
             <X size={16} />
           </button>
         </div>
 
         {/* Context chip */}
         {request && (
-          <div className="px-5 py-2.5 border-b border-gray-800 shrink-0 bg-gray-900/50 flex items-center gap-3">
+          <div className="px-5 py-2.5 border-b border-neutral-200 shrink-0 bg-neutral-100/60 flex items-center gap-3">
             <div className="min-w-0 flex-1">
-              <p className="text-[11px] text-gray-500">Working on</p>
-              <p className="text-xs text-gray-300 truncate">
-                <span className="text-indigo-400 font-mono">{request.id || "—"}</span>
+              <p className="text-[11px] text-fg-secondary">Working on</p>
+              <p className="text-xs text-fg-secondary truncate">
+                <span className="text-brand-500 font-mono">{request.id || "—"}</span>
                 {request.client ? ` · ${request.client}` : ""}
                 {request.feature ? ` · ${request.feature}` : ""}
               </p>
             </div>
             <button
               onClick={() => { setRequest(null); setMessages([]); setError(null); setInput(""); }}
-              className="text-[11px] text-gray-500 hover:text-indigo-300 transition-colors shrink-0"
+              className="text-[11px] text-fg-secondary hover:text-brand-500 transition-colors duration-200 ease-in-out shrink-0"
             >
               Change
             </button>
@@ -319,36 +320,36 @@ export function AssistantProvider({ children }: { children: ReactNode }) {
           {/* Empty state */}
           {!hasMessages && !loading && (
             <div>
-              <h2 className="text-2xl font-semibold text-indigo-300">Hello, {userName}</h2>
-              <p className="text-2xl font-semibold text-gray-400 mb-6">How can I help you today?</p>
+              <h2 className="text-2xl font-semibold text-brand-500">Hello, {userName}</h2>
+              <p className="text-2xl font-semibold text-fg-secondary mb-6">How can I help you today?</p>
               {request ? (
                 <div className="flex flex-col gap-2">
                   {chips.map((c) => (
                     <button key={c} onClick={() => send(c)}
-                      className="text-left px-4 py-3 rounded-xl bg-gray-900 border border-gray-800 text-sm text-gray-300 hover:border-indigo-600 hover:text-white transition-colors">
+                      className="text-left px-4 py-3 rounded-xl bg-surface-card border border-neutral-200 text-sm text-fg-secondary hover:border-brand-400 hover:text-fg-primary transition-colors duration-200 ease-in-out">
                       {c}
                     </button>
                   ))}
                 </div>
               ) : (
                 <div>
-                  <p className="text-sm text-gray-400 mb-3">Pick the request you want to work on:</p>
+                  <p className="text-sm text-fg-secondary mb-3">Pick the request you want to work on:</p>
                   <div className="relative mb-3">
-                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-secondary" />
                     <input
                       value={pickerSearch}
                       onChange={(e) => setPickerSearch(e.target.value)}
                       placeholder="Search by client, ID, person, email…"
-                      className="w-full pl-9 pr-3 py-2.5 bg-gray-900 border border-gray-800 rounded-lg text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full pl-9 pr-3 py-2.5 bg-surface-card border border-neutral-300 rounded-lg text-sm text-fg-primary placeholder:text-fg-secondary outline-none transition-colors duration-200 ease-in-out focus:border-brand-500 focus:shadow-[0_0_0_4px_var(--color-focus)]"
                     />
                   </div>
 
                   {formsLoading && (
-                    <div className="flex items-center gap-2 text-gray-500 text-sm py-6 justify-center">
+                    <div className="flex items-center gap-2 text-fg-secondary text-sm py-6 justify-center">
                       <Loader2 size={16} className="animate-spin" /> Loading requests…
                     </div>
                   )}
-                  {formsError && <p className="text-red-400 text-xs">{formsError}</p>}
+                  {formsError && <p className="text-[var(--color-error)] text-xs">{formsError}</p>}
 
                   {forms && !formsLoading && (
                     <div className="flex flex-col gap-2">
@@ -356,26 +357,26 @@ export function AssistantProvider({ children }: { children: ReactNode }) {
                         <button
                           key={f.id + f.client}
                           onClick={() => pickRequest(f)}
-                          className="text-left px-3 py-2.5 rounded-xl bg-gray-900 border border-gray-800 hover:border-indigo-600 transition-colors"
+                          className="text-left px-3 py-2.5 rounded-xl bg-surface-card border border-neutral-200 hover:border-brand-400 transition-colors duration-200 ease-in-out"
                         >
                           <div className="flex items-center gap-2">
-                            <span className="text-indigo-400 font-mono text-xs shrink-0">{f.id}</span>
-                            <span className="text-white text-sm font-medium truncate">{f.client}</span>
-                            {f.status && <span className="ml-auto text-[10px] text-gray-500 shrink-0">{f.status}</span>}
+                            <span className="text-brand-500 font-mono text-xs shrink-0">{f.id}</span>
+                            <span className="text-fg-primary text-sm font-medium truncate">{f.client}</span>
+                            {f.status && <span className="ml-auto text-[10px] text-fg-secondary shrink-0">{f.status}</span>}
                           </div>
                           {(f.submittedBy || f.email) && (
-                            <p className="text-[11px] text-gray-500 mt-0.5 truncate">
+                            <p className="text-[11px] text-fg-secondary mt-0.5 truncate">
                               {[f.submittedBy, f.email].filter(Boolean).join(" · ")}
                             </p>
                           )}
-                          {f.brief && <p className="text-xs text-gray-400 mt-1 line-clamp-2">{f.brief}</p>}
+                          {f.brief && <p className="text-xs text-fg-secondary mt-1 line-clamp-2">{f.brief}</p>}
                         </button>
                       ))}
                       {pickerFiltered.length === 0 && (
-                        <p className="text-gray-600 text-xs text-center py-4">No matching requests.</p>
+                        <p className="text-fg-secondary text-xs text-center py-4">No matching requests.</p>
                       )}
                       {pickerFiltered.length > 60 && (
-                        <p className="text-gray-600 text-[11px] text-center pt-1">Showing first 60 — refine your search.</p>
+                        <p className="text-fg-secondary text-[11px] text-center pt-1">Showing first 60 — refine your search.</p>
                       )}
                     </div>
                   )}
@@ -388,29 +389,29 @@ export function AssistantProvider({ children }: { children: ReactNode }) {
           {messages.map((m) =>
             m.role === "user" ? (
               <div key={m.id} className="flex justify-end">
-                <div className="max-w-[85%] bg-indigo-600 text-white text-sm rounded-2xl rounded-br-sm px-4 py-2.5">
+                <div className="max-w-[85%] bg-brand-500 text-white text-sm rounded-2xl rounded-br-sm px-4 py-2.5">
                   {m.text}
                 </div>
               </div>
             ) : (
-              <div key={m.id} className="bg-gray-900/60 border border-gray-800 rounded-2xl rounded-tl-sm p-4 space-y-4">
+              <div key={m.id} className="bg-neutral-100/60 border border-neutral-200 rounded-2xl rounded-tl-sm p-4 space-y-4">
                 {/* References */}
                 {m.references.length > 0 && (
                   <div>
-                    <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-500 mb-2">Based on</p>
+                    <p className="text-[11px] font-semibold uppercase tracking-widest text-fg-secondary mb-2">Based on</p>
                     <div className="flex flex-col gap-1.5">
                       {m.references.map((r, i) => {
                         const meta = REF_META[r.type];
                         return (
                           <a key={i} href={r.url || undefined} target="_blank" rel="noopener noreferrer"
-                            className="group flex items-start gap-2 px-3 py-2 rounded-lg bg-gray-900 border border-gray-800 hover:border-gray-700 transition-colors">
+                            className="group flex items-start gap-2 px-3 py-2 rounded-lg bg-surface-card border border-neutral-200 hover:border-neutral-300 transition-colors duration-200 ease-in-out">
                             <meta.Icon size={13} className="shrink-0 mt-0.5" style={{ color: meta.color }} />
                             <span className="min-w-0 flex-1">
-                              <span className="text-xs text-gray-300 font-medium">{r.id}</span>
-                              <span className="text-[10px] text-gray-600 ml-1.5">{meta.label}</span>
-                              <span className="block text-[11px] text-gray-500">{r.why}</span>
+                              <span className="text-xs text-fg-primary font-medium">{r.id}</span>
+                              <span className="text-[10px] text-fg-secondary ml-1.5">{meta.label}</span>
+                              <span className="block text-[11px] text-fg-secondary">{r.why}</span>
                             </span>
-                            {r.url && <ExternalLink size={11} className="text-gray-600 group-hover:text-gray-400 shrink-0 mt-0.5" />}
+                            {r.url && <ExternalLink size={11} className="text-fg-secondary group-hover:text-fg-primary shrink-0 mt-0.5" />}
                           </a>
                         );
                       })}
@@ -421,10 +422,10 @@ export function AssistantProvider({ children }: { children: ReactNode }) {
                 {/* Suggestions */}
                 {m.suggestions.length > 0 && (
                   <div>
-                    <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-500 mb-2">Confirm / fill in</p>
+                    <p className="text-[11px] font-semibold uppercase tracking-widest text-fg-secondary mb-2">Confirm / fill in</p>
                     <ul className="space-y-1">
                       {m.suggestions.map((s, i) => (
-                        <li key={i} className="text-xs text-gray-400 flex gap-2"><span className="text-indigo-500 shrink-0">•</span>{s}</li>
+                        <li key={i} className="text-xs text-fg-secondary flex gap-2"><span className="text-brand-500 shrink-0">•</span>{s}</li>
                       ))}
                     </ul>
                   </div>
@@ -432,41 +433,38 @@ export function AssistantProvider({ children }: { children: ReactNode }) {
 
                 {/* Editable draft */}
                 <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-500 mb-2">Solution draft (editable)</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-widest text-fg-secondary mb-2">Solution draft (editable)</p>
                   <textarea
                     value={m.draft}
                     onChange={(e) => updateDraft(m.id, e.target.value)}
-                    className="w-full h-64 px-3 py-3 bg-gray-950 border border-gray-800 rounded-lg text-gray-200 text-xs font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-y"
+                    className="w-full h-64 px-3 py-3 bg-surface-card border border-neutral-300 rounded-lg text-fg-primary text-xs font-mono leading-relaxed outline-none transition-colors duration-200 ease-in-out focus:border-brand-500 focus:shadow-[0_0_0_4px_var(--color-focus)] resize-y"
                   />
                 </div>
 
                 {/* Export (per message) */}
                 {exp.id === m.id && exp.done ? (
-                  <div className="flex items-center gap-2 bg-emerald-950/50 border border-emerald-900 rounded-lg p-3 text-emerald-300 text-sm">
+                  <div className="flex items-center gap-2 bg-success-50 border border-success-200 rounded-lg p-3 text-success-600 text-sm">
                     <Check size={15} /> Saved to {exp.done === "playbook" ? "Playbook" : "Blueprints"}. It now appears on that page.
                   </div>
                 ) : exp.id === m.id && exp.choosing ? (
-                  <div className="bg-gray-900 border border-gray-800 rounded-lg p-3">
-                    <p className="text-xs text-gray-400 mb-2.5">Save this solution as:</p>
-                    {exp.error && <p className="text-red-400 text-xs mb-2">{exp.error}</p>}
+                  <div className="bg-surface-card border border-neutral-200 rounded-lg p-3">
+                    <p className="text-xs text-fg-secondary mb-2.5">Save this solution as:</p>
+                    {exp.error && <p className="text-[var(--color-error)] text-xs mb-2">{exp.error}</p>}
                     <div className="flex gap-2">
-                      <button onClick={() => doExport(m, "playbook")} disabled={exp.exporting}
-                        className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-amber-600/90 hover:bg-amber-500 text-white text-xs font-semibold transition-colors disabled:opacity-50">
+                      <Button variant="warning" className="flex-1" onClick={() => doExport(m, "playbook")} disabled={exp.exporting}>
                         {exp.exporting ? <Loader2 size={13} className="animate-spin" /> : <BookOpen size={13} />} Playbook
-                      </button>
-                      <button onClick={() => doExport(m, "blueprint")} disabled={exp.exporting}
-                        className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-emerald-600/90 hover:bg-emerald-500 text-white text-xs font-semibold transition-colors disabled:opacity-50">
+                      </Button>
+                      <Button variant="success" className="flex-1" onClick={() => doExport(m, "blueprint")} disabled={exp.exporting}>
                         {exp.exporting ? <Loader2 size={13} className="animate-spin" /> : <Layers size={13} />} Blueprint
-                      </button>
+                      </Button>
                       <button onClick={() => setExp((e) => ({ ...e, id: "", choosing: false }))} disabled={exp.exporting}
-                        className="px-3 py-2 rounded-lg text-gray-400 hover:text-white text-xs transition-colors">Cancel</button>
+                        className="px-3 py-2 rounded-lg text-fg-secondary hover:text-fg-primary text-xs transition-colors duration-200 ease-in-out">Cancel</button>
                     </div>
                   </div>
                 ) : (
-                  <button onClick={() => setExp({ id: m.id, choosing: true, exporting: false, done: null, error: null })}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-white text-sm font-semibold transition-colors">
+                  <Button variant="neutral" className="w-full" onClick={() => setExp({ id: m.id, choosing: true, exporting: false, done: null, error: null })}>
                     <Download size={15} /> Export — Playbook or Blueprint
-                  </button>
+                  </Button>
                 )}
               </div>
             )
@@ -474,17 +472,17 @@ export function AssistantProvider({ children }: { children: ReactNode }) {
 
           {/* Loading bubble */}
           {loading && (
-            <div className="flex items-center gap-2 text-gray-400 text-sm px-1">
-              <Loader2 size={15} className="animate-spin text-indigo-400" />
+            <div className="flex items-center gap-2 text-fg-secondary text-sm px-1">
+              <Loader2 size={15} className="animate-spin text-brand-500" />
               {lastAssistant() ? "Refining the draft…" : "Searching past solutions & drafting…"}
             </div>
           )}
 
-          {error && <p className="text-red-400 text-xs px-1">{error}</p>}
+          {error && <p className="text-[var(--color-error)] text-xs px-1">{error}</p>}
         </div>
 
         {/* Composer */}
-        <div className="border-t border-gray-800 p-3 shrink-0">
+        <div className="border-t border-neutral-200 p-3 shrink-0">
           <div className="flex items-center gap-2">
             <input
               value={input}
@@ -492,13 +490,13 @@ export function AssistantProvider({ children }: { children: ReactNode }) {
               onKeyDown={(e) => { if (e.key === "Enter" && !loading) send(input); }}
               disabled={!request || loading}
               placeholder={!request ? "Pick a request above to start…" : hasMessages ? "Ask AI to refine… (e.g. add a rollout plan)" : "Describe what you need, or pick a suggestion above…"}
-              className="flex-1 px-3 py-2.5 bg-gray-900 border border-gray-800 rounded-lg text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
+              className="flex-1 px-3 py-2.5 bg-surface-card border border-neutral-300 rounded-lg text-sm text-fg-primary placeholder:text-fg-secondary outline-none transition-colors duration-200 ease-in-out focus:border-brand-500 focus:shadow-[0_0_0_4px_var(--color-focus)] disabled:opacity-50"
             />
             <button
               onClick={() => send(input)}
               disabled={loading || !input.trim() || !request}
               title={hasMessages ? "Refine" : "Generate"}
-              className="p-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white transition-colors disabled:opacity-40"
+              className="p-2.5 rounded-lg bg-brand-500 hover:bg-brand-600 text-white transition-colors duration-200 ease-in-out disabled:opacity-40"
             >
               {loading ? <Loader2 size={16} className="animate-spin" /> : hasMessages ? <Send size={16} /> : <Wand2 size={16} />}
             </button>

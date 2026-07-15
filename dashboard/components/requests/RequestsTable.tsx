@@ -5,6 +5,9 @@ import { useRouter } from "next/navigation";
 import { X, Search, ArrowDownWideNarrow, ArrowUpNarrowWide, Sparkles, RefreshCw, CloudDownload, Check, Loader2, Wand2 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { useAssistant, type AssistantRequest } from "@/components/ai/AssistantProvider";
+import { Badge, type BadgeProps } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 interface Request {
   path: string;
@@ -12,28 +15,50 @@ interface Request {
   content: string;
 }
 
-const STATUS_STYLES: Record<string, string> = {
-  new:                  "bg-indigo-950 text-indigo-300 border-indigo-800",
-  "in progress":        "bg-amber-950 text-amber-300 border-amber-800",
-  delivered:            "bg-emerald-950 text-emerald-300 border-emerald-800",
-  closed:               "bg-gray-800 text-gray-400 border-gray-700",
-  "no response closed": "bg-gray-800 text-gray-500 border-gray-700",
-  "no action":          "bg-gray-800 text-gray-500 border-gray-700",
+// Same status vocabulary + variant mapping as app/page.tsx's STATUS_META,
+// keyed by the canonical (normalized) status so the raw frontmatter value
+// still renders verbatim — only the badge color is derived from it.
+const STATUS_VARIANT: Record<string, NonNullable<BadgeProps["variant"]>> = {
+  "Solution Given Closed": "success",
+  "To Product Closed":     "brand",
+  "Open":                  "warning",
+  "Rejected":              "error",
+  "No Response Closed":    "neutral",
+  "Unknown":               "neutral",
 };
 
-function statusStyle(status: string) {
-  return STATUS_STYLES[status.toLowerCase()] ?? "bg-gray-800 text-gray-400 border-gray-700";
+function statusVariant(status: string): NonNullable<BadgeProps["variant"]> {
+  return STATUS_VARIANT[normalizeStatus(status)] ?? "neutral";
 }
 
-const STATUS_BAR: { key: string; label: string; color: string; bg: string }[] = [
-  { key: "Solution Given Closed", label: "Delivered",   color: "#34d399", bg: "rgba(52,211,153,0.14)"  },
-  { key: "To Product Closed",     label: "To Product",  color: "#818cf8", bg: "rgba(129,140,248,0.14)" },
-  { key: "Open",                  label: "Open",        color: "#fbbf24", bg: "rgba(251,191,36,0.14)"  },
-  { key: "Rejected",              label: "Rejected",    color: "#f87171", bg: "rgba(248,113,113,0.14)" },
-  { key: "No Response Closed",    label: "No Response", color: "#9ca3af", bg: "rgba(156,163,175,0.14)" },
-  { key: "Unknown",               label: "Unknown",     color: "#6b7280", bg: "rgba(107,114,128,0.14)" },
+const STATUS_BAR: { key: string; label: string; variant: NonNullable<BadgeProps["variant"]> }[] = [
+  { key: "Solution Given Closed", label: "Delivered",   variant: "success" },
+  { key: "To Product Closed",     label: "To Product",  variant: "brand" },
+  { key: "Open",                  label: "Open",        variant: "warning" },
+  { key: "Rejected",              label: "Rejected",    variant: "error" },
+  { key: "No Response Closed",    label: "No Response", variant: "neutral" },
+  { key: "Unknown",               label: "Unknown",     variant: "neutral" },
 ];
 const CANON = new Set(STATUS_BAR.map((s) => s.key));
+
+// Active-chip color per variant — token-based replacement for the old
+// per-status inline hex (color/bg) pairs.
+const CHIP_ACTIVE_CLASSES: Record<NonNullable<BadgeProps["variant"]>, string> = {
+  brand:   "bg-brand-50 border-brand-200 text-brand-600",
+  success: "bg-success-50 border-success-200 text-success-600",
+  warning: "bg-warning-50 border-warning-200 text-warning-600",
+  error:   "bg-error-50 border-error-200 text-error-600",
+  info:    "bg-info-50 border-info-200 text-info-600",
+  neutral: "bg-neutral-100 border-neutral-300 text-neutral-600",
+};
+const CHIP_DOT_CLASSES: Record<NonNullable<BadgeProps["variant"]>, string> = {
+  brand:   "bg-brand-400",
+  success: "bg-success-400",
+  warning: "bg-warning-400",
+  error:   "bg-error-400",
+  info:    "bg-info-400",
+  neutral: "bg-neutral-500",
+};
 
 function normalizeStatus(raw: string): string {
   const s = (raw ?? "").trim();
@@ -285,10 +310,10 @@ export function RequestsTable({ requests }: { requests: Request[] }) {
         {/* -top-5/-mt-5/pt-5 cancel out <main>'s own top padding so this sticks flush to the
             viewport edge — otherwise the sticky offset sits 20px below it and scrolled rows
             peek through that gap. */}
-        <div className="sticky -top-5 z-20 bg-gray-950 -mt-5 pt-5">
+        <div className="sticky -top-5 z-20 bg-neutral-50 -mt-5 pt-5">
           <div className="mb-5">
-            <h1 className="text-white text-2xl font-semibold">Solution Requests</h1>
-            <p className="text-gray-400 text-sm mt-1">{requests.length} requests from clients</p>
+            <h1 className="text-fg-primary text-2xl font-semibold">Solution Requests</h1>
+            <p className="text-fg-secondary text-sm mt-1">{requests.length} requests from clients</p>
           </div>
 
           {/* Status bar */}
@@ -297,8 +322,8 @@ export function RequestsTable({ requests }: { requests: Request[] }) {
               onClick={() => setStatusFilter(null)}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
                 statusFilter === null
-                  ? "bg-indigo-600 border-indigo-500 text-white"
-                  : "bg-gray-900 border-gray-800 text-gray-400 hover:text-white hover:border-gray-700"
+                  ? "bg-brand-500 border-brand-500 text-white"
+                  : "bg-surface-card border-neutral-200 text-fg-secondary hover:text-fg-primary hover:border-neutral-300"
               }`}
             >
               All <span className="tabular-nums opacity-80">{requests.length}</span>
@@ -310,11 +335,12 @@ export function RequestsTable({ requests }: { requests: Request[] }) {
                   key={s.key}
                   onClick={() => setStatusFilter(active ? null : s.key)}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
-                    active ? "" : "bg-gray-900 border-gray-800 text-gray-400 hover:text-white hover:border-gray-700"
+                    active
+                      ? CHIP_ACTIVE_CLASSES[s.variant]
+                      : "bg-surface-card border-neutral-200 text-fg-secondary hover:text-fg-primary hover:border-neutral-300"
                   }`}
-                  style={active ? { backgroundColor: s.bg, borderColor: s.color, color: s.color } : undefined}
                 >
-                  <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: s.color }} />
+                  <span className={`w-1.5 h-1.5 rounded-pill shrink-0 ${CHIP_DOT_CLASSES[s.variant]}`} />
                   {s.label}
                   <span className="tabular-nums opacity-80">{counts[s.key] ?? 0}</span>
                 </button>
@@ -325,64 +351,54 @@ export function RequestsTable({ requests }: { requests: Request[] }) {
           {/* Search + sort + refresh */}
           <div className="flex items-center gap-2 mb-3">
             <div className="relative flex-1 min-w-0">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-              <input
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-secondary" />
+              <Input
                 type="text"
                 placeholder="Search by client, ID, status, feature…"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                className="w-full bg-gray-900 border border-gray-800 rounded-lg pl-9 pr-4 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-indigo-600 transition-colors"
+                className="pl-9 pr-4 py-2.5 text-sm"
               />
             </div>
             <div className="flex items-center gap-1 shrink-0">
-              <button
+              <Button
+                variant={sort === "id-asc" || sort === "id-desc" ? "primary" : "neutral"}
+                size="sm"
                 onClick={() => setSort(sort === "id-asc" ? "id-desc" : "id-asc")}
                 title="Sort by Solution ID"
-                className={`flex items-center gap-1.5 px-3 py-2.5 rounded-lg text-xs font-medium border transition-colors ${
-                  sort === "id-asc" || sort === "id-desc"
-                    ? "bg-indigo-600 border-indigo-500 text-white"
-                    : "bg-gray-900 border-gray-800 text-gray-400 hover:text-white hover:border-gray-700"
-                }`}
               >
                 {sort === "id-desc" ? <ArrowUpNarrowWide size={14} /> : <ArrowDownWideNarrow size={14} />}
                 ID
-              </button>
-              <button
+              </Button>
+              <Button
+                variant={sort === "date-desc" || sort === "date-asc" ? "primary" : "neutral"}
+                size="sm"
                 onClick={() => setSort(sort === "date-desc" ? "date-asc" : "date-desc")}
                 title="Sort by submitted date"
-                className={`flex items-center gap-1.5 px-3 py-2.5 rounded-lg text-xs font-medium border transition-colors ${
-                  sort === "date-desc" || sort === "date-asc"
-                    ? "bg-indigo-600 border-indigo-500 text-white"
-                    : "bg-gray-900 border-gray-800 text-gray-400 hover:text-white hover:border-gray-700"
-                }`}
               >
                 {sort === "date-asc" ? <ArrowUpNarrowWide size={14} /> : <ArrowDownWideNarrow size={14} />}
                 Date
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="neutral"
+                size="sm"
                 onClick={handleRefresh}
                 disabled={isPending}
                 title="Refresh page data"
-                className="flex items-center gap-1.5 px-3 py-2.5 rounded-lg text-xs font-medium border transition-colors bg-gray-900 border-gray-800 text-gray-400 hover:text-white hover:border-gray-700 disabled:opacity-50"
               >
                 <RefreshCw size={14} className={isPending ? "animate-spin" : ""} />
                 Refresh
-              </button>
-              <button
+              </Button>
+              <Button
+                variant={pullState === "done" ? "success" : pullState === "error" ? "danger" : "neutral"}
+                size="sm"
                 onClick={handlePull}
                 disabled={pullState === "pulling" || isPending}
                 title="Pull new responses from MS Forms"
-                className={`flex items-center gap-1.5 px-3 py-2.5 rounded-lg text-xs font-medium border transition-colors disabled:opacity-50 ${
-                  pullState === "done"
-                    ? "bg-emerald-950 border-emerald-700 text-emerald-400"
-                    : pullState === "error"
-                    ? "bg-red-950 border-red-700 text-red-400"
-                    : "bg-gray-900 border-gray-800 text-gray-400 hover:text-white hover:border-gray-700"
-                }`}
               >
                 <CloudDownload size={14} className={pullState === "pulling" ? "animate-pulse" : ""} />
                 {pullState === "pulling" ? "Pulling…" : pullState === "done" ? "Queued!" : pullState === "error" ? "Failed" : "Pull"}
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -390,19 +406,19 @@ export function RequestsTable({ requests }: { requests: Request[] }) {
               Only a bottom border (matches original design); the card's left/right/bottom
               border lives solely on the body box below so there's never two adjacent
               elements independently drawing the same border line. */}
-          <div className="bg-gray-900 border-b border-gray-800 grid grid-cols-[140px_1fr_130px_1.5fr_120px_44px] gap-0 px-5 py-3">
-            <span className="text-gray-500 text-xs font-semibold uppercase tracking-wider">Solution ID</span>
-            <span className="text-gray-500 text-xs font-semibold uppercase tracking-wider">Client</span>
-            <span className="text-gray-500 text-xs font-semibold uppercase tracking-wider">Department</span>
-            <span className="text-gray-500 text-xs font-semibold uppercase tracking-wider">Description</span>
-            <span className="text-gray-500 text-xs font-semibold uppercase tracking-wider">Status</span>
+          <div className="bg-neutral-100 border-b border-neutral-200 grid grid-cols-[140px_1fr_130px_1.5fr_120px_44px] gap-0 px-5 py-3">
+            <span className="text-fg-secondary text-xs font-semibold uppercase tracking-wider">Solution ID</span>
+            <span className="text-fg-secondary text-xs font-semibold uppercase tracking-wider">Client</span>
+            <span className="text-fg-secondary text-xs font-semibold uppercase tracking-wider">Department</span>
+            <span className="text-fg-secondary text-xs font-semibold uppercase tracking-wider">Description</span>
+            <span className="text-fg-secondary text-xs font-semibold uppercase tracking-wider">Status</span>
             <span className="sr-only">AI</span>
           </div>
         </div>
 
         {/* Table body — scrolls under the sticky header block */}
-        <div className="bg-gray-900 border border-t-0 border-gray-800 rounded-b-xl overflow-hidden">
-          <div className="divide-y divide-gray-800/60">
+        <div className="bg-surface-card border border-t-0 border-neutral-200 rounded-b-xl overflow-hidden">
+          <div className="divide-y divide-neutral-200">
             {sorted.map((req, i) => {
               const fm = req.frontmatter;
               const id = get(fm, "form_id");
@@ -421,25 +437,23 @@ export function RequestsTable({ requests }: { requests: Request[] }) {
                   onClick={() => selectRequest(isActive ? null : req)}
                   onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); selectRequest(isActive ? null : req); } }}
                   className={`group w-full px-5 py-3 text-left transition-colors cursor-pointer border-l-2
-                    ${isActive ? "bg-indigo-950/40 border-l-indigo-500" : "hover:bg-gray-800/50 border-l-transparent"}`}
+                    ${isActive ? "bg-brand-50 border-l-brand-500" : "hover:bg-neutral-100 border-l-transparent"}`}
                 >
                   <div className="grid grid-cols-[140px_1fr_130px_1.5fr_120px_44px] gap-0 items-center">
-                    <span className="text-indigo-400 text-sm font-mono font-medium truncate pr-4">{id}</span>
-                    <span className="text-white text-sm truncate pr-4">{client}</span>
-                    <span className="text-gray-400 text-sm truncate pr-4">{department}</span>
-                    <span className="text-gray-400 text-sm truncate pr-4" title={gist || undefined}>
+                    <span className="text-brand-400 text-sm font-mono font-medium truncate pr-4">{id}</span>
+                    <span className="text-fg-primary text-sm truncate pr-4">{client}</span>
+                    <span className="text-fg-secondary text-sm truncate pr-4">{department}</span>
+                    <span className="text-fg-secondary text-sm truncate pr-4" title={gist || undefined}>
                       {gist || "—"}
                     </span>
                     <span>
-                      <span className={`inline-block px-2 py-0.5 rounded-full text-xs border ${statusStyle(status)}`}>
-                        {status}
-                      </span>
+                      <Badge variant={statusVariant(status)}>{status}</Badge>
                     </span>
                     <button
                       type="button"
                       title="Draft a solution with AI"
                       onClick={(e) => { e.stopPropagation(); openAssistant(toAssistant(req)); }}
-                      className="justify-self-end p-1.5 rounded-lg text-amber-400 hover:text-amber-300 hover:bg-amber-400/10 transition-all"
+                      className="justify-self-end p-1.5 rounded-lg text-warning-500 hover:text-warning-600 hover:bg-warning-50 transition-all"
                     >
                       <Sparkles size={16} />
                     </button>
@@ -448,30 +462,30 @@ export function RequestsTable({ requests }: { requests: Request[] }) {
               );
             })}
             {sorted.length === 0 && (
-              <div className="py-16 text-center text-gray-600 text-sm">No requests match your search.</div>
+              <div className="py-16 text-center text-fg-secondary text-sm">No requests match your search.</div>
             )}
           </div>
         </div>
 
-        <p className="text-gray-700 text-xs mt-2 text-right">{filtered.length} of {requests.length} requests</p>
+        <p className="text-fg-secondary text-xs mt-2 text-right">{filtered.length} of {requests.length} requests</p>
       </div>
 
       {/* Side panel — always-on form */}
       {selected && (
         <div className="w-[440px] shrink-0 ml-5 sticky top-0 self-start">
-          <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden flex flex-col max-h-[calc(100vh-2.5rem)]">
+          <div className="bg-surface-card border border-neutral-200 rounded-xl overflow-hidden flex flex-col max-h-[calc(100vh-2.5rem)]">
 
             {/* Header */}
-            <div className="flex items-start justify-between gap-3 px-5 py-4 border-b border-gray-800 shrink-0">
+            <div className="flex items-start justify-between gap-3 px-5 py-4 border-b border-neutral-200 shrink-0">
               <div className="min-w-0">
-                <p className="text-indigo-400 text-xs font-mono mb-0.5">
+                <p className="text-brand-400 text-xs font-mono mb-0.5">
                   {get(selected.frontmatter, "form_id")}
                 </p>
-                <h2 className="text-white font-semibold text-base leading-tight truncate">
+                <h2 className="text-fg-primary font-semibold text-base leading-tight truncate">
                   {get(selected.frontmatter, "client", "client_name")}
                 </h2>
                 {get(selected.frontmatter, "submitted_at") !== "—" && (
-                  <p className="text-gray-600 text-xs mt-0.5">
+                  <p className="text-fg-secondary text-xs mt-0.5">
                     {formatDate(get(selected.frontmatter, "submitted_at"))}
                     {get(selected.frontmatter, "submitted_by") !== "—" && ` · ${get(selected.frontmatter, "submitted_by")}`}
                   </p>
@@ -479,7 +493,7 @@ export function RequestsTable({ requests }: { requests: Request[] }) {
               </div>
               <button
                 onClick={() => selectRequest(null)}
-                className="text-gray-600 hover:text-white transition-colors shrink-0 mt-0.5"
+                className="text-fg-secondary hover:text-fg-primary transition-colors shrink-0 mt-0.5"
               >
                 <X size={16} />
               </button>
@@ -489,8 +503,8 @@ export function RequestsTable({ requests }: { requests: Request[] }) {
             <div className="flex-1 min-h-0 overflow-y-auto">
 
               {/* ── Request context (read-only) ── */}
-              <div className="px-5 py-4 border-b border-gray-800/60 space-y-3">
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-600">Request Details</p>
+              <div className="px-5 py-4 border-b border-neutral-200 space-y-3">
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-fg-secondary">Request Details</p>
 
                 <div className="grid grid-cols-2 gap-x-4 gap-y-2">
                   {[
@@ -505,8 +519,8 @@ export function RequestsTable({ requests }: { requests: Request[] }) {
                     if (val === "—") return null;
                     return (
                       <div key={label}>
-                        <p className="text-gray-600 text-[10px] mb-0.5">{label}</p>
-                        <p className="text-gray-300 text-xs leading-snug">{val}</p>
+                        <p className="text-fg-secondary text-[10px] mb-0.5">{label}</p>
+                        <p className="text-fg-primary text-xs leading-snug">{val}</p>
                       </div>
                     );
                   })}
@@ -520,14 +534,14 @@ export function RequestsTable({ requests }: { requests: Request[] }) {
                     <div className="space-y-2">
                       {subject && (
                         <div>
-                          <p className="text-gray-600 text-[10px] mb-0.5">Subject</p>
-                          <p className="text-gray-300 text-xs font-medium">{subject}</p>
+                          <p className="text-fg-secondary text-[10px] mb-0.5">Subject</p>
+                          <p className="text-fg-primary text-xs font-medium">{subject}</p>
                         </div>
                       )}
                       {brief && (
                         <div>
-                          <p className="text-gray-600 text-[10px] mb-0.5">Description</p>
-                          <p className="text-gray-400 text-xs leading-relaxed line-clamp-6">{brief}</p>
+                          <p className="text-fg-secondary text-[10px] mb-0.5">Description</p>
+                          <p className="text-fg-secondary text-xs leading-relaxed line-clamp-6">{brief}</p>
                         </div>
                       )}
                     </div>
@@ -537,26 +551,26 @@ export function RequestsTable({ requests }: { requests: Request[] }) {
 
               {/* ── Consultant response form ── */}
               <div className="px-5 py-4 space-y-3">
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-indigo-500">Consultant Response</p>
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-brand-500">Consultant Response</p>
 
                 {/* Status + Complexity row */}
                 <div className="flex gap-2">
                   <div className="flex-1">
-                    <label className="block text-gray-500 text-[10px] mb-1">Status</label>
+                    <label className="block text-fg-secondary text-[10px] mb-1">Status</label>
                     <select
                       value={editFields.status ?? "Open"}
                       onChange={(e) => setField("status", e.target.value)}
-                      className="w-full px-2.5 py-1.5 bg-gray-950 border border-gray-700 rounded-lg text-xs text-white focus:outline-none focus:border-indigo-500 transition-colors"
+                      className="w-full px-2.5 py-1.5 bg-surface-card border border-neutral-300 rounded-lg text-xs text-fg-primary focus:outline-none focus:border-brand-500 transition-colors"
                     >
                       {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
                     </select>
                   </div>
                   <div className="w-28">
-                    <label className="block text-gray-500 text-[10px] mb-1">Complexity</label>
+                    <label className="block text-fg-secondary text-[10px] mb-1">Complexity</label>
                     <select
                       value={editFields.complexity ?? "Not Set"}
                       onChange={(e) => setField("complexity", e.target.value)}
-                      className="w-full px-2.5 py-1.5 bg-gray-950 border border-gray-700 rounded-lg text-xs text-white focus:outline-none focus:border-indigo-500 transition-colors"
+                      className="w-full px-2.5 py-1.5 bg-surface-card border border-neutral-300 rounded-lg text-xs text-fg-primary focus:outline-none focus:border-brand-500 transition-colors"
                     >
                       {COMPLEXITY_OPTIONS.map((c) => <option key={c} value={c}>{c}</option>)}
                     </select>
@@ -571,30 +585,30 @@ export function RequestsTable({ requests }: { requests: Request[] }) {
                   { label: "Ticket / Link", key: "ticket" },
                 ] as const).map(({ label, key }) => (
                   <div key={key}>
-                    <label className="block text-gray-500 text-[10px] mb-1">{label}</label>
+                    <label className="block text-fg-secondary text-[10px] mb-1">{label}</label>
                     <input
                       type="text"
                       value={editFields[key] === "—" ? "" : (editFields[key] ?? "")}
                       onChange={(e) => setField(key, e.target.value)}
-                      className="w-full px-3 py-1.5 bg-gray-950 border border-gray-700 rounded-lg text-xs text-white placeholder-gray-700 focus:outline-none focus:border-indigo-500 transition-colors"
+                      className="w-full px-3 py-1.5 bg-surface-card border border-neutral-300 rounded-lg text-xs text-fg-primary placeholder:text-fg-secondary focus:outline-none focus:border-brand-500 transition-colors"
                     />
                   </div>
                 ))}
 
                 <div>
-                  <label className="block text-gray-500 text-[10px] mb-1">Closed On</label>
+                  <label className="block text-fg-secondary text-[10px] mb-1">Closed On</label>
                   <input
                     type="date"
                     value={editFields.closed_on === "—" ? "" : (editFields.closed_on ?? "")}
                     onChange={(e) => setField("closed_on", e.target.value)}
-                    className="w-full px-3 py-1.5 bg-gray-950 border border-gray-700 rounded-lg text-xs text-white focus:outline-none focus:border-indigo-500 transition-colors"
+                    className="w-full px-3 py-1.5 bg-surface-card border border-neutral-300 rounded-lg text-xs text-fg-primary focus:outline-none focus:border-brand-500 transition-colors"
                   />
                 </div>
 
                 {/* Solution Given — with inline AI suggest */}
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label className="text-gray-500 text-[10px]">Solution Given</label>
+                    <label className="text-fg-secondary text-[10px]">Solution Given</label>
                     <button
                       type="button"
                       onClick={handleSuggest}
@@ -602,12 +616,12 @@ export function RequestsTable({ requests }: { requests: Request[] }) {
                       title="Suggest a solution using AI semantic search on past work"
                       className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium border transition-colors disabled:opacity-50 ${
                         suggestState === "loading"
-                          ? "bg-indigo-950 border-indigo-800 text-indigo-400"
+                          ? "bg-brand-50 border-brand-200 text-brand-600"
                           : suggestState === "error"
-                          ? "bg-red-950 border-red-800 text-red-400"
+                          ? "bg-error-50 border-error-200 text-error-600"
                           : suggestState === "done"
-                          ? "bg-emerald-950 border-emerald-800 text-emerald-400"
-                          : "bg-gray-800 border-gray-700 text-gray-400 hover:text-indigo-300 hover:border-indigo-700"
+                          ? "bg-success-50 border-success-200 text-success-600"
+                          : "bg-neutral-100 border-neutral-300 text-fg-secondary hover:text-brand-600 hover:border-brand-300"
                       }`}
                     >
                       {suggestState === "loading"
@@ -625,21 +639,21 @@ export function RequestsTable({ requests }: { requests: Request[] }) {
                     value={editFields.solution === "—" ? "" : (editFields.solution ?? "")}
                     onChange={(e) => setField("solution", e.target.value)}
                     placeholder="Describe the solution provided…"
-                    className="w-full px-3 py-2 bg-gray-950 border border-gray-700 rounded-lg text-xs text-white placeholder-gray-700 focus:outline-none focus:border-indigo-500 transition-colors resize-none"
+                    className="w-full px-3 py-2 bg-surface-card border border-neutral-300 rounded-lg text-xs text-fg-primary placeholder:text-fg-secondary focus:outline-none focus:border-brand-500 transition-colors resize-none"
                   />
                   {/* Based-on strip */}
                   {suggestRefs.length > 0 && (
                     <div className="mt-1.5 flex flex-wrap gap-1">
-                      <span className="text-gray-600 text-[10px] mr-0.5 self-center">Based on:</span>
+                      <span className="text-fg-secondary text-[10px] mr-0.5 self-center">Based on:</span>
                       {suggestRefs.map((r, i) => (
                         <span
                           key={i}
                           title={r.why}
-                          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-gray-800 border border-gray-700 text-[10px] text-gray-400"
+                          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-neutral-100 border border-neutral-300 text-[10px] text-fg-secondary"
                         >
                           <span className={
-                            r.type === "form" ? "text-indigo-400" :
-                            r.type === "playbook" ? "text-amber-400" : "text-emerald-400"
+                            r.type === "form" ? "text-brand-500" :
+                            r.type === "playbook" ? "text-warning-500" : "text-success-500"
                           }>{r.type === "form" ? "◆" : r.type === "playbook" ? "◉" : "▲"}</span>
                           {r.id}
                         </span>
@@ -649,42 +663,43 @@ export function RequestsTable({ requests }: { requests: Request[] }) {
                 </div>
 
                 <div>
-                  <label className="block text-gray-500 text-[10px] mb-1">Remarks</label>
+                  <label className="block text-fg-secondary text-[10px] mb-1">Remarks</label>
                   <textarea
                     rows={3}
                     value={editFields.remarks === "—" ? "" : (editFields.remarks ?? "")}
                     onChange={(e) => setField("remarks", e.target.value)}
                     placeholder="Internal notes…"
-                    className="w-full px-3 py-2 bg-gray-950 border border-gray-700 rounded-lg text-xs text-white placeholder-gray-700 focus:outline-none focus:border-indigo-500 transition-colors resize-none"
+                    className="w-full px-3 py-2 bg-surface-card border border-neutral-300 rounded-lg text-xs text-fg-primary placeholder:text-fg-secondary focus:outline-none focus:border-brand-500 transition-colors resize-none"
                   />
                 </div>
               </div>
             </div>
 
             {/* Footer */}
-            <div className="px-5 py-3.5 border-t border-gray-800 shrink-0">
+            <div className="px-5 py-3.5 border-t border-neutral-200 shrink-0">
               <div className="flex items-center gap-2">
-                <button
+                <Button
+                  variant="primary"
                   onClick={handleSave}
                   disabled={isSaving}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 text-white text-sm font-semibold transition-colors"
+                  className="flex-1"
                 >
                   {isSaving
                     ? <><Loader2 size={14} className="animate-spin" /> Saving…</>
                     : saveMsg === "saved"
                     ? <><Check size={14} /> Saved</>
                     : "Save"}
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="ghost"
                   onClick={handleDiscard}
                   disabled={isSaving}
-                  className="px-4 py-2 rounded-lg border border-gray-700 text-gray-400 hover:text-white text-sm font-medium transition-colors disabled:opacity-60"
                 >
                   Discard
-                </button>
+                </Button>
               </div>
               {saveMsg === "error" && (
-                <p className="text-xs text-red-400 mt-2">Save failed — check your connection and try again.</p>
+                <p className="text-xs text-error-600 mt-2">Save failed — check your connection and try again.</p>
               )}
             </div>
 

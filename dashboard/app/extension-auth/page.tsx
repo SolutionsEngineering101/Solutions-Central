@@ -24,12 +24,12 @@ export default async function ExtensionAuthPage() {
     <main
       style={{
         minHeight: "100vh",
-        background: "#091522",
+        background: "var(--color-white)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        fontFamily: "system-ui, sans-serif",
-        color: "#D0E0FF",
+        fontFamily: "var(--font-family-base)",
+        color: "var(--text-primary)",
       }}
     >
       {/* Token element — read by the extension content script */}
@@ -37,9 +37,10 @@ export default async function ExtensionAuthPage() {
 
       <div
         style={{
-          background: "#102038",
-          border: "1px solid #1E3C6A",
+          background: "var(--color-white)",
+          border: "1px solid var(--neutral-200)",
           borderRadius: 12,
+          boxShadow: "var(--shadow-sm)",
           padding: "40px 48px",
           textAlign: "center",
           maxWidth: 380,
@@ -49,7 +50,7 @@ export default async function ExtensionAuthPage() {
           style={{
             width: 48,
             height: 48,
-            background: "#2D6BE4",
+            background: "var(--brand-500)",
             borderRadius: 12,
             display: "flex",
             alignItems: "center",
@@ -62,11 +63,11 @@ export default async function ExtensionAuthPage() {
         >
           SC
         </div>
-        <h1 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>Authenticated</h1>
-        <p style={{ color: "#6A85A8", fontSize: 14, marginBottom: 4 }}>
-          Signed in as <strong style={{ color: "#D0E0FF" }}>{user.name}</strong>
+        <h1 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8, color: "var(--text-primary)" }}>Authenticated</h1>
+        <p style={{ color: "var(--text-secondary)", fontSize: 14, marginBottom: 4 }}>
+          Signed in as <strong style={{ color: "var(--text-primary)" }}>{user.name}</strong>
         </p>
-        <p style={{ color: "#6A85A8", fontSize: 13 }}>
+        <p style={{ color: "var(--text-secondary)", fontSize: 13 }}>
           The extension is collecting your token. This tab will close automatically.
         </p>
       </div>

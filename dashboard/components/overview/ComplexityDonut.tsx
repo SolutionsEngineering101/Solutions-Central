@@ -1,6 +1,7 @@
 "use client";
 
 import { PieChart, Pie, Cell, Tooltip, Sector, ResponsiveContainer } from "recharts";
+import { Card, CardTitle } from "@/components/ui/card";
 
 interface Props {
   low: number;
@@ -9,9 +10,9 @@ interface Props {
 }
 
 const SLICES = [
-  { key: "Low",    color: "#34d399" },
-  { key: "Medium", color: "#fbbf24" },
-  { key: "High",   color: "#f87171" },
+  { key: "Low",    color: "var(--success-400)" },
+  { key: "Medium", color: "var(--warning-400)" },
+  { key: "High",   color: "var(--error-400)" },
 ];
 
 // ── Tooltip ───────────────────────────────────────────────────────────────────
@@ -25,14 +26,14 @@ interface TooltipEntry {
 function CustomTooltip({ active, payload }: { active?: boolean; payload?: TooltipEntry[] }) {
   if (!active || !payload?.length) return null;
   const { name, value, pct } = payload[0].payload;
-  const color = SLICES.find(s => s.key === name)?.color ?? "#fff";
+  const color = SLICES.find(s => s.key === name)?.color ?? "var(--color-white)";
   return (
     <div
-      className="bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 shadow-xl"
+      className="bg-neutral-100 border border-neutral-300 rounded-lg px-3 py-2 shadow-xl"
       style={{ zIndex: 9999 }}
     >
-      <p className="text-xs font-semibold" style={{ color }}>{name} Complexity</p>
-      <p className="text-xs text-gray-400 mt-0.5">
+      <p className="text-[length:var(--font-size-xs)] font-semibold" style={{ color }}>{name} Complexity</p>
+      <p className="text-[length:var(--font-size-xs)] text-fg-secondary mt-0.5">
         {value} requests · <span style={{ color }} className="font-semibold">{pct}%</span>
       </p>
     </div>
@@ -81,12 +82,12 @@ export function ComplexityDonut({ low, medium, high }: Props) {
   ].filter(d => d.value > 0);
 
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 flex flex-col">
+    <Card compact className="flex flex-col">
 
       {/* Title — on its own line, separated from the legend */}
-      <h2 className="text-white font-semibold text-sm pb-2.5 mb-3 border-b border-gray-800 shrink-0">
+      <CardTitle className="text-[length:var(--font-size-dense)] pb-2.5 mb-3 border-b border-neutral-200 shrink-0">
         By Complexity
-      </h2>
+      </CardTitle>
 
       {/* Legend — vertical stack */}
       <div className="flex flex-col gap-2 mb-3 shrink-0">
@@ -95,9 +96,9 @@ export function ComplexityDonut({ low, medium, high }: Props) {
           const pct   = total > 0 ? Math.round((count / total) * 100) : 0;
           return (
             <div key={key} className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
-              <span className="text-xs text-gray-400">{key}</span>
-              <span className="text-xs font-bold ml-auto tabular-nums" style={{ color }}>{pct}%</span>
+              <span className="w-2 h-2 rounded-pill shrink-0" style={{ backgroundColor: color }} />
+              <span className="text-[length:var(--font-size-xs)] text-fg-secondary">{key}</span>
+              <span className="text-[length:var(--font-size-xs)] font-bold ml-auto tabular-nums" style={{ color }}>{pct}%</span>
             </div>
           );
         })}
@@ -121,7 +122,7 @@ export function ComplexityDonut({ low, medium, high }: Props) {
               {data.map(entry => (
                 <Cell
                   key={entry.name}
-                  fill={SLICES.find(s => s.key === entry.name)?.color ?? "#6b7280"}
+                  fill={SLICES.find(s => s.key === entry.name)?.color ?? "var(--neutral-500)"}
                 />
               ))}
             </Pie>
@@ -137,10 +138,10 @@ export function ComplexityDonut({ low, medium, high }: Props) {
           className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none"
           style={{ zIndex: 1 }}
         >
-          <p className="text-xl font-bold text-white">{total}</p>
-          <p className="text-[10px] text-gray-500 mt-0.5">total</p>
+          <p className="text-[length:var(--font-size-xl)] font-bold text-fg-primary">{total}</p>
+          <p className="text-[length:var(--font-size-xs)] text-fg-secondary mt-0.5">total</p>
         </div>
       </div>
-    </div>
+    </Card>
   );
 }
