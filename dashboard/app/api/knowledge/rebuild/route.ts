@@ -44,11 +44,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
-    const [forms, playbook, blueprints, rfps, confluencePages] = await Promise.all([
+    const [forms, playbook, blueprints, rfps, specs, confluencePages] = await Promise.all([
       getMarkdownFiles("intake/solutions-forms"),
       getMarkdownFiles("playbook/entries"),
       getMarkdownFiles("pre-built-solutions/blueprints"),
       getMarkdownFiles("rfps/entries"),
+      getMarkdownFiles("product-information/specs"),
       listSpacePages(process.env.CONFLUENCE_SPACE_KEY ?? "PMT", CONFLUENCE_PAGE_ID ? [CONFLUENCE_PAGE_ID] : []).catch(() => []),
     ]);
 
@@ -123,6 +124,27 @@ export async function POST(req: Request) {
       }));
     }
 
+    // ── Product specs ───────────────────────────────────────────────────────────
+    // Specs are long reference docs (rate tables, API specs), so index one chunk
+    // per ##/### section — BM25 then surfaces exactly the relevant section.
+    for (const s of specs) {
+      if (s.path.endsWith("README.md")) continue;
+      const docTitle =
+        s.content.match(/^#\s+(.+)$/m)?.[1]?.trim() ||
+        s.path.split("/").pop()!.replace(/\.md$/, "");
+      const sections = s.content.split(/^(?=##+\s)/m);
+      for (const sec of sections) {
+        const heading = sec.match(/^##+\s+(.+)$/m)?.[1]?.trim();
+        const body = sec.replace(/^##+\s+.+$/m, "").trim();
+        if (!body) continue;
+        const title = heading ? `${docTitle} — ${heading}` : docTitle;
+        chunks.push(makeChunk(`spec:${title}`, "spec", title, `${title} ${clip(body, 6000)}`, {
+          date: fmStr(s.frontmatter, "date"),
+          url: ghUrl(s.path),
+        }));
+      }
+    }
+
     // ── Confluence pages ────────────────────────────────────────────────────────
     for (const page of confluencePages) {
       const text = [page.title, page.excerpt ?? ""].filter(Boolean).join(" ");
@@ -149,6 +171,7 @@ export async function POST(req: Request) {
       playbook: chunks.filter((c) => c.source === "playbook").length,
       blueprint: chunks.filter((c) => c.source === "blueprint").length,
       rfp: chunks.filter((c) => c.source === "rfp").length,
+      spec: chunks.filter((c) => c.source === "spec").length,
       confluence: chunks.filter((c) => c.source === "confluence").length,
     };
 

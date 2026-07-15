@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { BrainCircuit, FileText, BookOpen, Layers, Globe, Send, RefreshCw, AlertCircle, Database, X, Zap, FileSpreadsheet } from "lucide-react";
+import { BrainCircuit, FileText, BookOpen, Layers, Globe, Send, RefreshCw, AlertCircle, Database, X, Zap, FileSpreadsheet, FileCode2 } from "lucide-react";
 import type { KnowledgeStats } from "@/app/knowledge/page";
 import type { SourceRef } from "@/lib/knowledge";
 
@@ -26,6 +26,7 @@ function SourceIcon({ source }: { source: SourceRef["source"] }) {
   if (source === "playbook") return <BookOpen size={11} className={cls} />;
   if (source === "blueprint") return <Layers size={11} className={cls} />;
   if (source === "rfp") return <FileSpreadsheet size={11} className={cls} />;
+  if (source === "spec") return <FileCode2 size={11} className={cls} />;
   return <Globe size={11} className={cls} />;
 }
 
@@ -34,6 +35,7 @@ const SUGGESTIONS = [
   "What does the playbook say about handling integration challenges or blockers during client onboarding?",
   "Is there a pre-built blueprint for employee engagement or gamification use cases we can reuse?",
   "Summarise what the Confluence docs cover for the current sprint's active projects.",
+  "What is the points-to-currency conversion rate for Wipro employees redeeming in USD?",
 ];
 
 export function KnowledgeHub({ initialStats }: Props) {
@@ -126,7 +128,7 @@ export function KnowledgeHub({ initialStats }: Props) {
             <h1 className="text-fg-primary font-semibold text-lg leading-none">Knowledge Hub</h1>
             {stats ? (
               <p className="text-fg-secondary text-xs mt-1">
-                {stats.bySource.form} forms · {stats.bySource.playbook} playbook · {stats.bySource.blueprint} blueprints · {stats.bySource.rfp ?? 0} RFPs · {stats.bySource.confluence} Confluence
+                {stats.bySource.form} forms · {stats.bySource.playbook} playbook · {stats.bySource.blueprint} blueprints · {stats.bySource.rfp ?? 0} RFPs · {stats.bySource.spec ?? 0} specs · {stats.bySource.confluence} Confluence
                 {builtDate && <span className="ml-2 text-fg-secondary/70">— indexed {builtDate}</span>}
               </p>
             ) : (
@@ -198,7 +200,7 @@ export function KnowledgeHub({ initialStats }: Props) {
             <div>
               <Database size={36} className="text-neutral-300 mx-auto mb-3" />
               <p className="text-fg-secondary text-sm font-medium">Ask anything about the team's knowledge</p>
-              <p className="text-fg-secondary/70 text-xs mt-1">Solution requests, playbook entries, blueprints, RFPs, and Confluence docs</p>
+              <p className="text-fg-secondary/70 text-xs mt-1">Solution requests, playbook entries, blueprints, RFPs, product specs, and Confluence docs</p>
             </div>
             <div className="flex flex-col gap-2 w-full max-w-md">
               {SUGGESTIONS.map((s) => (
