@@ -2,9 +2,9 @@
   "last_updated": "2026-07-21",
   "metrics": {
     "total_requests": 281,
-    "solutions_delivered": 189,
+    "solutions_delivered": 190,
     "to_product": 37,
-    "open": 26,
+    "open": 25,
     "rejected": 12,
     "no_response_closed": 8,
     "unknown": 9,
