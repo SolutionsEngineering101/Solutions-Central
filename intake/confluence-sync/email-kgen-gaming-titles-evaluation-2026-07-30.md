@@ -1,16 +1,13 @@
-# Playbook Entry — Gaming Rewards: Demand Is Platform Currency, Not Game Titles
+# KGeN Gaming Titles — Reward Category Evaluation
 
-## Entry Details
+## Document Details
 - **Date:** 2026-07-30
-- **Product:** Rewards Marketplace / Redemption
-- **Classification:** Category Evaluation — Reward Supply Partner
-- **Solution Type:** Evaluation / Decision Record
-- **Client Type:** N/A (inbound partner approach)
-- **Industry:** Gaming
-- **Maturity:** First Instance
-- **Effort:** Low (desk research + redemption ledger analysis)
+- **Source:** Inbound email — KGeN (Shikha Battoo, AVP-New Initiatives), forwarded by Partha Neog
+- **Type:** Category evaluation / decision record
+- **Area:** Rewards Marketplace — Redemption supply
+- **Prepared by:** Hemanga Bharadwaj
 
-## When to Use This
+## When This Is Relevant
 - A reward supply partner pitches gaming as a new redemption category
 - A client or RFP asks whether we support gaming rewards, and in which geographies
 - Anyone proposes a separate integration for a niche redemption category and we need the volume bar it has to clear
@@ -114,15 +111,7 @@ Gamer verified user-acquisition / data business, unrelated to rewards.
 
 Well-funded company; this specific product line is unproven.
 
-## Reusability
-- **Can this be reused?** Yes
-- **For which situations?** Any inbound reward-supply partner pitch, and any RFP question about
-  gaming availability
-- **What would need to change?** Re-run the ledger cut for current numbers. The structural finding —
-  currency over titles, console over PC, US over India — should be re-tested annually, not assumed
-  permanent. The category is growing ~5x off a small base.
-
-## Limitations & Edge Cases
+## Caveats
 - Ledger ends 30 Jun 2026. Recent cohorts are right-censored, so breakage figures use mature cohorts
   (redeemed before Jan 2026) only.
 - Brand classification is regex-based over 2,097 brand strings; false positives (IKEA, Gamma,
@@ -130,19 +119,17 @@ Well-funded company; this specific product line is unproven.
 - India gaming SKUs have only ~3 months of shelf time — "no demand" is not yet a safe conclusion for
   India, only "no demand observed".
 - Gaming volume is 49% one client (Deloitte). Treat aggregate gaming trends with that in mind.
+- The structural finding — currency over titles, console over PC, US over India — should be re-tested
+  annually, not assumed permanent. The category is growing ~5x off a small base.
 
 ## References
 - `intake/solutions-forms/SF-2025-03-25-005.md` — Hershey's, Games geo availability
 - `intake/solutions-forms/SF-2025-08-28-115.md` — CQ Fluency, LATAM marketplace options
 - `rfps/entries/2026-06-30-global-recognition-program-rfp-part-2-of-21.md:463` — partner ecosystem;
-  RewardTheWorld listed as the Europe-focused Books/Music/Games partner
+  RewardtheWorld listed as the Europe-focused Books/Music/Games partner
 - `rfps/entries/2026-06-30-global-recognition-program-rfp-part-2-of-21.md:358` — Steam Wallet is a
   top-10 redeemed gift card in the Philippines
 - `product-information/specs/vc-partner-brand-integration-oauth2-api-v2.0.md` — standard partner
   brand integration path
 - `product-information/specs/vc-partner-redemption-api-v1.0.md` — standard partner redemption path
 - `~/venice/projects/breakage-tool/data/store.parquet` — redemption ledger (outside this repo)
-
-## Entry Created By
-- **Author:** Hemanga Bharadwaj
-- **Reviewed By:** —
