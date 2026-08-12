@@ -1,1 +1,49 @@
-[]
+[
+  {
+    "id": "REL-2026-001",
+    "name": "Wipro Panel Award",
+    "releaseType": "customization",
+    "clients": [
+      "Wipro"
+    ],
+    "products": [
+      "Recognition"
+    ],
+    "jiraTickets": [],
+    "deploymentDate": "2026-08-24",
+    "pmOwner": "garima-kayal",
+    "status": "in-progress",
+    "createdAt": "2026-08-12T06:18:28.450Z",
+    "updatedAt": "2026-08-12T06:18:28.450Z",
+    "sections": {
+      "solutions": {
+        "status": "pending",
+        "completedChecks": []
+      },
+      "engineering": {
+        "status": "pending",
+        "completedChecks": []
+      },
+      "qa": {
+        "status": "pending",
+        "completedChecks": []
+      },
+      "devops": {
+        "status": "pending",
+        "completedChecks": []
+      },
+      "clientConfig": {
+        "status": "pending",
+        "completedChecks": []
+      },
+      "deployment": {
+        "status": "pending",
+        "completedChecks": []
+      },
+      "clientValidation": {
+        "status": "pending",
+        "completedChecks": []
+      }
+    }
+  }
+]
