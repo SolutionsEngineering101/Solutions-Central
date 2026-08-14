@@ -14,7 +14,7 @@
     "pmOwner": "garima-kayal",
     "status": "in-progress",
     "createdAt": "2026-08-12T06:18:28.450Z",
-    "updatedAt": "2026-08-14T09:53:35.000Z",
+    "updatedAt": "2026-08-14T09:53:57.480Z",
     "sections": {
       "solutions": {
         "status": "in-progress",
@@ -32,7 +32,9 @@
       },
       "engineering": {
         "status": "in-progress",
-        "completedChecks": [],
+        "completedChecks": [
+          "sso-verified"
+        ],
         "naChecks": [
           "backward-compat",
           "migration-scripts",
