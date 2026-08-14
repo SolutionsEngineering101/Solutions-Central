@@ -14,14 +14,15 @@
     "pmOwner": "garima-kayal",
     "status": "in-progress",
     "createdAt": "2026-08-12T06:18:28.450Z",
-    "updatedAt": "2026-08-14T09:51:35.560Z",
+    "updatedAt": "2026-08-14T09:51:39.853Z",
     "sections": {
       "solutions": {
         "status": "in-progress",
         "completedChecks": [],
         "naChecks": [
           "scope-freeze",
-          "edge-cases"
+          "edge-cases",
+          "dependencies"
         ]
       },
       "engineering": {
