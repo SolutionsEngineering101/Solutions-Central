@@ -14,7 +14,7 @@
     "pmOwner": "garima-kayal",
     "status": "in-progress",
     "createdAt": "2026-08-12T06:18:28.450Z",
-    "updatedAt": "2026-08-14T09:51:46.819Z",
+    "updatedAt": "2026-08-14T09:51:57.343Z",
     "sections": {
       "solutions": {
         "status": "in-progress",
@@ -23,7 +23,8 @@
           "scope-freeze",
           "edge-cases",
           "dependencies",
-          "impacted-modules"
+          "impacted-modules",
+          "risk-assessment"
         ]
       },
       "engineering": {
