@@ -14,7 +14,7 @@
     "pmOwner": "garima-kayal",
     "status": "in-progress",
     "createdAt": "2026-08-12T06:18:28.450Z",
-    "updatedAt": "2026-08-14T09:55:01.925Z",
+    "updatedAt": "2026-08-14T09:55:05.511Z",
     "sections": {
       "solutions": {
         "status": "in-progress",
@@ -48,7 +48,8 @@
           "query-perf",
           "no-n-plus-1",
           "caching",
-          "fe-backward-compat"
+          "fe-backward-compat",
+          "fe-error-logging"
         ]
       },
       "qa": {
