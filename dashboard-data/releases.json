@@ -14,7 +14,7 @@
     "pmOwner": "garima-kayal",
     "status": "in-progress",
     "createdAt": "2026-08-12T06:18:28.450Z",
-    "updatedAt": "2026-08-14T09:56:14.644Z",
+    "updatedAt": "2026-08-14T09:56:21.476Z",
     "sections": {
       "solutions": {
         "status": "in-progress",
@@ -59,9 +59,7 @@
           "acceptance-validated",
           "positive-flow"
         ],
-        "naChecks": [
-          "points-mapping"
-        ]
+        "naChecks": []
       },
       "devops": {
         "status": "pending",
