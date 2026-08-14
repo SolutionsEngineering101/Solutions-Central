@@ -14,7 +14,7 @@
     "pmOwner": "garima-kayal",
     "status": "in-progress",
     "createdAt": "2026-08-12T06:18:28.450Z",
-    "updatedAt": "2026-08-14T09:53:25.989Z",
+    "updatedAt": "2026-08-14T09:53:29.362Z",
     "sections": {
       "solutions": {
         "status": "in-progress",
@@ -38,7 +38,8 @@
           "migration-scripts",
           "staging-migrations",
           "logging-added",
-          "bg-jobs-tested"
+          "bg-jobs-tested",
+          "db-indexes"
         ]
       },
       "qa": {
