@@ -14,7 +14,7 @@
     "pmOwner": "garima-kayal",
     "status": "in-progress",
     "createdAt": "2026-08-12T06:18:28.450Z",
-    "updatedAt": "2026-08-14T09:54:35.218Z",
+    "updatedAt": "2026-08-14T09:54:38.547Z",
     "sections": {
       "solutions": {
         "status": "in-progress",
@@ -45,7 +45,8 @@
           "sso-verified",
           "hrms-sync",
           "webhooks",
-          "query-perf"
+          "query-perf",
+          "no-n-plus-1"
         ]
       },
       "qa": {
