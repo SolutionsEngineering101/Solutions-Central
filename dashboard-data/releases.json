@@ -14,12 +14,14 @@
     "pmOwner": "garima-kayal",
     "status": "in-progress",
     "createdAt": "2026-08-12T06:18:28.450Z",
-    "updatedAt": "2026-08-14T09:50:15.870Z",
+    "updatedAt": "2026-08-14T09:50:20.214Z",
     "sections": {
       "solutions": {
-        "status": "pending",
+        "status": "in-progress",
         "completedChecks": [],
-        "naChecks": []
+        "naChecks": [
+          "scope-freeze"
+        ]
       },
       "engineering": {
         "status": "pending",
