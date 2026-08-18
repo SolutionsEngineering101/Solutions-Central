@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   BookOpen, Layers, Upload, X, FileText, Loader2,
-  AlertTriangle, CheckCircle2, UploadCloud, FileSpreadsheet, Trash2,
+  AlertTriangle, CheckCircle2, UploadCloud, FileSpreadsheet, Trash2, ExternalLink,
 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -110,6 +110,13 @@ const ACCEPT_RFP = ".xlsx,.xls,application/vnd.openxmlformats-officedocument.spr
 
 function str(v: unknown): string {
   return typeof v === "string" ? v : "";
+}
+
+// A companion document published outside the repo (formatted write-up, deck, canvas).
+// Only http(s) URLs are linked — anything else in the field is ignored.
+function artifactUrl(fm: Record<string, unknown>): string {
+  const v = str(fm.artifact) || str(fm.doc_url) || str(fm.source_url);
+  return /^https?:\/\//.test(v) ? v : "";
 }
 
 function metaLine(kind: EntryKind, fm: Record<string, unknown>): string {
@@ -303,6 +310,12 @@ export function EntryLibrary({ kind, entries }: Props) {
                       </div>
                     )}
                     <p className="text-fg-secondary/70 text-xs mt-2 line-clamp-2">{entry.content.slice(0, 120)}…</p>
+                    {artifactUrl(entry.frontmatter) && (
+                      <span className="inline-flex items-center gap-1 mt-2 text-brand-600 text-xs font-medium">
+                        <ExternalLink size={11} />
+                        Full document attached
+                      </span>
+                    )}
                   </div>
                 </div>
               </button>
@@ -338,6 +351,17 @@ export function EntryLibrary({ kind, entries }: Props) {
             <div className="px-6 py-5">
               {metaLine(kind, viewing.frontmatter) && (
                 <p className="text-fg-secondary text-xs mb-4">{metaLine(kind, viewing.frontmatter)}</p>
+              )}
+              {artifactUrl(viewing.frontmatter) && (
+                <a
+                  href={artifactUrl(viewing.frontmatter)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 mb-5 px-3 py-2 bg-brand-50 hover:bg-brand-100 border border-brand-200 rounded-lg text-brand-600 text-sm font-medium transition-colors duration-200 ease-in-out"
+                >
+                  <ExternalLink size={14} />
+                  {str(viewing.frontmatter.artifact_label) || "Open the full document"}
+                </a>
               )}
               <pre className="whitespace-pre-wrap break-words text-fg-primary text-sm leading-relaxed font-sans">
                 {viewing.content.trim()}

@@ -5,12 +5,11 @@ author: "Hemanga Bharadwaj"
 domain: "Rewards & Redemption / API Integration"
 client_type: "Companies running their own recognition platform with no redemption catalog"
 tags: [api, bulk-award-points, sso, redemption, gift-cards]
+artifact: "https://claude.ai/code/artifact/16663ae2-39f0-491b-8e87-4341fd43e398"
+artifact_label: "Open the formatted options doc"
 ---
 
 # External Recognition Platform → VC Redemption Backend
-
-> Companion doc (formatted, with flow diagrams and talk track):
-> https://claude.ai/code/artifact/16663ae2-39f0-491b-8e87-4341fd43e398
 
 ## Use Case
 
