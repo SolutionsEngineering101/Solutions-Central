@@ -1,1 +1,21 @@
-[]
+[
+  {
+    "id": "BP-2026-08-18-01",
+    "title": "External Recognition Platform \u2192 VC Redemption Backend",
+    "date": "2026-08-18",
+    "author": "Hemanga Bharadwaj",
+    "type": "blueprint",
+    "domain": "Rewards & Redemption / API Integration",
+    "client_type": "Companies running their own recognition platform with no redemption catalog",
+    "tags": [
+      "api",
+      "bulk-award-points",
+      "sso",
+      "redemption",
+      "gift-cards"
+    ],
+    "path": "pre-built-solutions/blueprints/2026-08-18-external-recognition-redemption-backend.md",
+    "artifact": "https://claude.ai/code/artifact/16663ae2-39f0-491b-8e87-4341fd43e398",
+    "summary": "Three ranked integration options for a prospect that owns recognition but has no redemption catalog. Recommends real-time Bulk Award Points push plus SSO into the VC storefront."
+  }
+]
