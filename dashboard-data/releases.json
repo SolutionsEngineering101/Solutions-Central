@@ -14,7 +14,7 @@
     "pmOwner": "garima-kayal",
     "status": "in-progress",
     "createdAt": "2026-08-12T06:18:28.450Z",
-    "updatedAt": "2026-08-19T09:31:40.284Z",
+    "updatedAt": "2026-08-19T09:31:50.657Z",
     "sections": {
       "solutions": {
         "status": "in-progress",
@@ -69,7 +69,8 @@
           "reporting-accuracy"
         ],
         "naChecks": [
-          "points-mapping"
+          "points-mapping",
+          "historical-data"
         ]
       },
       "devops": {
