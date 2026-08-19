@@ -14,7 +14,7 @@
     "pmOwner": "garima-kayal",
     "status": "in-progress",
     "createdAt": "2026-08-12T06:18:28.450Z",
-    "updatedAt": "2026-08-19T09:31:27.407Z",
+    "updatedAt": "2026-08-19T09:31:40.284Z",
     "sections": {
       "solutions": {
         "status": "in-progress",
@@ -65,7 +65,8 @@
           "regression-full",
           "no-cross-client",
           "data-accuracy",
-          "data-consistency"
+          "data-consistency",
+          "reporting-accuracy"
         ],
         "naChecks": [
           "points-mapping"
