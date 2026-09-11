@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect, useCallback } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -44,6 +45,33 @@ export function QuarterlyBreakdown({ requests }: { requests: RequestRow[] }) {
   const ALL = "All";
   const [selected, setSelected] = useState<string>(ALL);
 
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const updateScrollState = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 2);
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 2);
+  }, []);
+
+  // Land on the most recent quarter by default — older ones (e.g. Q1 2025)
+  // stay one arrow-click away instead of crowding the header.
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const id = requestAnimationFrame(() => {
+      el.scrollLeft = el.scrollWidth;
+      updateScrollState();
+    });
+    return () => cancelAnimationFrame(id);
+  }, [quarters, updateScrollState]);
+
+  const scrollByAmount = (dir: 1 | -1) => {
+    scrollRef.current?.scrollBy({ left: dir * 120, behavior: "smooth" });
+  };
+
   const filtered = useMemo(
     () => selected === ALL ? requests : requests.filter(r => getQuarter(r.submittedAt) === selected),
     [requests, selected]
@@ -66,31 +94,53 @@ export function QuarterlyBreakdown({ requests }: { requests: RequestRow[] }) {
     <Card compact>
 
       {/* Header */}
-      <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-        <CardTitle className="text-[length:var(--font-size-dense)]">Solution Requests by Quarter</CardTitle>
-        <div className="flex items-center gap-1 flex-wrap">
+      <div className="flex items-center justify-between mb-3 gap-2">
+        <CardTitle className="text-[length:var(--font-size-dense)] shrink-0">Solution Requests by Quarter</CardTitle>
+        <div className="flex items-center gap-1 min-w-0">
           <button
             onClick={() => setSelected(ALL)}
             className={cn(
-              "px-2.5 py-1 rounded-[8px] text-[length:var(--font-size-xs)] font-semibold transition-colors duration-200 ease-in-out",
+              "shrink-0 px-2.5 py-1 rounded-[8px] text-[length:var(--font-size-xs)] font-semibold transition-colors duration-200 ease-in-out",
               selected === ALL ? "bg-brand-500 text-white" : "text-fg-secondary hover:text-fg-primary hover:bg-neutral-200"
             )}
           >
             All
           </button>
-          <div className="w-px h-3.5 bg-neutral-300 mx-0.5" />
-          {quarters.map(q => (
-            <button
-              key={q}
-              onClick={() => setSelected(q)}
-              className={cn(
-                "px-2.5 py-1 rounded-[8px] text-[length:var(--font-size-xs)] font-semibold transition-colors duration-200 ease-in-out",
-                selected === q ? "bg-brand-500 text-white" : "text-fg-secondary hover:text-fg-primary hover:bg-neutral-200"
-              )}
-            >
-              {q}
-            </button>
-          ))}
+          <div className="w-px h-3.5 bg-neutral-300 mx-0.5 shrink-0" />
+          <button
+            onClick={() => scrollByAmount(-1)}
+            disabled={!canScrollLeft}
+            aria-label="Show earlier quarters"
+            className="shrink-0 p-1 rounded-md text-fg-secondary hover:bg-neutral-200 hover:text-fg-primary disabled:opacity-30 disabled:pointer-events-none transition-colors"
+          >
+            <ChevronLeft size={14} />
+          </button>
+          <div
+            ref={scrollRef}
+            onScroll={updateScrollState}
+            className="hide-scrollbar flex items-center gap-1 flex-nowrap overflow-x-auto max-w-[210px] py-0.5"
+          >
+            {quarters.map(q => (
+              <button
+                key={q}
+                onClick={() => setSelected(q)}
+                className={cn(
+                  "shrink-0 px-2.5 py-1 rounded-[8px] text-[length:var(--font-size-xs)] font-semibold transition-colors duration-200 ease-in-out",
+                  selected === q ? "bg-brand-500 text-white" : "text-fg-secondary hover:text-fg-primary hover:bg-neutral-200"
+                )}
+              >
+                {q}
+              </button>
+            ))}
+          </div>
+          <button
+            onClick={() => scrollByAmount(1)}
+            disabled={!canScrollRight}
+            aria-label="Show later quarters"
+            className="shrink-0 p-1 rounded-md text-fg-secondary hover:bg-neutral-200 hover:text-fg-primary disabled:opacity-30 disabled:pointer-events-none transition-colors"
+          >
+            <ChevronRight size={14} />
+          </button>
         </div>
       </div>
 
