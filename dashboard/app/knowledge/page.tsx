@@ -3,7 +3,7 @@ import { KnowledgeHub } from "@/components/knowledge/KnowledgeHub";
 import { getJSON } from "@/lib/github";
 import type { KnowledgeIndex } from "@/lib/knowledge";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 export interface KnowledgeStats {
   chunkCount: number;

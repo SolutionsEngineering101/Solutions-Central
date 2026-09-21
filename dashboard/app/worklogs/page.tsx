@@ -10,7 +10,7 @@ const MEMBERS = [
   "nilimpa-nizara-bora", "garima-kayal", "kongkana-bayan",
 ];
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 export default async function WorklogsPage() {
   const allLogs = await Promise.all(

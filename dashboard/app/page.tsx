@@ -43,7 +43,7 @@ function normalizeComplexity(raw: unknown): "Low" | "Medium" | "High" | "Other" 
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 export default async function OverviewPage() {
   const [forms, playbook, blueprints] = await Promise.all([
