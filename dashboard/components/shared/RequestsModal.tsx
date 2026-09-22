@@ -8,6 +8,9 @@ export interface SegmentRequest {
   status: string;
   frontmatter: Record<string, unknown>;
   content: string;
+  // Optional context shown in the row subtitle instead of department —
+  // e.g. why a request is flagged in the Action Required notification.
+  reason?: string;
 }
 
 function get(fm: Record<string, unknown>, ...keys: string[]): string {
@@ -118,14 +121,16 @@ export function RequestsModal({
   title,
   color,
   requests,
+  initialDetail = null,
   onClose,
 }: {
   title: string;
   color: string;
   requests: SegmentRequest[];
+  initialDetail?: SegmentRequest | null;
   onClose: () => void;
 }) {
-  const [detail, setDetail] = useState<SegmentRequest | null>(null);
+  const [detail, setDetail] = useState<SegmentRequest | null>(initialDetail);
 
   useEffect(() => {
     const fn = (e: KeyboardEvent) => {
@@ -171,7 +176,7 @@ export function RequestsModal({
               {requests.map((r, i) => {
                 const formId = get(r.frontmatter, "form_id");
                 const client = get(r.frontmatter, "client", "client_name");
-                const department = get(r.frontmatter, "department");
+                const subtitle = r.reason || get(r.frontmatter, "department");
                 return (
                   <button
                     key={i}
@@ -182,7 +187,7 @@ export function RequestsModal({
                     <span className="text-xs font-medium text-fg-secondary w-16 shrink-0 tabular-nums">{formId || "—"}</span>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-fg-primary truncate">{client || "—"}</p>
-                      {department && <p className="text-xs text-fg-secondary truncate">{department}</p>}
+                      {subtitle && <p className="text-xs text-fg-secondary truncate">{subtitle}</p>}
                     </div>
                     <span className="text-xs text-fg-secondary shrink-0 tabular-nums">{r.submittedAt ? formatDate(r.submittedAt) : "—"}</span>
                   </button>

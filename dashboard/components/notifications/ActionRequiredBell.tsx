@@ -2,16 +2,20 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
-import Link from "next/link";
-import { Bell, AlertCircle } from "lucide-react";
+import { Bell, AlertCircle, ChevronRight } from "lucide-react";
 import { formatDate } from "@/lib/utils";
+import { RequestsModal } from "@/components/shared/RequestsModal";
 import type { ActionRequiredItem } from "@/app/api/github/action-required/route";
+
+const VISIBLE_LIMIT = 5;
 
 export function ActionRequiredBell() {
   const { data: session } = useSession();
   const devMode = process.env.NEXT_PUBLIC_DEV_NO_AUTH === "1";
   const [items, setItems] = useState<ActionRequiredItem[]>([]);
   const [open, setOpen] = useState(false);
+  const [modalItem, setModalItem] = useState<ActionRequiredItem | null>(null);
+  const [showModal, setShowModal] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -32,7 +36,21 @@ export function ActionRequiredBell() {
     return () => document.removeEventListener("mousedown", onClickOutside);
   }, []);
 
+  function openItem(it: ActionRequiredItem) {
+    setModalItem(it);
+    setShowModal(true);
+    setOpen(false);
+  }
+
+  function openAll() {
+    setModalItem(null);
+    setShowModal(true);
+    setOpen(false);
+  }
+
   if (!session?.user && !devMode) return null;
+
+  const visible = items.slice(0, VISIBLE_LIMIT);
 
   return (
     <div ref={ref} className="relative">
@@ -58,10 +76,15 @@ export function ActionRequiredBell() {
             </p>
           </div>
 
-          {items.length > 0 && (
+          {visible.length > 0 && (
             <div className="max-h-72 overflow-y-auto">
-              {items.map((it) => (
-                <div key={it.formId} className="flex items-start gap-2.5 px-4 py-2.5 border-b border-neutral-100 last:border-0">
+              {visible.map((it) => (
+                <button
+                  key={it.formId}
+                  type="button"
+                  onClick={() => openItem(it)}
+                  className="flex items-start gap-2.5 w-full text-left px-4 py-2.5 border-b border-neutral-100 last:border-0 hover:bg-neutral-100 transition-colors"
+                >
                   <AlertCircle size={14} className="text-[var(--color-warning)] shrink-0 mt-0.5" />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
@@ -72,19 +95,32 @@ export function ActionRequiredBell() {
                       {it.reason}{it.submittedAt && ` · submitted ${formatDate(it.submittedAt)}`}
                     </p>
                   </div>
-                </div>
+                  <ChevronRight size={14} className="text-fg-secondary shrink-0 mt-0.5" />
+                </button>
               ))}
             </div>
           )}
 
-          <Link
-            href="/solution-requests"
-            onClick={() => setOpen(false)}
-            className="block px-4 py-2.5 text-center text-brand-500 text-xs font-semibold hover:bg-neutral-100 transition-colors"
-          >
-            View Solution Requests
-          </Link>
+          {items.length > 1 && (
+            <button
+              type="button"
+              onClick={openAll}
+              className="block w-full px-4 py-2.5 text-center text-brand-500 text-xs font-semibold hover:bg-neutral-100 transition-colors border-t border-neutral-200"
+            >
+              Show all {items.length}
+            </button>
+          )}
         </div>
+      )}
+
+      {showModal && (
+        <RequestsModal
+          title="Action Required"
+          color="var(--warning-400)"
+          requests={items}
+          initialDetail={modalItem}
+          onClose={() => { setShowModal(false); setModalItem(null); }}
+        />
       )}
     </div>
   );

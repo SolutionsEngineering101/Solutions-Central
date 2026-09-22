@@ -5,7 +5,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { RequestsModal } from "@/components/overview/RequestsModal";
+import { RequestsModal } from "@/components/shared/RequestsModal";
 
 interface RequestRow {
   submittedAt: string;

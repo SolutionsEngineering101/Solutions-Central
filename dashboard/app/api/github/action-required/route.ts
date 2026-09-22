@@ -14,6 +14,8 @@ export interface ActionRequiredItem {
   status: string;
   submittedAt: string;
   reason: string;
+  frontmatter: Record<string, unknown>;
+  content: string;
 }
 
 // The GitHub profile's "name" field is optional — plenty of accounts never
@@ -72,6 +74,8 @@ export async function GET() {
       status,
       submittedAt,
       reason,
+      frontmatter: r.frontmatter,
+      content: r.content,
     });
   }
 
