@@ -148,7 +148,7 @@ def to_markdown(row: dict, num=None) -> str:
     eid   = clean(row["id"])
     date  = parse_date(row["completion"] or row["response_date"])
     cli   = clean(row["client"]) or "Unknown Client"
-    stat  = clean(row["status"]) or "Unknown"
+    stat  = clean(row["status"]) or "Pending Update"
     comp  = clean(row["complexity"]) or "Not Set"
     try:
         form_id = f"SF-{int(float(eid)):03d}" if eid else (f"SF-R{num:03d}" if num else "SF-???")
@@ -283,7 +283,7 @@ def update_impact_json():
             "open": status_counts.get("Open", 0),
             "rejected": status_counts.get("Rejected", 0),
             "no_response_closed": status_counts.get("No Response Closed", 0),
-            "unknown": status_counts.get("Unknown", 0),
+            "unknown": status_counts.get("Pending Update", 0),
             "playbook_entries": 0,
             "blueprints_created": 0,
             "active_projects": 0,
