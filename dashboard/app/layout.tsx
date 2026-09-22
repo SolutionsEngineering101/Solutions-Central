@@ -32,9 +32,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={inter.variable} suppressHydrationWarning>
       <body>
-        <Script id="theme-boot" strategy="beforeInteractive">
-          {THEME_BOOT_SCRIPT}
-        </Script>
+        <Script id="theme-boot" strategy="beforeInteractive" dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
         <Providers>{children}</Providers>
       </body>
     </html>

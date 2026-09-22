@@ -17,6 +17,7 @@ const STATUS_META: Record<string, { label: string; variant: NonNullable<BadgePro
   "Open":                  { label: "Open",        variant: "warning", dot: "var(--warning-400)" },
   "Rejected":              { label: "Rejected",    variant: "error",   dot: "var(--error-400)" },
   "No Response Closed":    { label: "No Response", variant: "neutral", dot: "var(--neutral-500)" },
+  "Pending Update":        { label: "Pending Update", variant: "neutral", dot: "var(--neutral-500)" },
 };
 
 const SPOC_KEYS: Record<string, string> = {
@@ -28,7 +29,7 @@ const SPOC_KEYS: Record<string, string> = {
 
 function normalizeStatus(raw: unknown): string {
   const s = String(raw ?? "").trim();
-  if (!s || s === "—") return "Unknown";
+  if (!s || s === "—") return "Pending Update";
   if (s.toLowerCase() === "new") return "Open";
   return s;
 }
@@ -119,6 +120,8 @@ export default async function OverviewPage() {
           requests={requests.map(r => ({
             submittedAt: String(r.frontmatter.submitted_at ?? r.frontmatter.date ?? ""),
             status: normalizeStatus(r.frontmatter.status),
+            frontmatter: r.frontmatter,
+            content: r.content,
           }))}
         />
 

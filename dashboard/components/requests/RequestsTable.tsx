@@ -24,7 +24,7 @@ const STATUS_VARIANT: Record<string, NonNullable<BadgeProps["variant"]>> = {
   "Open":                  "warning",
   "Rejected":              "error",
   "No Response Closed":    "neutral",
-  "Unknown":               "neutral",
+  "Pending Update":        "neutral",
 };
 
 function statusVariant(status: string): NonNullable<BadgeProps["variant"]> {
@@ -37,7 +37,7 @@ const STATUS_BAR: { key: string; label: string; variant: NonNullable<BadgeProps[
   { key: "Open",                  label: "Open",        variant: "warning" },
   { key: "Rejected",              label: "Rejected",    variant: "error" },
   { key: "No Response Closed",    label: "No Response", variant: "neutral" },
-  { key: "Unknown",               label: "Unknown",     variant: "neutral" },
+  { key: "Pending Update",        label: "Pending Update", variant: "neutral" },
 ];
 const CANON = new Set(STATUS_BAR.map((s) => s.key));
 
@@ -62,9 +62,9 @@ const CHIP_DOT_CLASSES: Record<NonNullable<BadgeProps["variant"]>, string> = {
 
 function normalizeStatus(raw: string): string {
   const s = (raw ?? "").trim();
-  if (!s || s === "—") return "Unknown";
+  if (!s || s === "—") return "Pending Update";
   if (s.toLowerCase() === "new") return "Open";
-  return CANON.has(s) ? s : "Unknown";
+  return CANON.has(s) ? s : "Pending Update";
 }
 
 function get(fm: Record<string, unknown>, ...keys: string[]): string {
@@ -99,7 +99,7 @@ function extractDescription(content: string): { subject: string; brief: string }
 
 const STATUS_OPTIONS = [
   "Open", "Solution Given Closed", "To Product Closed",
-  "Rejected", "No Response Closed", "Unknown",
+  "Rejected", "No Response Closed", "Pending Update",
 ];
 const COMPLEXITY_OPTIONS = ["Not Set", "Low", "Medium", "High"];
 

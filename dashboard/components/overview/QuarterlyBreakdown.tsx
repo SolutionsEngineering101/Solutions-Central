@@ -5,10 +5,13 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { RequestsModal } from "@/components/overview/RequestsModal";
 
 interface RequestRow {
   submittedAt: string;
   status: string;
+  frontmatter: Record<string, unknown>;
+  content: string;
 }
 
 const STATUS_META: Record<string, { label: string; variant: NonNullable<BadgeProps["variant"]>; color: string }> = {
@@ -17,7 +20,7 @@ const STATUS_META: Record<string, { label: string; variant: NonNullable<BadgePro
   "Open":                  { label: "Open",        variant: "warning", color: "var(--warning-400)" },
   "Rejected":              { label: "Rejected",    variant: "error",   color: "var(--error-400)" },
   "No Response Closed":    { label: "No Response", variant: "neutral", color: "var(--neutral-500)" },
-  "Unknown":               { label: "Unknown",     variant: "neutral", color: "var(--neutral-600)" },
+  "Pending Update":        { label: "Pending Update", variant: "neutral", color: "var(--neutral-600)" },
 };
 
 function getQuarter(dateStr: string): string | null {
@@ -88,9 +91,13 @@ export function QuarterlyBreakdown({ requests }: { requests: RequestRow[] }) {
   // Always show every status in a fixed order so the card structure stays rigid
   // across quarter changes — only the counts/bars update.
   const breakdown = Object.entries(STATUS_META)
-    .map(([key, meta]) => ({ ...meta, count: counts[key] ?? 0 }));
+    .map(([key, meta]) => ({ key, ...meta, count: counts[key] ?? 0 }));
+
+  const [openKey, setOpenKey] = useState<string | null>(null);
+  const openMeta = openKey ? STATUS_META[openKey] : null;
 
   return (
+    <>
     <Card compact>
 
       {/* Header */}
@@ -163,11 +170,18 @@ export function QuarterlyBreakdown({ requests }: { requests: RequestRow[] }) {
 
           {/* Status bars */}
           <div className="col-span-3 flex flex-col justify-center gap-2.5">
-            {breakdown.map(({ label, variant, color, count }) => {
+            {breakdown.map(({ key, label, variant, color, count }) => {
               const pct = total > 0 ? Math.round((count / total) * 100) : 0;
               return (
-                <div key={label} className="flex items-center gap-3">
-                  <Badge variant={variant} className="shrink-0 w-24 justify-center">{label}</Badge>
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setOpenKey(key)}
+                  disabled={count === 0}
+                  className="flex items-center gap-3 w-full text-left rounded-md -mx-1 px-1 py-0.5 transition-colors hover:bg-neutral-200/60 disabled:hover:bg-transparent disabled:cursor-default focus-visible:outline-2 focus-visible:outline-brand-400"
+                  title={count > 0 ? `Show ${label.toLowerCase()} requests` : undefined}
+                >
+                  <Badge variant={variant} className="shrink-0 w-28 justify-center">{label}</Badge>
                   <div className="flex-1 h-1.5 bg-neutral-300 rounded-pill overflow-hidden">
                     <div
                       className="h-full rounded-pill transition-all duration-500 ease-out"
@@ -176,12 +190,22 @@ export function QuarterlyBreakdown({ requests }: { requests: RequestRow[] }) {
                   </div>
                   <span className="text-[length:var(--font-size-xs)] font-bold tabular-nums w-7 text-right" style={{ color }}>{count}</span>
                   <span className="text-[length:var(--font-size-xs)] text-fg-secondary tabular-nums w-8 text-right">{pct}%</span>
-                </div>
+                </button>
               );
             })}
           </div>
 
         </div>
     </Card>
+
+    {openMeta && (
+      <RequestsModal
+        title={openMeta.label}
+        color={openMeta.color}
+        requests={filtered.filter(r => r.status === openKey)}
+        onClose={() => setOpenKey(null)}
+      />
+    )}
+    </>
   );
 }
