@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { getMarkdownFiles } from "@/lib/github";
+import { SPOC_KEYS } from "@/lib/spoc";
 
 export const revalidate = 60;
 
@@ -15,11 +16,17 @@ export interface ActionRequiredItem {
   reason: string;
 }
 
-// Matches the logged-in GitHub user to the free-text `solution_spoc` field the
-// same way the homepage's SPOC leaderboard does — first-name substring match,
-// no separate name→login table to keep in sync.
-function isAssignedTo(spoc: string, firstName: string): boolean {
-  return spoc.toLowerCase().includes(firstName);
+// The GitHub profile's "name" field is optional — plenty of accounts never
+// set it — so identity is resolved against every signal the session has
+// (display name, email, and the always-present GitHub username), matched
+// against the same SPOC vocabulary the homepage leaderboard uses. Whichever
+// key appears in any of them wins.
+function resolveSpocKey(candidates: (string | null | undefined)[]): string | null {
+  const lowered = candidates.filter((c): c is string => !!c).map((c) => c.toLowerCase());
+  for (const key of Object.keys(SPOC_KEYS)) {
+    if (lowered.some((c) => c.includes(key))) return key;
+  }
+  return null;
 }
 
 function daysSince(dateStr: string): number | null {
@@ -32,19 +39,23 @@ function daysSince(dateStr: string): number | null {
 export async function GET() {
   const session = await getServerSession(authOptions);
   const devBypass = process.env.NEXT_PUBLIC_DEV_NO_AUTH === "1";
-  const name = session?.user?.name ?? (devBypass ? process.env.DEV_ACTION_REQUIRED_USER : undefined);
-  if (!name) return NextResponse.json({ items: [] });
+  const user = session?.user as { name?: string | null; email?: string | null; login?: string } | undefined;
 
-  const firstName = name.trim().split(/\s+/)[0]?.toLowerCase();
-  if (!firstName) return NextResponse.json({ items: [] });
+  const spocKey = user
+    ? resolveSpocKey([user.name, user.email, user.login])
+    : devBypass
+      ? resolveSpocKey([process.env.DEV_ACTION_REQUIRED_USER])
+      : null;
+
+  if (!spocKey) return NextResponse.json({ items: [] });
 
   const forms = await getMarkdownFiles("intake/solutions-forms");
   const requests = forms.filter((f) => !f.path.includes("skeleton-") && !f.path.endsWith("README.md"));
 
   const items: ActionRequiredItem[] = [];
   for (const r of requests) {
-    const spoc = String(r.frontmatter.solution_spoc ?? "");
-    if (!spoc || !isAssignedTo(spoc, firstName)) continue;
+    const spoc = String(r.frontmatter.solution_spoc ?? "").toLowerCase();
+    if (!spoc.includes(spocKey)) continue;
 
     const status = String(r.frontmatter.status ?? "").trim() || "Pending Update";
     const submittedAt = String(r.frontmatter.submitted_at ?? r.frontmatter.date ?? "");

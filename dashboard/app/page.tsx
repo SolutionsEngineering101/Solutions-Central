@@ -8,6 +8,7 @@ import { ComplexityDonut } from "@/components/overview/ComplexityDonut";
 import { Card, CardTitle } from "@/components/ui/card";
 import { StatCard } from "@/components/ui/stat-card";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
+import { SPOC_KEYS } from "@/lib/spoc";
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
@@ -18,11 +19,6 @@ const STATUS_META: Record<string, { label: string; variant: NonNullable<BadgePro
   "Rejected":              { label: "Rejected",    variant: "error",   dot: "var(--error-400)" },
   "No Response Closed":    { label: "No Response", variant: "neutral", dot: "var(--neutral-500)" },
   "Pending Update":        { label: "Pending Update", variant: "neutral", dot: "var(--neutral-500)" },
-};
-
-const SPOC_KEYS: Record<string, string> = {
-  nilimpa: "Nilimpa", garima: "Garima", hemanga: "Hemanga",
-  pankaj: "Pankaj",  kongkana: "Kongkana", bhargav: "Bhargav",
 };
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────

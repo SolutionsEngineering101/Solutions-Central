@@ -15,9 +15,20 @@ export const authOptions: NextAuthOptions = {
       // specific people later, check `profile.login` against an allow-list and return false.
       return true;
     },
+    async jwt({ token, profile }) {
+      // GitHub's `login` (username) is always present, unlike the optional
+      // profile "name" field — the more reliable identity signal to keep.
+      if (profile && "login" in profile) {
+        token.login = (profile as { login?: string }).login;
+      }
+      return token;
+    },
     async session({ session, token }) {
       if (session.user && token.sub) {
         (session.user as { id?: string }).id = token.sub;
+      }
+      if (session.user && token.login) {
+        (session.user as { login?: string }).login = token.login as string;
       }
       return session;
     },
