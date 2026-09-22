@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { RequestsModal } from "@/components/shared/RequestsModal";
 
 interface RequestRow {
+  path: string;
   submittedAt: string;
   status: string;
   frontmatter: Record<string, unknown>;

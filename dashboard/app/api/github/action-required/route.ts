@@ -9,6 +9,7 @@ export const revalidate = 60;
 const STALE_OPEN_DAYS = 7;
 
 export interface ActionRequiredItem {
+  path: string;
   formId: string;
   client: string;
   status: string;
@@ -69,6 +70,7 @@ export async function GET() {
 
     if (!reason) continue;
     items.push({
+      path: r.path,
       formId: String(r.frontmatter.form_id ?? ""),
       client: String(r.frontmatter.client ?? r.frontmatter.client_name ?? "—"),
       status,

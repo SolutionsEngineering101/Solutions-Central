@@ -114,6 +114,7 @@ export default async function OverviewPage() {
         {/* ── Quarterly breakdown ──────────────────────────────────────────── */}
         <QuarterlyBreakdown
           requests={requests.map(r => ({
+            path: r.path,
             submittedAt: String(r.frontmatter.submitted_at ?? r.frontmatter.date ?? ""),
             status: normalizeStatus(r.frontmatter.status),
             frontmatter: r.frontmatter,
