@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { ActionRequiredBell } from "@/components/notifications/ActionRequiredBell";
 import {
   LayoutDashboard,
   FileText,
@@ -38,9 +39,12 @@ export function Sidebar() {
 
   return (
     <aside className="fixed left-0 top-0 h-screen w-56 bg-neutral-100 border-r border-neutral-300 flex flex-col">
-      <div className="px-5 py-5 border-b border-neutral-300">
-        <p className="text-fg-primary font-semibold text-sm tracking-wide">Solutions Central</p>
-        <p className="text-fg-secondary text-xs mt-0.5">SE Team Dashboard</p>
+      <div className="px-5 py-5 border-b border-neutral-300 flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="text-fg-primary font-semibold text-sm tracking-wide">Solutions Central</p>
+          <p className="text-fg-secondary text-xs mt-0.5">SE Team Dashboard</p>
+        </div>
+        <ActionRequiredBell />
       </div>
 
       <nav className="flex-1 px-3 py-4 space-y-0.5">
