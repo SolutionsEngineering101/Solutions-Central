@@ -18,16 +18,40 @@ export function ActionRequiredBell() {
   const [showModal, setShowModal] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  function loadItems() {
+  // The very first request right after login can fail on a cold serverless
+  // function or a transient network blip — silently giving up there meant
+  // the badge only ever appeared once something else (a click) retried it.
+  // One retry, plus a periodic re-poll below, means the marker shows up on
+  // its own instead of depending on the user interacting with the bell first.
+  function loadItems(retriesLeft = 1) {
     return fetch("/api/github/action-required")
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error(`status ${res.status}`);
+        return res.json();
+      })
       .then((data: { items: ActionRequiredItem[] }) => setItems(data.items ?? []))
-      .catch(() => {});
+      .catch((err) => {
+        if (retriesLeft > 0) {
+          setTimeout(() => loadItems(retriesLeft - 1), 2000);
+        } else {
+          console.error("Action Required fetch failed:", err);
+        }
+      });
   }
 
   useEffect(() => {
     if (!session?.user && !devMode) return;
     loadItems();
+    // Keep the badge current for as long as the tab stays open, without
+    // requiring the user to click anything.
+    const interval = setInterval(() => loadItems(), 2 * 60 * 1000);
+    function onVisible() { if (document.visibilityState === "visible") loadItems(); }
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session, devMode]);
 
   useEffect(() => {
@@ -122,7 +146,7 @@ export function ActionRequiredBell() {
           requests={items}
           initialDetail={modalItem}
           onClose={() => { setShowModal(false); setModalItem(null); }}
-          onSaved={loadItems}
+          onSaved={() => loadItems()}
         />
       )}
     </div>
