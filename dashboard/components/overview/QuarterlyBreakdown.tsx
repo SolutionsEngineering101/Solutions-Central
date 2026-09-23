@@ -20,7 +20,7 @@ const STATUS_META: Record<string, { label: string; variant: NonNullable<BadgePro
   "To Product Closed":     { label: "To Product",  variant: "brand",   color: "var(--brand-400)" },
   "Open":                  { label: "Open",        variant: "warning", color: "var(--warning-400)" },
   "Rejected":              { label: "Rejected",    variant: "error",   color: "var(--error-400)" },
-  "No Response Closed":    { label: "No Response", variant: "neutral", color: "var(--neutral-500)" },
+  "No Response Closed":    { label: "No Response Closed", variant: "neutral", color: "var(--neutral-500)" },
   "Pending Update":        { label: "Pending Update", variant: "neutral", color: "var(--neutral-600)" },
 };
 
@@ -94,7 +94,9 @@ export function QuarterlyBreakdown({ requests }: { requests: RequestRow[] }) {
   const counts: Record<string, number> = {};
   for (const r of filtered) counts[r.status] = (counts[r.status] ?? 0) + 1;
 
-  const delivered = counts["Solution Given Closed"] ?? 0;
+  // No Response Closed requests were still resolved from our end, so they
+  // count toward Delivered / completion rate alongside Solution Given Closed.
+  const delivered = (counts["Solution Given Closed"] ?? 0) + (counts["No Response Closed"] ?? 0);
   const open      = counts["Open"] ?? 0;
   const winRate   = total > 0 ? Math.round((delivered / total) * 100) : 0;
 
@@ -191,7 +193,7 @@ export function QuarterlyBreakdown({ requests }: { requests: RequestRow[] }) {
                   className="flex items-center gap-3 w-full text-left rounded-md -mx-1 px-1 py-0.5 transition-colors hover:bg-neutral-200/60 disabled:hover:bg-transparent disabled:cursor-default focus-visible:outline-2 focus-visible:outline-brand-400"
                   title={count > 0 ? `Show ${label.toLowerCase()} requests` : undefined}
                 >
-                  <Badge variant={variant} className="shrink-0 w-28 justify-center">{label}</Badge>
+                  <Badge variant={variant} className="shrink-0 w-36 justify-center">{label}</Badge>
                   <div className="flex-1 h-1.5 bg-neutral-300 rounded-pill overflow-hidden">
                     <div
                       className="h-full rounded-pill transition-all duration-500 ease-out"

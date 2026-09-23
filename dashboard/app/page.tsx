@@ -17,7 +17,7 @@ const STATUS_META: Record<string, { label: string; variant: NonNullable<BadgePro
   "To Product Closed":     { label: "To Product",  variant: "brand",   dot: "var(--brand-400)" },
   "Open":                  { label: "Open",        variant: "warning", dot: "var(--warning-400)" },
   "Rejected":              { label: "Rejected",    variant: "error",   dot: "var(--error-400)" },
-  "No Response Closed":    { label: "No Response", variant: "neutral", dot: "var(--neutral-500)" },
+  "No Response Closed":    { label: "No Response Closed", variant: "neutral", dot: "var(--neutral-500)" },
   "Pending Update":        { label: "Pending Update", variant: "neutral", dot: "var(--neutral-500)" },
 };
 
@@ -59,7 +59,9 @@ export default async function OverviewPage() {
     const s = normalizeStatus(r.frontmatter.status);
     statusCounts[s] = (statusCounts[s] ?? 0) + 1;
   }
-  const delivered = statusCounts["Solution Given Closed"] ?? 0;
+  // No Response Closed requests were still resolved from our end, so they
+  // count toward Delivered / completion rate alongside Solution Given Closed.
+  const delivered = (statusCounts["Solution Given Closed"] ?? 0) + (statusCounts["No Response Closed"] ?? 0);
   const open      = statusCounts["Open"] ?? 0;
   const winRate   = total > 0 ? Math.round((delivered / total) * 100) : 0;
 

@@ -36,7 +36,7 @@ const STATUS_BAR: { key: string; label: string; variant: NonNullable<BadgeProps[
   { key: "To Product Closed",     label: "To Product",  variant: "brand" },
   { key: "Open",                  label: "Open",        variant: "warning" },
   { key: "Rejected",              label: "Rejected",    variant: "error" },
-  { key: "No Response Closed",    label: "No Response", variant: "neutral" },
+  { key: "No Response Closed",    label: "No Response Closed", variant: "neutral" },
   { key: "Pending Update",        label: "Pending Update", variant: "neutral" },
 ];
 const CANON = new Set(STATUS_BAR.map((s) => s.key));
