@@ -59,12 +59,14 @@ export default async function OverviewPage() {
     const s = normalizeStatus(r.frontmatter.status);
     statusCounts[s] = (statusCounts[s] ?? 0) + 1;
   }
-  // No Response Closed and To Product Closed requests were still resolved
-  // from our end, so they count toward Delivered / completion rate
-  // alongside Solution Given Closed.
+  // No Response Closed, To Product Closed, and Rejected requests were all
+  // still resolved from our end (Rejected means a solution was discussed
+  // and a decision was made not to proceed) — every closed status except
+  // Open / Pending Update counts toward Delivered / completion rate.
   const delivered = (statusCounts["Solution Given Closed"] ?? 0)
     + (statusCounts["No Response Closed"] ?? 0)
-    + (statusCounts["To Product Closed"] ?? 0);
+    + (statusCounts["To Product Closed"] ?? 0)
+    + (statusCounts["Rejected"] ?? 0);
   const open      = statusCounts["Open"] ?? 0;
   const winRate   = total > 0 ? Math.round((delivered / total) * 100) : 0;
 
