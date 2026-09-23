@@ -18,14 +18,16 @@ export function ActionRequiredBell() {
   const [showModal, setShowModal] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
+  function loadItems() {
+    return fetch("/api/github/action-required")
+      .then((res) => res.json())
+      .then((data: { items: ActionRequiredItem[] }) => setItems(data.items ?? []))
+      .catch(() => {});
+  }
+
   useEffect(() => {
     if (!session?.user && !devMode) return;
-    let cancelled = false;
-    fetch("/api/github/action-required")
-      .then((res) => res.json())
-      .then((data: { items: ActionRequiredItem[] }) => { if (!cancelled) setItems(data.items ?? []); })
-      .catch(() => {});
-    return () => { cancelled = true; };
+    loadItems();
   }, [session, devMode]);
 
   useEffect(() => {
@@ -55,7 +57,7 @@ export function ActionRequiredBell() {
   return (
     <div ref={ref} className="relative">
       <button
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => { const next = !open; setOpen(next); if (next) loadItems(); }}
         aria-label={`${items.length} requests need action`}
         className="relative flex items-center justify-center w-8 h-8 rounded-[8px] text-fg-secondary hover:text-fg-primary hover:bg-neutral-200 transition-colors duration-200 ease-in-out"
       >
@@ -120,6 +122,7 @@ export function ActionRequiredBell() {
           requests={items}
           initialDetail={modalItem}
           onClose={() => { setShowModal(false); setModalItem(null); }}
+          onSaved={loadItems}
         />
       )}
     </div>

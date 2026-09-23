@@ -76,9 +76,18 @@ export function QuarterlyBreakdown({ requests }: { requests: RequestRow[] }) {
     scrollRef.current?.scrollBy({ left: dir * 120, behavior: "smooth" });
   };
 
-  const filtered = useMemo(
+  const filteredRaw = useMemo(
     () => selected === ALL ? requests : requests.filter(r => getQuarter(r.submittedAt) === selected),
     [requests, selected]
+  );
+
+  // Statuses changed via the drill-down popup, keyed by path — overlaid on
+  // top of the server-passed `requests` prop so the KPIs and bars update
+  // immediately, without waiting on that prop to refetch.
+  const [edits, setEdits] = useState<Record<string, string>>({});
+  const filtered = useMemo(
+    () => filteredRaw.map(r => (edits[r.path] ? { ...r, status: edits[r.path] } : r)),
+    [filteredRaw, edits]
   );
 
   const total = filtered.length;
@@ -205,6 +214,7 @@ export function QuarterlyBreakdown({ requests }: { requests: RequestRow[] }) {
         color={openMeta.color}
         requests={filtered.filter(r => r.status === openKey)}
         onClose={() => setOpenKey(null)}
+        onSaved={(updated) => setEdits((prev) => ({ ...prev, [updated.path]: updated.status }))}
       />
     )}
     </>

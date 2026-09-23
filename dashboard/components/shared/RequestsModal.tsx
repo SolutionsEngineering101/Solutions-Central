@@ -227,12 +227,18 @@ export function RequestsModal({
   requests,
   initialDetail = null,
   onClose,
+  onSaved,
 }: {
   title: string;
   color: string;
   requests: SegmentRequest[];
   initialDetail?: SegmentRequest | null;
   onClose: () => void;
+  // Called with the updated request after a successful save, so a caller
+  // holding its own copy of the data (a fetched list, or aggregate counts
+  // computed from it) can react — this modal's own optimistic update only
+  // covers what it renders itself.
+  onSaved?: (updated: SegmentRequest) => void;
 }) {
   const router = useRouter();
   // Only the edited items are tracked locally — the rest still come straight
@@ -305,6 +311,7 @@ export function RequestsModal({
       setEdits((prev) => ({ ...prev, [updated.path]: updated }));
       setEditing(false);
       setSaveMsg("saved");
+      onSaved?.(updated);
       setTimeout(() => { setSaveMsg(""); router.refresh(); }, 1200);
     } catch {
       setSaveMsg("error");
