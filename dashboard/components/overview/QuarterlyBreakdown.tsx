@@ -94,9 +94,12 @@ export function QuarterlyBreakdown({ requests }: { requests: RequestRow[] }) {
   const counts: Record<string, number> = {};
   for (const r of filtered) counts[r.status] = (counts[r.status] ?? 0) + 1;
 
-  // No Response Closed requests were still resolved from our end, so they
-  // count toward Delivered / completion rate alongside Solution Given Closed.
-  const delivered = (counts["Solution Given Closed"] ?? 0) + (counts["No Response Closed"] ?? 0);
+  // No Response Closed and To Product Closed requests were still resolved
+  // from our end, so they count toward Delivered / completion rate
+  // alongside Solution Given Closed.
+  const delivered = (counts["Solution Given Closed"] ?? 0)
+    + (counts["No Response Closed"] ?? 0)
+    + (counts["To Product Closed"] ?? 0);
   const open      = counts["Open"] ?? 0;
   const winRate   = total > 0 ? Math.round((delivered / total) * 100) : 0;
 
