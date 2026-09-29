@@ -3,11 +3,11 @@
   "metrics": {
     "total_requests": 331,
     "solutions_delivered": 229,
-    "to_product": 43,
+    "to_product": 44,
     "open": 20,
     "rejected": 12,
     "no_response_closed": 16,
-    "unknown": 11,
+    "unknown": 10,
     "playbook_entries": 0,
     "blueprints_created": 0,
     "active_projects": 0,
