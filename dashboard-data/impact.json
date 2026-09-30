@@ -1,17 +1,17 @@
 {
   "last_updated": "2026-09-30",
   "metrics": {
-    "total_requests": 331,
+    "total_requests": 333,
     "solutions_delivered": 229,
     "to_product": 44,
     "open": 20,
     "rejected": 12,
     "no_response_closed": 16,
-    "unknown": 10,
+    "unknown": 12,
     "playbook_entries": 0,
     "blueprints_created": 0,
     "active_projects": 0,
-    "clients_served": 197
+    "clients_served": 198
   },
   "highlights": []
 }
