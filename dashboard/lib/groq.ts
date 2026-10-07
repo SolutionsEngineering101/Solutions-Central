@@ -1,8 +1,8 @@
 // Groq API client (OpenAI-compatible REST) — no SDK dependency.
-// Model overridable via GROQ_MODEL env var; defaults to llama-3.3-70b-versatile.
+// Model overridable via GROQ_MODEL env var; defaults to openai/gpt-oss-120b (open-weight; llama-3.3-70b-versatile was retired by Groq).
 
 const API = "https://api.groq.com/openai/v1";
-const MODEL = process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
+const MODEL = process.env.GROQ_MODEL || "openai/gpt-oss-120b";
 
 export function groqConfigured(): boolean {
   return !!process.env.GROQ_API_KEY;
