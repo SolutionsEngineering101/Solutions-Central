@@ -38,19 +38,44 @@ function makeChunk(
   return { id, source, title, text: cleaned, meta, tf: computeTf(cleaned), len: cleaned.length };
 }
 
+// Split a long markdown doc into one chunk per ##/### section, and window any
+// section longer than maxLen. Indexing only the first ~1.5k chars meant most of
+// a long playbook or RFP was invisible to search.
+function sectionChunks(content: string, maxLen = 2500): { heading: string; body: string }[] {
+  const out: { heading: string; body: string }[] = [];
+  for (const sec of content.split(/^(?=##+\s)/m)) {
+    const heading = sec.match(/^##+\s+(.+)$/m)?.[1]?.trim() ?? "";
+    const body = clip(heading ? sec.replace(/^##+\s+.+$/m, "") : sec, Infinity);
+    if (!body) continue;
+    if (body.length <= maxLen) { out.push({ heading, body }); continue; }
+    for (let i = 0, part = 1; i < body.length; i += maxLen, part++) {
+      out.push({ heading: `${heading || "Part"} (${part})`, body: body.slice(i, i + maxLen) });
+    }
+  }
+  return out;
+}
+
+function docTitleOf(f: { path: string; content: string; frontmatter: Record<string, unknown> }): string {
+  return fmStr(f.frontmatter, "title")
+    || f.content.match(/^#\s+(.+)$/m)?.[1]?.trim()
+    || f.path.split("/").pop()!.replace(/\.md$/, "");
+}
+
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
   if (!session && process.env.NEXT_PUBLIC_DEV_NO_AUTH !== "1")
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
-    const [forms, playbook, blueprints, rfps, specs, confluencePages] = await Promise.all([
+    const [forms, playbook, blueprints, rfps, specs, confluencePages, documents, confluenceSync] = await Promise.all([
       getMarkdownFiles("intake/solutions-forms"),
       getMarkdownFiles("playbook/entries"),
       getMarkdownFiles("pre-built-solutions/blueprints"),
       getMarkdownFiles("rfps/entries"),
       getMarkdownFiles("product-information/specs"),
       listSpacePages(process.env.CONFLUENCE_SPACE_KEY ?? "PMT", CONFLUENCE_PAGE_ID ? [CONFLUENCE_PAGE_ID] : []).catch(() => []),
+      getMarkdownFiles("documents"),
+      getMarkdownFiles("intake/confluence-sync"),
     ]);
 
     const chunks: KnowledgeChunk[] = [];
@@ -80,48 +105,57 @@ export async function POST(req: Request) {
     for (const p of playbook) {
       if (p.path.endsWith("README.md")) continue;
       const fm = p.frontmatter;
-      const title = fmStr(fm, "title") || p.path.split("/").pop()!.replace(/\.md$/, "");
+      const docTitle = docTitleOf(p);
       const tags = Array.isArray(fm.tags) ? (fm.tags as string[]).join(" ") : "";
       const author = fmStr(fm, "author");
-      const text = [title, tags, author, clip(p.content, 1400)].filter(Boolean).join(" ");
-      chunks.push(makeChunk(`playbook:${title}`, "playbook", title, text, {
-        tags: Array.isArray(fm.tags) ? (fm.tags as string[]) : [],
-        author, date: fmStr(fm, "date"), url: ghUrl(p.path),
-      }));
+      for (const { heading, body } of sectionChunks(p.content)) {
+        const title = heading ? `${docTitle} — ${heading}` : docTitle;
+        const text = [title, tags, author, body].filter(Boolean).join(" ");
+        chunks.push(makeChunk(`playbook:${title}`, "playbook", title, text, {
+          tags: Array.isArray(fm.tags) ? (fm.tags as string[]) : [],
+          author, date: fmStr(fm, "date"), url: ghUrl(p.path),
+        }));
+      }
     }
 
     // ── Blueprints ──────────────────────────────────────────────────────────────
     for (const b of blueprints) {
       if (b.path.endsWith("README.md")) continue;
       const fm = b.frontmatter;
-      const title = fmStr(fm, "title") || b.path.split("/").pop()!.replace(/\.md$/, "");
+      const docTitle = docTitleOf(b);
       const domain = fmStr(fm, "domain");
       const clientType = fmStr(fm, "client_type");
       const tags = Array.isArray(fm.tags) ? (fm.tags as string[]).join(" ") : "";
-      const text = [title, domain, clientType, tags, clip(b.content, 1400)].filter(Boolean).join(" ");
-      chunks.push(makeChunk(`blueprint:${title}`, "blueprint", title, text, {
-        tags: Array.isArray(fm.tags) ? (fm.tags as string[]) : [],
-        date: fmStr(fm, "date"),
-        url: ghUrl(b.path),
-      }));
+      for (const { heading, body } of sectionChunks(b.content)) {
+        const title = heading ? `${docTitle} — ${heading}` : docTitle;
+        const text = [title, domain, clientType, tags, body].filter(Boolean).join(" ");
+        chunks.push(makeChunk(`blueprint:${title}`, "blueprint", title, text, {
+          tags: Array.isArray(fm.tags) ? (fm.tags as string[]) : [],
+          date: fmStr(fm, "date"),
+          url: ghUrl(b.path),
+        }));
+      }
     }
 
     // ── RFPs ────────────────────────────────────────────────────────────────────
     for (const r of rfps) {
       if (r.path.endsWith(".gitkeep")) continue;
       const fm = r.frontmatter;
-      const title = fmStr(fm, "title") || r.path.split("/").pop()!.replace(/\.md$/, "");
+      const docTitle = docTitleOf(r);
       const client = fmStr(fm, "client");
       const status = fmStr(fm, "status");
       const assignedTo = fmStr(fm, "assigned_to");
       const deadline = fmStr(fm, "deadline");
       const estimatedValue = fmStr(fm, "estimated_value");
       const tags = Array.isArray(fm.tags) ? (fm.tags as string[]).join(" ") : "";
-      const text = [title, client, status, assignedTo, deadline, estimatedValue, tags, clip(r.content, 1800)].filter(Boolean).join(" ");
-      chunks.push(makeChunk(`rfp:${title}`, "rfp", title, text, {
-        client, status, tags: Array.isArray(fm.tags) ? (fm.tags as string[]) : [],
-        date: fmStr(fm, "date_received"), url: ghUrl(r.path),
-      }));
+      for (const { heading, body } of sectionChunks(r.content)) {
+        const title = heading ? `${docTitle} — ${heading}` : docTitle;
+        const text = [title, client, status, assignedTo, deadline, estimatedValue, tags, body].filter(Boolean).join(" ");
+        chunks.push(makeChunk(`rfp:${title}`, "rfp", title, text, {
+          client, status, tags: Array.isArray(fm.tags) ? (fm.tags as string[]) : [],
+          date: fmStr(fm, "date_received"), url: ghUrl(r.path),
+        }));
+      }
     }
 
     // ── Product specs ───────────────────────────────────────────────────────────
@@ -141,6 +175,19 @@ export async function POST(req: Request) {
         chunks.push(makeChunk(`spec:${title}`, "spec", title, `${title} ${clip(body, 6000)}`, {
           date: fmStr(s.frontmatter, "date"),
           url: ghUrl(s.path),
+        }));
+      }
+    }
+
+    // ── Documents & imported notes (documents/, intake/confluence-sync/) ─────────
+    for (const d of [...documents, ...confluenceSync]) {
+      if (d.path.endsWith("README.md")) continue;
+      const docTitle = docTitleOf(d);
+      for (const { heading, body } of sectionChunks(d.content)) {
+        const title = heading ? `${docTitle} — ${heading}` : docTitle;
+        chunks.push(makeChunk(`doc:${title}`, "document", title, `${title} ${body}`, {
+          date: fmStr(d.frontmatter, "date"),
+          url: ghUrl(d.path),
         }));
       }
     }
@@ -173,6 +220,7 @@ export async function POST(req: Request) {
       rfp: chunks.filter((c) => c.source === "rfp").length,
       spec: chunks.filter((c) => c.source === "spec").length,
       confluence: chunks.filter((c) => c.source === "confluence").length,
+      document: chunks.filter((c) => c.source === "document").length,
     };
 
     return NextResponse.json({ ok: true, chunkCount: chunks.length, builtAt: index.builtAt, bySource });

@@ -8,7 +8,7 @@ export const revalidate = 60;
 export interface KnowledgeStats {
   chunkCount: number;
   builtAt: string;
-  bySource: { form: number; playbook: number; blueprint: number; rfp: number; spec: number; confluence: number };
+  bySource: { form: number; playbook: number; blueprint: number; rfp: number; spec: number; confluence: number; document: number };
 }
 
 export default async function KnowledgePage() {
@@ -25,6 +25,7 @@ export default async function KnowledgePage() {
           rfp: index.chunks.filter((c) => c.source === "rfp").length,
           spec: index.chunks.filter((c) => c.source === "spec").length,
           confluence: index.chunks.filter((c) => c.source === "confluence").length,
+          document: index.chunks.filter((c) => c.source === "document").length,
         },
       }
     : null;

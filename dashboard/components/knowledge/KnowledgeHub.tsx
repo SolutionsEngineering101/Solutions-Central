@@ -27,6 +27,7 @@ function SourceIcon({ source }: { source: SourceRef["source"] }) {
   if (source === "blueprint") return <Layers size={11} className={cls} />;
   if (source === "rfp") return <FileSpreadsheet size={11} className={cls} />;
   if (source === "spec") return <FileCode2 size={11} className={cls} />;
+  if (source === "document") return <FileText size={11} className={cls} />;
   return <Globe size={11} className={cls} />;
 }
 
@@ -128,7 +129,7 @@ export function KnowledgeHub({ initialStats }: Props) {
             <h1 className="text-fg-primary font-semibold text-lg leading-none">Knowledge Hub</h1>
             {stats ? (
               <p className="text-fg-secondary text-xs mt-1">
-                {stats.bySource.form} forms · {stats.bySource.playbook} playbook · {stats.bySource.blueprint} blueprints · {stats.bySource.rfp ?? 0} RFPs · {stats.bySource.spec ?? 0} specs · {stats.bySource.confluence} Confluence
+                {stats.bySource.form} forms · {stats.bySource.playbook} playbook · {stats.bySource.blueprint} blueprints · {stats.bySource.rfp ?? 0} RFPs · {stats.bySource.spec ?? 0} specs · {stats.bySource.document ?? 0} docs · {stats.bySource.confluence} Confluence
                 {builtDate && <span className="ml-2 text-fg-secondary/70">— indexed {builtDate}</span>}
               </p>
             ) : (

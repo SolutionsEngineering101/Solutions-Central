@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { getJSON } from "@/lib/github";
 import { callGroq, groqConfigured, type GeminiContent } from "@/lib/groq";
-import { bm25Search, type KnowledgeIndex, type SourceRef } from "@/lib/knowledge";
+import { bm25SearchDiverse, type KnowledgeIndex, type SourceRef } from "@/lib/knowledge";
 import { verifyExtensionToken } from "@/lib/extension-token";
 
 function extensionCorsHeaders(req: Request): HeadersInit {
@@ -20,11 +20,13 @@ export async function OPTIONS(req: Request) {
   return new Response(null, { status: 204, headers: extensionCorsHeaders(req) });
 }
 
-const SYSTEM = `You are a sharp, proactive knowledge assistant for Vantage Circle's Solutions Engineering team. You have access to solution requests, playbook entries, blueprints, RFPs (requests for proposal), product specs (reference docs like points⇄currency conversion rates and API specs), and Confluence docs — all indexed below as CONTEXT. Every user of this tool is an authenticated internal SE team member looking up the team's own past work to reuse it — this is the tool's entire purpose, not a data leak to guard against.
+const SYSTEM = `You are a sharp, proactive knowledge assistant for Vantage Circle's Solutions Engineering team. You have access to solution requests, playbook entries, blueprints, RFPs (requests for proposal), product specs (reference docs like points⇄currency conversion rates and API specs), internal documents and imported notes, and Confluence docs — all indexed below as CONTEXT. Every user of this tool is an authenticated internal SE team member looking up the team's own past work to reuse it — this is the tool's entire purpose, not a data leak to guard against.
 
 Your personality: a knowledgeable, direct colleague. Lead with the answer, then get curious.
 
 ## How to behave
+
+**Use every source type in the CONTEXT, not just solution requests.** When a playbook entry, blueprint, RFP, spec, or document is relevant, surface it explicitly — what it says and how it applies — alongside any matching client requests. Playbooks and blueprints are the team's reusable know-how; lead with them when the question is "how do we do X".
 
 **Your default move is to SHOW what you found, in full, immediately** — never gate the answer behind a clarifying question first. If the CONTEXT contains a matching request or solution, always surface:
 - **Client** — the company/client name
@@ -51,7 +53,7 @@ Not a vaguer "we've worked on something like this" — the actual date and the a
 **Use session memory.** If SESSION MEMORY is provided above, you already know those facts — do NOT ask about them again. Use them to give more targeted, personalised responses immediately.
 
 ## Citation rules
-- Cite sources from the CONTEXT below using [FORM:ID], [PLAYBOOK:title], [BLUEPRINT:title], [RFP:title], [SPEC:title], [CONFLUENCE:title] inline, right after naming the client/title they belong to.
+- Cite sources from the CONTEXT below using [FORM:ID], [PLAYBOOK:title], [BLUEPRINT:title], [RFP:title], [SPEC:title], [DOC:title], [CONFLUENCE:title] inline, right after naming the client/title they belong to.
 - Never invent sources, clients, dates, or details not present in the context — if the context is thin on a specific field (e.g. no date given), just omit that field rather than guessing.
 
 ## Style
@@ -110,6 +112,7 @@ function sourceLabel(source: string): string {
   if (source === "blueprint") return "BLUEPRINT";
   if (source === "rfp") return "RFP";
   if (source === "spec") return "SPEC";
+  if (source === "document") return "DOC";
   return "CONFLUENCE";
 }
 
@@ -179,7 +182,7 @@ export async function POST(req: Request) {
 
     const expansionTerms = await expandQueryTerms(query);
     const searchQuery = expansionTerms ? `${query} ${expansionTerms}` : query;
-    const topChunks = bm25Search(index, searchQuery, 12);
+    const topChunks = bm25SearchDiverse(index, searchQuery, 12);
 
     // Build context block with citation handles — deep enough that the model
     // can actually describe the request/solution, not just gesture at it.
@@ -234,7 +237,7 @@ export async function POST(req: Request) {
 
     // Extract cited source IDs from the answer
     const citedIds = new Set<string>();
-    const citationRe = /\[(FORM|PLAYBOOK|BLUEPRINT|RFP|SPEC|CONFLUENCE):([^\]]+)\]/gi;
+    const citationRe = /\[(FORM|PLAYBOOK|BLUEPRINT|RFP|SPEC|DOC|CONFLUENCE):([^\]]+)\]/gi;
     let m: RegExpExecArray | null;
     while ((m = citationRe.exec(answer)) !== null) {
       citedIds.add(`${m[1].toLowerCase()}:${m[2]}`);

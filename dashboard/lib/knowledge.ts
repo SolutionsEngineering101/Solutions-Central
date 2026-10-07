@@ -4,7 +4,7 @@
 
 export interface KnowledgeChunk {
   id: string;
-  source: "form" | "playbook" | "blueprint" | "confluence" | "rfp" | "spec";
+  source: "form" | "playbook" | "blueprint" | "confluence" | "rfp" | "spec" | "document";
   title: string;
   text: string;
   meta: {
@@ -54,6 +54,47 @@ export function bm25Search(
   k1 = 1.5,
   b = 0.75
 ): KnowledgeChunk[] {
+  return bm25Scored(index, query, k1, b).slice(0, topN).map((s) => s.chunk);
+}
+
+// Forms (~340) and spec sections (~440) outnumber playbooks/blueprints/RFPs/docs
+// by ~100x, so a plain top-N is almost always all forms. Reserve a slot for the
+// best match from each source, as long as it is reasonably relevant
+// (>= minRelative of the top score), then fill the rest by overall rank.
+export function bm25SearchDiverse(
+  index: KnowledgeIndex,
+  query: string,
+  topN = 12,
+  perSource = 1,
+  minRelative = 0.35
+): KnowledgeChunk[] {
+  const scored = bm25Scored(index, query);
+  if (!scored.length) return [];
+  const floor = scored[0].score * minRelative;
+
+  const picked = new Set<KnowledgeChunk>();
+  const takenBySource: Record<string, number> = {};
+  for (const s of scored) {
+    if (s.score < floor) break;
+    const n = takenBySource[s.chunk.source] ?? 0;
+    if (n >= perSource) continue;
+    takenBySource[s.chunk.source] = n + 1;
+    picked.add(s.chunk);
+  }
+  for (const s of scored) {
+    if (picked.size >= topN) break;
+    picked.add(s.chunk);
+  }
+  // Keep overall relevance order for the prompt
+  return scored.filter((s) => picked.has(s.chunk)).map((s) => s.chunk);
+}
+
+function bm25Scored(
+  index: KnowledgeIndex,
+  query: string,
+  k1 = 1.5,
+  b = 0.75
+): { chunk: KnowledgeChunk; score: number }[] {
   const qTokens = [...new Set(tokenize(query))];
   if (!qTokens.length) return [];
 
@@ -82,7 +123,5 @@ export function bm25Search(
 
   return scored
     .filter((s) => s.score > 0)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, topN)
-    .map((s) => s.chunk);
+    .sort((a, b) => b.score - a.score);
 }
