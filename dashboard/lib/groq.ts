@@ -17,6 +17,7 @@ export async function callGroq(opts: {
   contents: GeminiContent[];
   schema?: unknown;       // When set, forces JSON output mode (structure must be described in system prompt)
   temperature?: number;
+  maxTokens?: number;     // Caps output; also lowers what Groq reserves against the TPM limit
 }): Promise<string> {
   const key = process.env.GROQ_API_KEY;
   if (!key) throw new Error("GROQ_API_KEY not set");
@@ -34,9 +35,13 @@ export async function callGroq(opts: {
     messages,
     temperature: opts.temperature ?? 0.4,
     ...(opts.schema ? { response_format: { type: "json_object" } } : {}),
+    ...(opts.maxTokens ? { max_completion_tokens: opts.maxTokens } : {}),
+    // gpt-oss spends hidden reasoning tokens that count against the free-tier
+    // 8k tokens/min budget; "low" keeps answers fast and within it.
+    ...(MODEL.startsWith("openai/gpt-oss") ? { reasoning_effort: "low" } : {}),
   };
 
-  const res = await fetch(`${API}/chat/completions`, {
+  const send = () => fetch(`${API}/chat/completions`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -45,6 +50,17 @@ export async function callGroq(opts: {
     body: JSON.stringify(body),
     cache: "no-store",
   });
+
+  let res = await send();
+  // Free tier is limited per minute; a short wait usually clears it. Retry once
+  // when Groq asks for <= 10s, otherwise surface the 429 to the caller.
+  if (res.status === 429) {
+    const waitSec = Number(res.headers.get("retry-after") ?? "");
+    if (Number.isFinite(waitSec) && waitSec > 0 && waitSec <= 10) {
+      await new Promise((r) => setTimeout(r, waitSec * 1000));
+      res = await send();
+    }
+  }
 
   if (!res.ok) {
     const text = await res.text();

@@ -123,6 +123,7 @@ async function expandQueryTerms(query: string): Promise<string> {
       system: `Expand the user's search query into 6-10 closely related keywords, synonyms, and specific entities (product features, industry terms, client-facing phrasing) that might appear in Vantage Circle solution requests, playbook entries, blueprints, RFPs, or Confluence docs. Output ONLY a comma-separated list of terms — no explanation, no numbering, no repeating the original query verbatim.`,
       contents: [{ role: "user", parts: [{ text: query }] }],
       temperature: 0.3,
+      maxTokens: 200,
     });
     return raw.replace(/\n/g, " ").trim();
   } catch {
@@ -178,7 +179,7 @@ export async function POST(req: Request) {
 
     const expansionTerms = await expandQueryTerms(query);
     const searchQuery = expansionTerms ? `${query} ${expansionTerms}` : query;
-    const topChunks = bm25Search(index, searchQuery, 20);
+    const topChunks = bm25Search(index, searchQuery, 12);
 
     // Build context block with citation handles — deep enough that the model
     // can actually describe the request/solution, not just gesture at it.
@@ -189,7 +190,7 @@ export async function POST(req: Request) {
         .filter(Boolean).join(" | ");
       // Spec chunks are dense reference tables (e.g. per-client rate rows) — a
       // short clip would cut the table mid-row, so give them much more room.
-      contextLines.push(`[${label}] ${chunk.title}${meta ? ` — ${meta}` : ""}\n${clip(chunk.text, chunk.source === "spec" ? 4000 : 1000)}`);
+      contextLines.push(`[${label}] ${chunk.title}${meta ? ` — ${meta}` : ""}\n${clip(chunk.text, chunk.source === "spec" ? 3000 : 800)}`);
     }
     const contextBlock = contextLines.length
       ? contextLines.join("\n\n")
@@ -217,6 +218,7 @@ export async function POST(req: Request) {
       system: systemWithContext,
       contents: [...history, { role: "user", parts: [{ text: query }] }],
       temperature: 0.5,
+      maxTokens: 1500,
     });
 
     // Extract <memory> block before showing answer to user
