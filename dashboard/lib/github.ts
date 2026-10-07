@@ -19,10 +19,14 @@ export async function getFile(path: string): Promise<string | null> {
     if ("content" in data && data.content) {
       return Buffer.from(data.content, "base64").toString("utf-8");
     }
-    // File > 1 MB: GitHub omits inline content — fall back to the raw download URL
+    // File > 1 MB: GitHub omits inline content. Fetch it raw through the API —
+    // the download_url is CDN-cached for 5 min, so a just-rebuilt
+    // knowledge-index.json would otherwise read stale.
     if ("download_url" in data && data.download_url) {
-      const res = await fetch(data.download_url);
-      if (res.ok) return res.text();
+      const { data: raw } = await octokit.repos.getContent({
+        owner: OWNER, repo: REPO, path, mediaType: { format: "raw" },
+      });
+      return typeof raw === "string" ? raw : null;
     }
     return null;
   } catch (err: unknown) {
