@@ -1,7 +1,7 @@
 [
   {
     "id": "BP-2026-08-18-01",
-    "title": "External Recognition Platform \u2192 VC Redemption Backend",
+    "title": "External Recognition Platform → VC Redemption Backend",
     "date": "2026-08-18",
     "author": "Hemanga Bharadwaj",
     "type": "blueprint",
@@ -17,5 +17,24 @@
     "path": "pre-built-solutions/blueprints/2026-08-18-external-recognition-redemption-backend.md",
     "artifact": "https://claude.ai/code/artifact/16663ae2-39f0-491b-8e87-4341fd43e398",
     "summary": "Three ranked integration options for a prospect that owns recognition but has no redemption catalog. Recommends real-time Bulk Award Points push plus SSO into the VC storefront."
+  },
+  {
+    "id": "PB-2026-10-12-01",
+    "title": "Positioning Vantage Recognition for Workday — Client Impact & Discovery",
+    "date": "2026-10-12",
+    "author": "Hemanga Bharadwaj",
+    "type": "playbook",
+    "domain": "HRIS Integration / Workday",
+    "client_type": "Clients and prospects on Workday HCM",
+    "tags": [
+      "workday",
+      "integration",
+      "hris",
+      "provisioning",
+      "client-success"
+    ],
+    "path": "playbook/entries/2026-10-12-workday-integration-client-impact.md",
+    "artifact": "https://claude.ai/artifact/HtKXrxUR28YdnpMjWzerX6",
+    "summary": "How the two-way Workday integration (WQL people sync in, Anytime Feedback write-back out) affects each client stakeholder, a 7-point discovery checklist, and messaging cautions where the Marketplace listing and PDF brief differ."
   }
 ]

@@ -1,6 +1,6 @@
 ---
 title: "Vantage Circle RFP Answer Library"
-updated: 2026-10-09
+updated: 2026-10-12
 owner: "Hemanga Bharadwaj"
 ---
 
@@ -126,6 +126,33 @@ Most snippets come from the Wells Fargo Global Recognition RFx (Nov 2025) — `r
 - **Reporting:** HR admin dashboard (24h refresh) with redemption, points, budget and utilisation reports; segmentation by country/BU/location; scheduled emailed reports; CSV/Excel export.
 - **Collaboration:** Microsoft Teams, Outlook, SharePoint, Slack.
 - **Mobile:** iOS and Android.
+
+### 7a. Workday integration
+Source: Vantage Recognition for Workday brief (Sep 2026) + Workday Marketplace listing. Playbook: `playbook/entries/2026-10-12-workday-integration-client-impact.md`.
+
+> **Do you integrate with Workday?**
+> Yes. Vantage Recognition is published on Workday Marketplace and carries Workday's Design Approved badge; Vantage Circle is a Workday Innovation Partner. The integration is a direct, two-way connection built on Workday's supported integration technologies, not file transfers or screen automation, and is maintained by Vantage Circle as a product rather than rebuilt per customer. It works with Workday Core HCM and nothing is installed in [Client]'s tenant.
+
+> **How does employee data reach the platform?**
+> Worker data flows from Workday to Vantage Circle using Workday Query Language (WQL) over Workday's REST API, authenticated with OAuth 2.0. Vantage Circle owns and maintains the query, including across Workday releases, so [Client] has no report to build or maintain. A full load runs at launch, followed by a scheduled sync (daily by default, or at an agreed frequency) covering joiners, leavers, transfers and reporting-line changes.
+
+> **Can recognition appear in Workday?**
+> Yes. Recognition given in Vantage Circle is posted to Workday as native Anytime Feedback on the recipient's worker profile using Workday's Give Feedback web service. Each Vantage Circle award maps to a Feedback Badge configured in [Client]'s tenant, so recognition is visible where managers hold performance and talent conversations. Only the giver, recipient, badge, message and date are written.
+
+> **What data do you need?**
+> Only work email and employee ID are required. Optional: legal name, cost center, management level, worker status; manager ID and email (manager-led recognition, approval routing); work phone, city, country, gender, date of birth, hire date, worker type, job profile (service-anniversary and birthday programs, regional catalogues, reporting segmentation). The integration works without any optional field.
+
+> **What access and security does it require?**
+> Least privilege per direction: reading worker data and writing feedback use separate credentials (an API Client for Integrations for read; a dedicated Integration System User in a security group permitted to give feedback for write-back). The read is read-only and scoped to the attributes above; the write creates feedback only, and neither can modify worker records, compensation or any other Workday object. No Workday user account or administrative access is required. Traffic runs over TLS, employee data is encrypted at rest with AES-256, and [Client] can revoke credentials from within Workday at any time, which stops the integration immediately.
+
+> **What does implementation involve?**
+> Four phases, with sandbox and production following the same steps: (1) Scoping — usually one working session; (2) Sandbox connection and first load; (3) Validation of a sample of records including a recent joiner and a leaver, plus a test recognition if write-back is in scope; (4) Production — full load reconciled against headcount and the recurring schedule set. [Client]'s team registers the API client, creates the write-back ISU, and confirms email domains and Feedback Badges; Vantage Circle configures the integration (no development work), runs and reconciles loads, applies the award-to-badge mapping and monitors sync exceptions.
+
+> **We already send you a file feed — how do we migrate?**
+> The existing integration is paused, not removed. We bring the Workday integration up, run the initial load and hand it to you to validate; once confirmed, the switch is made permanent and the old path is decommissioned. If anything needs more time, the previous integration is simply resumed. We never run both at once, as two sources writing the same records will disagree, most visibly on leavers.
+
+⚠ The Marketplace listing says "real-time" recognition sync and "HR autonomy" over schedules and mappings; the brief says daily people sync and VC-applied mapping. Use the brief's wording unless product confirms.
+⚠ Not stated in sources: data residency, pricing beyond the Free Marketplace edition, error-reporting to the client.
 
 ---
 
